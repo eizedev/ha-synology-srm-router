@@ -46,6 +46,7 @@ from .const import (
     CONF_TRACKED,
     DEFAULT_FAST_INTERVAL,
     DEFAULT_SLOW_INTERVAL,
+    DOCS_URL,
     DOMAIN,
     LOGGER,
     UPDATE_TIMEOUT,
@@ -224,6 +225,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
             severity=ir.IssueSeverity.ERROR,
             translation_key="blocked",
             translation_placeholders={"name": self.config_entry.title},
+            learn_more_url=f"{DOCS_URL}repairs/blocked/",
         )
 
     def _unblocked(self) -> None:
