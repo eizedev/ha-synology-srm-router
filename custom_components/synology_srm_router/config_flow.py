@@ -207,6 +207,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         self._probe: Probe | None = None
         self._show_all = False
         self._own_trackers = False
+        self._from_menu = False
 
     @staticmethod
     @callback
@@ -300,9 +301,19 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             keep=(user_input or {}).get(CONF_TRACKED, []),
         )
         schema = _clients_schema(choice, user_input or {}, show_all=self._show_all)
+        # Coming from the access point's menu: flows have no "back", so the page says how to get
+        # the router's choice anyway (pick nothing).
         return self.async_show_form(
-            step_id="clients", data_schema=schema, description_placeholders={"docs": DOCS_TRACKERS}
+            step_id="own_clients" if self._from_menu else "clients",
+            data_schema=schema,
+            description_placeholders={"docs": DOCS_TRACKERS},
         )
+
+    async def async_step_own_clients(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose clients of this access point; the same as the clients step."""
+        return await self.async_step_clients(user_input)
 
     async def async_step_access_point(
         self, user_input: dict[str, Any] | None = None
@@ -327,7 +338,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Choose clients of this access point to track here."""
-        self._own_trackers = True
+        self._own_trackers = self._from_menu = True
         return await self.async_step_clients()
 
     def _create(self, probe: Probe, choice: Mapping[str, Any]) -> ConfigFlowResult:

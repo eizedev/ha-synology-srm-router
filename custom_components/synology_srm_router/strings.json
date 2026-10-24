@@ -93,11 +93,26 @@
       },
       "access_point": {
         "title": "Device trackers",
-        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. If you choose trackers here and then pick no client, the router keeps them all. [Help]({docs})",
+        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. [Help]({docs})",
         "menu_options": {
           "router_keeps_trackers": "Finish: the router keeps the trackers",
           "own_trackers": "Choose trackers for this access point →"
         }
+      },
+      "own_clients": {
+        "title": "Device trackers",
+        "description": "Clients this access point knows. Choose none and finish to leave all trackers to the router, as with the first option of the previous page. ● is online now, ○ is not. [Help]({docs})",
+        "data": {
+          "track_all": "Track all clients",
+          "tracked": "Clients to track",
+          "show_all": "Show all known clients"
+        },
+        "data_description": {
+          "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
+          "tracked": "Only these clients get a tracker. Leave empty for none.",
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago."
+        },
+        "submit": "Finish"
       }
     },
     "error": {

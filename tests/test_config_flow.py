@@ -392,7 +392,7 @@ async def test_an_access_point_may_keep_trackers_anyway(hass: HomeAssistant) -> 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": "own_trackers"}
     )
-    assert result["step_id"] == "clients"
+    assert result["step_id"] == "own_clients"  # the page that says how to choose the router
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_TRACK_ALL: True}
     )
