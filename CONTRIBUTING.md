@@ -21,6 +21,22 @@ uv run mypy
 The tests run against a fake client fed by anonymized answers of real devices; they need no
 router and no running Home Assistant.
 
+## Demo instance and screenshots
+
+`scripts/demo/` runs Home Assistant against two stand-in devices that answer like a router and an
+access point, with the anonymized test data and made-up names (no real device is involved):
+
+```sh
+uv run --no-project --with-requirements scripts/demo/requirements.txt \
+    python scripts/demo/run.py            # http://127.0.0.1:8125, user demo / demo
+```
+
+The screenshots in `docs/assets/screenshots/` come from it: start it with `--empty`, then run
+`scripts/demo/screenshots.py` in a second terminal (same `uv run` prefix). It sets up both devices
+through the dialogs and photographs each step, the device pages and the example dashboard. Run it
+again whenever the dialogs or pages change; it needs an installed Edge or Chrome
+(`--browser chrome`), or `playwright install chromium` and `--browser chromium`.
+
 ## Rules for changes
 
 - **Read only.** The integration never changes router settings.

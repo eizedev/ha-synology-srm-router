@@ -21,3 +21,17 @@ updates:
     labels: ["dependencies"]
     commit-message:
       prefix: "ci(deps)"
+
+  - package-ecosystem: "pip"
+    directory: "/scripts/demo"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    ignore:
+      # The demo runs the oldest Home Assistant CI tests; it moves with CI, not on its own.
+      - dependency-name: "homeassistant"
+      - dependency-name: "home-assistant-frontend"
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "build(deps)"

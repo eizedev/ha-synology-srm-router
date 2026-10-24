@@ -43,8 +43,14 @@ Wi-Fi clients by band, with the device they use; useful to see what still uses 2
 
 The radio names are SRM's: `2.4G`, `5G`, and `5G-2` for a second 5 GHz radio.
 
-## Devices
+## A complete dashboard
 
-A dashboard of the [sections](https://www.home-assistant.io/dashboards/sections/) type with a
-*Gauge* card for CPU load and memory, *Tile* cards for clients, last boot and the WAN entities, and
-a *Statistics graph* of the download and upload rate gives a quick overview per device.
+![The example dashboard: router, access point, by radio, who is where](assets/screenshots/dashboard.png)
+
+Router and access point with gauges, tiles and a traffic graph, plus both lists above.
+[Download it](assets/example-dashboard.yaml) or copy it from here; the comment at the top says
+where to paste it and which entity IDs to adjust.
+
+```yaml
+--8<-- "docs/assets/example-dashboard.yaml"
+```

@@ -56,3 +56,4 @@ toc.permalink = true
 pymdownx.highlight = {}
 pymdownx.superfences = {}
 pymdownx.inlinehilite = {}
+pymdownx.snippets = { check_paths = true }

@@ -52,6 +52,9 @@ hassfest and the HACS check run in CI only.
   `docs/assets/site.css` is copied in at build time and not committed. Every repair has a page in
   `docs/repairs/`, linked from the repair with `learn_more_url`; help links in the config flow
   point to sections of `docs/configuration.md` (`DOCS_*` in `config_flow.py`).
+- **Screenshots** come from the demo instance in `scripts/demo/` (CONTRIBUTING.md, "Demo instance
+  and screenshots"); regenerate them when dialogs or pages change, never take them from a real
+  network. The example dashboard lives once, in `docs/assets/example-dashboard.yaml`.
 - Don't contact real devices from tests; use `tests/conftest.py`'s `FakeClient`.
 - Don't add write actions (services, switches, buttons that change the router).
 - Don't edit `uv.lock` by hand.
