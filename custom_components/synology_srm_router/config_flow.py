@@ -13,6 +13,7 @@ from aiosynologysrm import (
     SrmConnectionError,
     SrmError,
     SrmPermissionError,
+    SrmSessionError,
     SrmTwoFactorRequiredError,
     get_certificate_fingerprint,
 )
@@ -40,13 +41,14 @@ from homeassistant.util import dt as dt_util
 from homeassistant.util.ssl import get_default_no_verify_context
 import probatio
 
-from . import create_client
+from . import create_client, session_name
 from .clients import Client, combine, dhcp_macs, options as client_options
 from .const import (
     CONF_CONSIDER_HOME,
     CONF_FAST_INTERVAL,
     CONF_FINGERPRINT,
     CONF_IS_ROUTER,
+    CONF_OWN_TRACKERS,
     CONF_SHOW_ALL,
     CONF_SLOW_INTERVAL,
     CONF_TRACK_ALL,
@@ -124,6 +126,8 @@ def _error_key(err: Exception) -> str:  # noqa: PLR0911 - one per error class
         return "not_admin"
     if isinstance(err, SrmBlockedError):
         return "blocked"
+    if isinstance(err, SrmSessionError):
+        return "session_ended"
     if isinstance(err, SrmCertificateError):
         return "certificate"
     if isinstance(err, SrmConnectionError):
@@ -150,7 +154,7 @@ class Probe:
 
 async def _probe(hass: HomeAssistant, data: Mapping[str, Any]) -> Probe:
     """Log in once and read what the flow needs; a device without serial is refused."""
-    client = create_client(hass, dict(data))
+    client = create_client(hass, dict(data), await session_name(hass, "setup"))
     try:
         await client.login()
         system = await client.get_system_info()
@@ -181,8 +185,15 @@ def _title(hass: HomeAssistant, probe: Probe) -> str:
 
 
 def _router_configured(hass: HomeAssistant) -> bool:
-    """Whether a router is set up; it then owns every tracker."""
+    """Whether a router is set up; it then keeps the trackers of the clients it knows."""
     return any(e.data.get(CONF_IS_ROUTER) for e in hass.config_entries.async_entries(DOMAIN))
+
+
+def _router_clients(hass: HomeAssistant) -> frozenset[str]:
+    """Return the clients the configured routers know."""
+    hub = get_hub(hass)
+    routers = [e for e in hass.config_entries.async_entries(DOMAIN) if e.data.get(CONF_IS_ROUTER)]
+    return frozenset().union(*(hub.known(e.entry_id) for e in routers))
 
 
 class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -195,6 +206,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._probe: Probe | None = None
         self._show_all = False
+        self._own_trackers = False
 
     @staticmethod
     @callback
@@ -255,11 +267,16 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
                 self._data = data
                 if not self._probe.is_router and _router_configured(self.hass):
+                    # No client in common with the routers: a network of its own.
+                    if not set(self._probe.clients) & _router_clients(self.hass):
+                        self._own_trackers = True
+                        return await self.async_step_clients()
                     return await self.async_step_access_point()
                 return await self.async_step_clients()
+        keep = {CONF_USERNAME: user_input[CONF_USERNAME]} if user_input else {}
         return self.async_show_form(
             step_id="credentials",
-            data_schema=probatio.Schema(CREDENTIALS),
+            data_schema=self.add_suggested_values_to_schema(probatio.Schema(CREDENTIALS), keep),
             errors=errors,
             description_placeholders={"docs": DOCS_ACCOUNT},
         )
@@ -290,20 +307,28 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_access_point(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Say that the router keeps the trackers; there is nothing to choose here."""
+        """Say that the router keeps the trackers; the access point may keep its own anyway."""
         probe = self._probe
         if probe is None:  # pragma: no cover - the flow only gets here after a probe
             return self.async_abort(reason="unknown")
         if user_input is not None:
+            if user_input.get(CONF_OWN_TRACKERS):
+                self._own_trackers = True
+                return await self.async_step_clients()
             return self._create(probe, {})
         return self.async_show_form(
-            step_id="access_point", description_placeholders={"docs": DOCS_TRACKERS}
+            step_id="access_point",
+            data_schema=probatio.Schema(
+                {probatio.Optional(CONF_OWN_TRACKERS, default=False): BooleanSelector()}
+            ),
+            description_placeholders={"docs": DOCS_TRACKERS},
         )
 
     def _create(self, probe: Probe, choice: Mapping[str, Any]) -> ConfigFlowResult:
         options = {
             CONF_TRACK_ALL: choice.get(CONF_TRACK_ALL, False),
             CONF_TRACKED: choice.get(CONF_TRACKED, []),
+            CONF_OWN_TRACKERS: self._own_trackers,
             CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.seconds,
             CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.seconds,
             CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.seconds,
@@ -477,23 +502,37 @@ class SrmOptionsFlow(OptionsFlowWithReload):
     async def async_step_access_point(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Take the settings of an access point, which has no trackers next to a router."""
+        """Take the settings of an access point next to a router (same form, other texts)."""
         return await self.async_step_init(user_input)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Show the current settings; an access point next to a router has no trackers."""
+        """Show the current settings.
+
+        An access point next to a router keeps trackers only when switched to; switching or
+        asking for all known clients shows the form again with the clients.
+        """
         entry: SrmConfigEntry = self.config_entry
-        trackers = bool(entry.data.get(CONF_IS_ROUTER)) or not _router_configured(self.hass)
+        hub = get_hub(self.hass)
+        next_to_router = not entry.data.get(CONF_IS_ROUTER) and _router_configured(self.hass)
+        current = {**entry.options, **(user_input or {})}
+        trackers = not next_to_router or bool(current.get(CONF_OWN_TRACKERS))
         if user_input is not None:
-            if user_input.pop(CONF_SHOW_ALL, False) and not self._show_all:
-                self._show_all = True
+            more = user_input.pop(CONF_SHOW_ALL, False) and not self._show_all
+            switched = trackers and CONF_TRACKED not in user_input
+            if more or switched:
+                self._show_all = self._show_all or more
             else:
                 return self.async_create_entry(data={**entry.options, **user_input})
-        current = {**entry.options, **(user_input or {})}
         fields: dict[Any, Any] = {}
+        if next_to_router:
+            fields[
+                probatio.Optional(CONF_OWN_TRACKERS, default=current.get(CONF_OWN_TRACKERS, False))
+            ] = BooleanSelector()
         if trackers:
+            own = hub.known(entry.entry_id)
+            clients = {mac: c for mac, c in hub.clients.items() if mac in own}
             choice = client_options(
-                get_hub(self.hass).clients,
+                clients,
                 dt_util.utcnow(),
                 show_all=self._show_all,
                 keep=current.get(CONF_TRACKED, []),
@@ -514,7 +553,7 @@ class SrmOptionsFlow(OptionsFlowWithReload):
                 low, high
             )
         return self.async_show_form(
-            step_id="init" if trackers else "access_point",
+            step_id="access_point" if next_to_router else "init",
             data_schema=probatio.Schema(fields),
             description_placeholders={"docs": DOCS_TRACKERS},
         )

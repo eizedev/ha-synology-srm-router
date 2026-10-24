@@ -13,7 +13,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
@@ -47,7 +47,13 @@ GETTERS = (
 )
 
 
-def create_client(hass: HomeAssistant, data: dict[str, object]) -> SrmClient:
+async def session_name(hass: HomeAssistant, purpose: str | None = None) -> str:
+    """Name the SRM session after this installation, so two of them do not end each other's."""
+    name = f"{SESSION_NAME}-{(await instance_id.async_get(hass))[:8]}"
+    return f"{name}-{purpose}" if purpose else name
+
+
+def create_client(hass: HomeAssistant, data: dict[str, object], session: str) -> SrmClient:
     """Build a client from an entry's data: pinned certificate, or none checked when chosen."""
     fingerprint = data.get(CONF_FINGERPRINT)
     use_https = bool(data[CONF_USE_HTTPS])
@@ -63,13 +69,13 @@ def create_client(hass: HomeAssistant, data: dict[str, object]) -> SrmClient:
         use_https=use_https,
         ssl=ssl,
         timeout=REQUEST_TIMEOUT,
-        session_name=SESSION_NAME,
+        session_name=session,
     )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
     """Connect to one SRM device and start polling it."""
-    client = create_client(hass, dict(entry.data))
+    client = create_client(hass, dict(entry.data), await session_name(hass))
     try:
         await client.login()
         topology = await client.get_topology()

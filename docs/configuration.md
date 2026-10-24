@@ -38,10 +38,19 @@ authentication; Home Assistant cannot enter codes unattended. A dedicated accoun
 Assistant is best: it shows up on its own in SRM's logs, and you can change its password without
 touching anything else.
 
+SRM keeps one session per account and session name; a second login under the same name ends the
+first. Each Home Assistant installation therefore logs in under a name of its own
+(`HomeAssistant-` and the start of its instance ID), so a test and a production instance can share
+the account.
+
 ## Device trackers
 
-The router keeps one tracker per chosen client; an access point's entry asks only when no router
-is set up. A tracker is *home* while the client is on the network.
+A tracker is *home* while the client is on the network. Each router offers the clients it knows,
+and keeps the trackers of the ones you choose. An access point next to a router leaves its clients
+to the router, unless you switch on *Keep trackers here anyway*; an access point whose clients no
+configured router knows (a network of its own) offers them right away. So two routers of separate
+networks, for example one for work and one at home, each keep their own trackers. A client known
+to several devices gets one tracker, from the first device that wants it, routers first.
 
 The list to choose from shows the clients that matter: those online now (●), those with a name
 given in SRM, those with a DHCP lease or reservation, and those Home Assistant saw online in the

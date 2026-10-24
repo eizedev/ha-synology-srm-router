@@ -93,8 +93,14 @@
       },
       "access_point": {
         "title": "Device trackers",
-        "description": "The router you set up already keeps the device trackers for all clients, including the ones on this access point. There is nothing to choose here. [Help]({docs})",
-        "submit": "Finish"
+        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. You can still keep trackers here, for clients that only this access point knows. [Help]({docs})",
+        "submit": "Finish",
+        "data": {
+          "own_trackers": "Keep trackers here anyway"
+        },
+        "data_description": {
+          "own_trackers": "For clients that only this access point knows, for example when it serves a network of its own; the router keeps the trackers of the clients it knows."
+        }
       }
     },
     "error": {
@@ -106,7 +112,8 @@
       "invalid_host": "Enter a host name or an IP address, without port or path.",
       "not_admin": "The account is not an administrator. SRM's Web API only answers administrators.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",
-      "unknown": "Unexpected error, see the log."
+      "unknown": "Unexpected error, see the log.",
+      "session_ended": "SRM ended the session right after the login, usually because the same account logged in elsewhere under the same name. Try again."
     },
     "abort": {
       "already_configured": "This device is already set up.",
@@ -139,17 +146,25 @@
       },
       "access_point": {
         "title": "Options",
-        "description": "The router keeps the device trackers, including the clients on this access point. [Help]({docs})",
+        "description": "The router keeps the device trackers of the clients it knows, including the ones on this access point. Switch on and save to choose clients here as well. [Help]({docs})",
         "submit": "Save",
         "data": {
-          "consider_home": "Time until away",
+          "own_trackers": "Keep trackers here anyway",
+          "track_all": "Track all clients",
+          "tracked": "Clients to track",
           "fast_interval": "Fast polling interval",
-          "slow_interval": "Slow polling interval"
+          "slow_interval": "Slow polling interval",
+          "show_all": "Show all known clients",
+          "consider_home": "Time until away"
         },
         "data_description": {
-          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
+          "own_trackers": "For clients that only this access point knows, for example when it serves a network of its own; the router keeps the trackers of the clients it knows.",
+          "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
+          "tracked": "Only these clients get a tracker. Leave empty for none.",
           "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
-          "slow_interval": "System information (firmware, uptime). Default 300 s."
+          "slow_interval": "System information (firmware, uptime). Default 300 s.",
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
+          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s."
         }
       }
     }

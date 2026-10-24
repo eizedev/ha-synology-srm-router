@@ -137,7 +137,7 @@ async def test_owner_and_names(hass: HomeAssistant) -> None:
     entry = make_entry()
     await _setup(hass, entry)
     hub = get_hub(hass)
-    assert hub.owner("aa:bb:cc:dd:ee:ff") == entry.entry_id  # a single router owns every client
+    assert hub.owner("aa:bb:cc:dd:ee:ff") is None  # nobody knows this client
     assert hub.name_of(None) is None
     assert hub.name_of(entry.entry_id) == entry.title
 
@@ -221,6 +221,9 @@ class _Hub:
 
     def relevant(self, mac: str) -> bool:
         return False
+
+    def wants(self, entry: object, mac: str) -> bool:
+        return True
 
     def name_of(self, entry_id: str | None) -> str | None:
         return entry_id

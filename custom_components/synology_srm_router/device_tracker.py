@@ -33,13 +33,6 @@ def chosen(entry: SrmConfigEntry, mac: str) -> bool:
     return mac in tracked
 
 
-def wanted(hub: LocationHub, entry: SrmConfigEntry, mac: str) -> bool:
-    """Whether the client gets a tracker: picked by name, or covered by "all"."""
-    if chosen(entry, mac):
-        return True
-    return bool(entry.options.get(CONF_TRACK_ALL, False)) and hub.relevant(mac)
-
-
 @callback
 def remove_unwanted(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
     """Delete this entry's trackers for clients that are no longer picked.
@@ -47,11 +40,13 @@ def remove_unwanted(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
     With "all", nothing is deleted: whether a client is covered depends on data that may not be
     there yet, and a deleted entity loses its name, area and history.
     """
-    if entry.options.get(CONF_TRACK_ALL, False):
+    if entry.options.get(CONF_TRACK_ALL, False) and get_hub(hass).keeps_trackers(entry):
         return
     registry = er.async_get(hass)
     for item in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if item.domain == Platform.DEVICE_TRACKER and not chosen(entry, item.unique_id):
+        if item.domain == Platform.DEVICE_TRACKER and not (
+            chosen(entry, item.unique_id) and get_hub(hass).keeps_trackers(entry)
+        ):
             registry.async_remove(item.entity_id)
 
 
@@ -70,7 +65,7 @@ async def async_setup_entry(
     def _add_new() -> None:
         new = []
         for mac in hub.locations:
-            if mac in added or not wanted(hub, entry, mac) or hub.owner(mac) != entry.entry_id:
+            if mac in added or hub.owner(mac) != entry.entry_id:
                 continue
             entity_id = registry.async_get_entity_id(Platform.DEVICE_TRACKER, DOMAIN, mac)
             existing = registry.async_get(entity_id) if entity_id else None
@@ -109,7 +104,7 @@ class SrmTracker(ScannerEntity):
         self._consider_home = timedelta(
             seconds=entry.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.seconds)
         )
-        self._picked = wanted(hub, entry, mac)
+        self._picked = hub.wants(entry, mac)
         self._update_from_hub()
 
     @property

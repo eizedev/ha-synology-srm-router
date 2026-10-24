@@ -14,6 +14,7 @@ from aiosynologysrm import (
     SrmConnectionError,
     SrmError,
     SrmPermissionError,
+    SrmSessionError,
     SrmTwoFactorRequiredError,
 )
 from homeassistant.config_entries import SOURCE_USER, ConfigFlowResult
@@ -364,14 +365,61 @@ async def test_without_dhcp_fewer_clients_are_offered(hass: HomeAssistant) -> No
     assert len(without) < len(with_dhcp)
 
 
+async def _router_loaded(hass: HomeAssistant) -> None:
+    router = make_entry()
+    router.add_to_hass(hass)
+    await hass.config_entries.async_setup(router.entry_id)
+    await hass.async_block_till_done()
+
+
 async def test_an_access_point_next_to_a_router_has_no_tracker_step(hass: HomeAssistant) -> None:
-    make_entry().add_to_hass(hass)
+    await _router_loaded(hass)
     result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
     assert result["step_id"] == "access_point"
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["options"][CONF_TRACKED] == []
+    assert result["options"]["own_trackers"] is False
     assert result["data"]["is_router"] is False
+
+
+async def test_an_access_point_may_keep_trackers_anyway(hass: HomeAssistant) -> None:
+    await _router_loaded(hass)
+    result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"own_trackers": True}
+    )
+    assert result["step_id"] == "clients"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: True}
+    )
+    assert result["options"]["own_trackers"] is True
+
+
+async def test_an_access_point_of_another_network_keeps_its_trackers(
+    hass: HomeAssistant,
+) -> None:
+    make_entry().add_to_hass(hass)  # a router that knows none of the access point's clients
+    result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
+    assert result["step_id"] == "clients"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: True}
+    )
+    assert result["options"]["own_trackers"] is True
+
+
+async def test_the_username_stays_after_an_error(hass: HomeAssistant) -> None:
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    ERRORS[ROUTER_HOST] = {"login": SrmSessionError(119, "SYNO.API.Auth")}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"username": "someone", "password": "x"}
+    )
+    assert result["errors"] == {"base": "session_ended"}
+    schema = result["data_schema"]
+    assert schema is not None
+    username = next(k for k in schema.schema if k == "username")
+    assert username.description == {"suggested_value": "someone"}
 
 
 async def test_a_second_device_of_the_same_model_gets_the_serial(hass: HomeAssistant) -> None:

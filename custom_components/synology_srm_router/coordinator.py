@@ -40,7 +40,10 @@ from .const import (
     BLOCKED_RETRY,
     CONF_FAST_INTERVAL,
     CONF_IS_ROUTER,
+    CONF_OWN_TRACKERS,
     CONF_SLOW_INTERVAL,
+    CONF_TRACK_ALL,
+    CONF_TRACKED,
     DEFAULT_FAST_INTERVAL,
     DEFAULT_SLOW_INTERVAL,
     DOMAIN,
@@ -432,22 +435,43 @@ class LocationHub:
         self._refresh()
         return any(e.entry_id not in self._missing for e in self.configured())
 
+    def known(self, entry_id: str) -> frozenset[str]:
+        """Return the clients an entry's own device and Wi-Fi lists contain."""
+        loaded = self.loaded.get(entry_id)
+        data = loaded.runtime_data.fast.data if loaded else None
+        if data is None:
+            return frozenset()
+        macs = [d.mac for d in data.devices.devices] if data.devices else []
+        macs += [w.mac_address for w in data.wifi.device_list] if data.wifi else []
+        return frozenset(m for mac in macs if (m := helpers.normalize_mac(mac)))
+
+    def keeps_trackers(self, entry: ConfigEntry) -> bool:
+        """Whether an entry keeps trackers.
+
+        Routers do, and access points without a router or set to keep their own.
+        """
+        if entry.data.get(CONF_IS_ROUTER) or entry.options.get(CONF_OWN_TRACKERS):
+            return True
+        return not any(e.data.get(CONF_IS_ROUTER) for e in self.configured())
+
+    def wants(self, entry: ConfigEntry, mac: str) -> bool:
+        """Whether an entry wants a tracker for a client: picked by name, or covered by "all"."""
+        if not self.keeps_trackers(entry):
+            return False
+        if mac in entry.options.get(CONF_TRACKED, []):
+            return True
+        return bool(entry.options.get(CONF_TRACK_ALL, False)) and self.relevant(mac)
+
     def owner(self, mac: str) -> str | None:
         """Return the entry that creates a client's tracker.
 
-        Routers own the trackers (access points only when no router is set up). With one
-        candidate it owns every client; with several, the first that knows the client, in an
-        order that does not depend on which entry loaded first.
+        The first entry that knows the client and wants a tracker for it, routers before access
+        points, in an order that does not depend on which entry loaded first. Two routers of
+        separate networks, or an access point in a network without a Synology router, each keep
+        the trackers of their own clients.
         """
-        entries = self.configured()
-        candidates = [e for e in entries if e.data.get(CONF_IS_ROUTER)] or entries
-        if len(candidates) == 1:
-            return candidates[0].entry_id
-        for entry in candidates:
-            loaded = self.loaded.get(entry.entry_id)
-            data = loaded.runtime_data.fast.data if loaded else None
-            devices = data.devices.devices if data and data.devices else ()
-            if any(helpers.normalize_mac(d.mac) == mac for d in devices):
+        for entry in self.configured():
+            if mac in self.known(entry.entry_id) and self.wants(entry, mac):
                 return entry.entry_id
         return None
 

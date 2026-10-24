@@ -17,6 +17,8 @@ CONF_SLOW_INTERVAL: Final = "slow_interval"
 CONF_IS_ROUTER: Final = "is_router"
 CONF_CONSIDER_HOME: Final = "consider_home"
 CONF_SHOW_ALL: Final = "show_all"
+# An access point next to a router keeps its own trackers (by default the router keeps all).
+CONF_OWN_TRACKERS: Final = "own_trackers"
 
 DEFAULT_HTTPS_PORT: Final = 8001
 DEFAULT_HTTP_PORT: Final = 8000
@@ -42,4 +44,6 @@ LOCATION_GRACE: Final = timedelta(minutes=10)
 
 DOCS_URL: Final = "https://ha-synology-srm-router.eize.dev/"
 
+# SRM keeps one session per account and session name: a second login under the same name ends the
+# first (measured). Each Home Assistant installation, and its setup dialog, logs in under its own.
 SESSION_NAME: Final = "HomeAssistant"
