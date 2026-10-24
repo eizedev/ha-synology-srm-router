@@ -40,14 +40,57 @@ class Client:
         return self.online or self.named or self.dhcp or recent
 
 
-def dhcp_macs(clients: DhcpClients | None, reservations: DhcpReservations | None) -> frozenset[str]:
-    """MAC addresses with an IPv4 lease or reservation (for IPv4, SRM's ``clid`` is the MAC)."""
-    leases = clients.client_list.ipv4 if clients and clients.client_list else ()
-    fixed = (
-        reservations.reservation_list.ipv4 if reservations and reservations.reservation_list else ()
-    )
-    clids = [e.clid for e in leases] + [e.clid for e in fixed]
-    return frozenset(mac for clid in clids if (mac := helpers.normalize_mac(clid)))
+@dataclass(frozen=True, kw_only=True)
+class DhcpAddress:
+    """What SRM's DHCP server knows about a client: lease first, else reservation."""
+
+    ip: str | None = None
+    ip6: str | None = None
+
+
+# DHCPv6 DUIDs that carry the MAC (RFC 8415): type and hardware type (1 = Ethernet), then the MAC.
+DUID_LLT_ETHERNET, DUID_LLT_LENGTH = b"\x00\x01\x00\x01", 14  # with 4 bytes of time
+DUID_LL_ETHERNET, DUID_LL_LENGTH = b"\x00\x03\x00\x01", 10
+
+
+def duid_mac(duid: str | None) -> str | None:
+    """Return the MAC address inside a DHCPv6 DUID of type LLT or LL (Ethernet), else None.
+
+    LLT: 00:01, hardware type 00:01, 4 bytes of time, the MAC; LL: 00:03, 00:01, the MAC.
+    """
+    try:
+        raw = bytes.fromhex((duid or "").replace(":", "").replace("-", ""))
+    except ValueError:
+        return None
+    if raw[:4] == DUID_LLT_ETHERNET and len(raw) == DUID_LLT_LENGTH:
+        return helpers.normalize_mac(raw[8:].hex())
+    if raw[:4] == DUID_LL_ETHERNET and len(raw) == DUID_LL_LENGTH:
+        return helpers.normalize_mac(raw[4:].hex())
+    return None
+
+
+def dhcp_addresses(
+    clients: DhcpClients | None, reservations: DhcpReservations | None
+) -> dict[str, DhcpAddress]:
+    """Addresses by MAC from leases and reservations (IPv4 by MAC, IPv6 by the MAC in the DUID).
+
+    SRM's client list leaves out many addresses its own DHCP server handed out; these fill in.
+    """
+    found: dict[str, dict[str, str | None]] = {}
+    lists = [
+        (clients.client_list if clients else None),
+        (reservations.reservation_list if reservations else None),
+    ]
+    for entries in lists:  # leases first: they are what the client really uses
+        if entries is None:
+            continue
+        for entry in entries.ipv4:
+            if (mac := helpers.normalize_mac(entry.clid)) and entry.ip:
+                found.setdefault(mac, {}).setdefault("ip", entry.ip)
+        for entry in entries.ipv6:
+            if (mac := duid_mac(entry.clid)) and (ip6 := usable_ipv6(entry.ip)):
+                found.setdefault(mac, {}).setdefault("ip6", ip6)
+    return {mac: DhcpAddress(ip=a.get("ip"), ip6=a.get("ip6")) for mac, a in found.items()}
 
 
 def usable_ipv6(value: str | None) -> str | None:
@@ -63,13 +106,14 @@ def usable_ipv6(value: str | None) -> str | None:
 
 def combine(
     lists: Iterable[NetworkDevices | None],
-    dhcp: frozenset[str],
+    dhcp: Mapping[str, DhcpAddress],
     last_seen: Mapping[str, datetime],
 ) -> dict[str, Client]:
     """Merge the device lists of all entries, routers first.
 
     A name given in SRM wins wherever it is set, then the first reported host name: an access
     point only sees what a client reports about itself, the router also the names given there.
+    Addresses the lists leave out come from the router's DHCP leases and reservations.
     """
     found: dict[str, dict[str, object]] = {}
     for devices in lists:
@@ -87,12 +131,13 @@ def combine(
             item["ip"] = item["ip"] or device.ip_addr
             item["ip6"] = item["ip6"] or usable_ipv6(device.ip6_addr)
             item["online"] = bool(item["online"] or device.is_online)
+    none = DhcpAddress()
     return {
         mac: Client(
             mac=mac,
             name=item["name"],  # type: ignore[arg-type]
-            ip=item["ip"],  # type: ignore[arg-type]
-            ip6=item["ip6"],  # type: ignore[arg-type]
+            ip=item["ip"] or dhcp.get(mac, none).ip,  # type: ignore[arg-type]
+            ip6=item["ip6"] or dhcp.get(mac, none).ip6,  # type: ignore[arg-type]
             online=bool(item["online"]),
             named=bool(item["named"]),
             dhcp=mac in dhcp,
