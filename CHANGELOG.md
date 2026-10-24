@@ -19,5 +19,14 @@ All notable changes to this project are documented here. The format follows
   minutes.
 - Diagnostics without addresses, names or secrets.
 - English and German.
+- The tracker choice offers the clients that matter first (online, named in SRM, with a DHCP lease
+  or reservation, or seen in the last 30 days); all known clients on request. "Track all" covers
+  exactly those, and new clients as they appear.
+- Trackers carry the name given in SRM, also for clients on an access point, and count a client
+  as away only after a configurable time (3 minutes by default).
+- Routers of separate networks each keep the trackers of their own clients; an access point keeps
+  trackers when no configured router knows its clients, or when chosen in its menu.
+- Each Home Assistant installation logs in under its own session name, because SRM ends a session
+  when the same account logs in again under the same name.
 
 [Unreleased]: https://github.com/eizedev/ha-synology-srm-router/commits/main

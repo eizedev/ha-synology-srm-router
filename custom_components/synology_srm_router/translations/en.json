@@ -15,11 +15,13 @@
           "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
           "use_https": "Recommended: the password travels encrypted.",
           "verify_certificate": "Pin the device's certificate after you confirmed its fingerprint. Turn off only if you accept that anyone in your network could read the password."
-        }
+        },
+        "submit": "Next"
       },
       "certificate": {
         "title": "Confirm the certificate",
-        "description": "The device presents a certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nCompare it with the certificate shown in SRM's settings. Continue only if it matches; Home Assistant then trusts exactly this certificate."
+        "description": "The device presents a certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nTo compare it, open {url} in a browser, click the padlock or the warning next to the address and show the certificate; it lists the SHA-256 fingerprint. Continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
+        "submit": "Trust"
       },
       "credentials": {
         "title": "Administrator account",
@@ -31,19 +33,23 @@
         "data_description": {
           "username": "An SRM administrator account without two-factor authentication; a dedicated account is best.",
           "password": "The account's password."
-        }
+        },
+        "submit": "Next"
       },
       "clients": {
         "title": "Device trackers",
-        "description": "Choose the clients Home Assistant should track. You can change this later in the options.",
+        "description": "Choose the clients Home Assistant should track. ● is online now, ○ is not; a date says when Home Assistant last saw the client. You can change this later in the options. [Help]({docs})",
         "data": {
           "track_all": "Track all clients",
-          "tracked": "Clients to track"
+          "tracked": "Clients to track",
+          "show_all": "Show all known clients"
         },
         "data_description": {
-          "track_all": "Creates a tracker for every client, including new ones later.",
-          "tracked": "Only these clients get a tracker. Leave empty for none."
-        }
+          "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
+          "tracked": "Only these clients get a tracker. Leave empty for none.",
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago."
+        },
+        "submit": "Finish"
       },
       "reauth_confirm": {
         "title": "Sign in again",
@@ -55,15 +61,18 @@
         "data_description": {
           "username": "An SRM administrator account without two-factor authentication; a dedicated account is best.",
           "password": "The account's password."
-        }
+        },
+        "submit": "Finish"
       },
       "reauth_certificate": {
         "title": "New certificate",
-        "description": "The device now presents a different certificate:\n\n`{fingerprint}`\n\nThis is expected after a certificate renewal. Compare it with SRM and continue only if it matches."
+        "description": "The device now presents a different certificate:\n\n`{fingerprint}`\n\nThis is expected after a certificate renewal. Compare it with the certificate shown at {url} in a browser and continue only if both match. [How to compare]({docs})",
+        "submit": "Trust"
       },
       "reconfigure_certificate": {
         "title": "Confirm the certificate",
-        "description": "The device presents a different certificate than the one trusted so far:\n\n`{fingerprint}`\n\nCompare it with the certificate shown in SRM's settings. Continue only if it matches; Home Assistant then trusts exactly this certificate."
+        "description": "The device presents a different certificate than the one trusted so far:\n\n`{fingerprint}`\n\nCompare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
+        "submit": "Trust"
       },
       "reconfigure": {
         "title": "Change the connection",
@@ -79,6 +88,15 @@
           "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
           "use_https": "Recommended: the password travels encrypted.",
           "verify_certificate": "Pin the device's certificate after you confirmed its fingerprint. Turn off only if you accept that anyone in your network could read the password."
+        },
+        "submit": "Save"
+      },
+      "access_point": {
+        "title": "Device trackers",
+        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. If you choose trackers here and then pick no client, the router keeps them all. [Help]({docs})",
+        "menu_options": {
+          "router_keeps_trackers": "Finish: the router keeps the trackers",
+          "own_trackers": "Choose trackers for this access point →"
         }
       }
     },
@@ -91,7 +109,8 @@
       "invalid_host": "Enter a host name or an IP address, without port or path.",
       "not_admin": "The account is not an administrator. SRM's Web API only answers administrators.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",
-      "unknown": "Unexpected error, see the log."
+      "unknown": "Unexpected error, see the log.",
+      "session_ended": "SRM ended the session right after the login, usually because the same account logged in elsewhere under the same name. Try again."
     },
     "abort": {
       "already_configured": "This device is already set up.",
@@ -108,13 +127,55 @@
           "track_all": "Track all clients",
           "tracked": "Clients to track",
           "fast_interval": "Fast polling interval",
+          "slow_interval": "Slow polling interval",
+          "show_all": "Show all known clients",
+          "consider_home": "Time until away"
+        },
+        "data_description": {
+          "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
+          "tracked": "Only these clients get a tracker. Leave empty for none.",
+          "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
+          "slow_interval": "System information (firmware, uptime). Default 300 s.",
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
+          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s."
+        },
+        "submit": "Save"
+      },
+      "access_point": {
+        "title": "Access point",
+        "description": "The router keeps the device trackers of the clients it knows, including the ones on this access point. [Help]({docs})",
+        "menu_options": {
+          "timings": "Times and polling",
+          "trackers": "Trackers of this access point"
+        }
+      },
+      "timings": {
+        "title": "Times and polling",
+        "submit": "Save",
+        "data": {
+          "consider_home": "Time until away",
+          "fast_interval": "Fast polling interval",
           "slow_interval": "Slow polling interval"
         },
         "data_description": {
-          "track_all": "Creates a tracker for every client, including new ones later.",
-          "tracked": "Only these clients get a tracker. Leave empty for none.",
+          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
           "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
           "slow_interval": "System information (firmware, uptime). Default 300 s."
+        }
+      },
+      "trackers": {
+        "title": "Trackers of this access point",
+        "description": "Clients this access point knows. Choosing none leaves all trackers to the router. ● is online now, ○ is not. [Help]({docs})",
+        "submit": "Save",
+        "data": {
+          "track_all": "Track all clients",
+          "tracked": "Clients to track",
+          "show_all": "Show all known clients"
+        },
+        "data_description": {
+          "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
+          "tracked": "Only these clients get a tracker. Leave empty for none.",
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago."
         }
       }
     }

@@ -22,10 +22,11 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from homeassistant.util import dt as dt_util
 import pytest
 
-from custom_components.synology_srm_router.config_flow import client_options
-from custom_components.synology_srm_router.const import LOCATION_GRACE
+from custom_components.synology_srm_router.clients import combine, options
+from custom_components.synology_srm_router.const import DEFAULT_CONSIDER_HOME, LOCATION_GRACE
 from custom_components.synology_srm_router.coordinator import (
     FastData,
     gather_partial,
@@ -136,7 +137,7 @@ async def test_owner_and_names(hass: HomeAssistant) -> None:
     entry = make_entry()
     await _setup(hass, entry)
     hub = get_hub(hass)
-    assert hub.owner("aa:bb:cc:dd:ee:ff") == entry.entry_id  # a single router owns every client
+    assert hub.owner("aa:bb:cc:dd:ee:ff") is None  # nobody knows this client
     assert hub.name_of(None) is None
     assert hub.name_of(entry.entry_id) == entry.title
 
@@ -158,19 +159,48 @@ def test_sensor_helpers_without_data() -> None:
     assert _load(FastData(utilization=util), "load_1min") == 0.57
 
 
-def test_client_options_skip_odd_macs() -> None:
-    devices = NetworkDevices.from_api(
+def test_client_names_relevance_and_choice() -> None:
+    now = dt_util.utcnow()
+    router = NetworkDevices.from_api(
         {
             "devices": [
                 {"mac": "nope"},
-                {"mac": "AA-BB-CC-DD-EE-01", "hostname": "x", "is_online": True},
+                {"mac": "AA-BB-CC-DD-EE-01", "hostname": "Living room", "is_manual_hostname": True},
+                {"mac": "aa:bb:cc:dd:ee:02", "hostname": "phone", "is_online": True},
+                {"mac": "aa:bb:cc:dd:ee:03", "hostname": "old"},
+                {"mac": "aa:bb:cc:dd:ee:04"},
             ]
         }
     )
-    assert client_options(devices) == [
-        {"value": "aa:bb:cc:dd:ee:01", "label": "x / aa:bb:cc:dd:ee:01"}
+    access_point = NetworkDevices.from_api(
+        {
+            "devices": [
+                {"mac": "aa:bb:cc:dd:ee:01", "hostname": "SonosZP", "ip_addr": "192.0.2.9"},
+                {"mac": "aa:bb:cc:dd:ee:05", "hostname": "Hall", "is_manual_hostname": True},
+            ]
+        }
+    )
+    seen = {"aa:bb:cc:dd:ee:04": now - timedelta(days=3)}
+    clients = combine([router, None, access_point], frozenset({"aa:bb:cc:dd:ee:03"}), seen)
+    assert clients["aa:bb:cc:dd:ee:01"].name == "Living room"  # the name given in SRM wins
+    assert clients["aa:bb:cc:dd:ee:01"].ip == "192.0.2.9"
+    assert clients["aa:bb:cc:dd:ee:05"].named
+    relevant = options(clients, now, show_all=False)
+    assert [o["value"] for o in relevant] == [
+        "aa:bb:cc:dd:ee:02",  # online first
+        "aa:bb:cc:dd:ee:05",
+        "aa:bb:cc:dd:ee:01",
+        "aa:bb:cc:dd:ee:03",  # DHCP lease
+        "aa:bb:cc:dd:ee:04",  # seen three days ago, no name
     ]
-    assert client_options(None) == []
+    assert relevant[0]["label"].startswith("● phone")
+    assert relevant[-1]["label"].endswith((now - timedelta(days=3)).date().isoformat())
+    old = {**seen, "aa:bb:cc:dd:ee:04": now - timedelta(days=90)}
+    clients = combine([router], frozenset(), old)
+    assert "aa:bb:cc:dd:ee:04" not in [o["value"] for o in options(clients, now, show_all=False)]
+    assert "aa:bb:cc:dd:ee:04" in [o["value"] for o in options(clients, now, show_all=True)]
+    kept = options(clients, now, show_all=False, keep=["aa:bb:cc:dd:ee:04", "02:00:00:00:00:99"])
+    assert {o["value"] for o in kept} >= {"aa:bb:cc:dd:ee:04", "02:00:00:00:00:99"}
 
 
 async def test_options_of_an_entry_that_is_not_loaded(hass: HomeAssistant) -> None:
@@ -185,6 +215,15 @@ class _Hub:
         self.locations = locations
         self.missing: frozenset[str] = frozenset()
         self.anything_available = True
+
+    def name(self, mac: str) -> str | None:
+        return None
+
+    def relevant(self, mac: str) -> bool:
+        return False
+
+    def wants(self, entry: object, mac: str) -> bool:
+        return True
 
     def name_of(self, entry_id: str | None) -> str | None:
         return entry_id
@@ -244,6 +283,32 @@ def test_tracker_leaves_home_after_the_grace_while_its_device_is_missing(
     tracker._update_from_hub()
     assert tracker.is_connected
     freezer.tick(LOCATION_GRACE)
+    tracker._update_from_hub()
+    assert tracker.is_connected  # missing now, but not for "consider home" yet
+    freezer.tick(DEFAULT_CONSIDER_HOME)
+    tracker._update_from_hub()
+    assert not tracker.is_connected
+    assert tracker.extra_state_attributes == {}
+
+
+def test_tracker_ignores_short_dropouts(freezer: FrozenDateTimeFactory) -> None:
+    entry = make_entry(tracked=["aa:bb:cc:dd:ee:ff"])
+    hub = _Hub({"aa:bb:cc:dd:ee:ff": _location(source="router", basis="device_list")})
+    tracker = SrmTracker(hub, entry, "aa:bb:cc:dd:ee:ff")  # type: ignore[arg-type]
+    offline = _location(source=None, online=False, basis="offline")
+    hub.locations["aa:bb:cc:dd:ee:ff"] = offline
+    freezer.tick(timedelta(seconds=60))
+    tracker._update_from_hub()
+    assert tracker.is_connected
+    assert tracker.extra_state_attributes["connected_to"] == "router"
+    hub.locations["aa:bb:cc:dd:ee:ff"] = _location(source="router", basis="device_list")
+    tracker._update_from_hub()
+    hub.locations["aa:bb:cc:dd:ee:ff"] = offline
+    tracker._update_from_hub()  # a new dropout starts the wait again
+    freezer.tick(DEFAULT_CONSIDER_HOME - timedelta(seconds=1))
+    tracker._update_from_hub()
+    assert tracker.is_connected
+    freezer.tick(timedelta(seconds=2))
     tracker._update_from_hub()
     assert not tracker.is_connected
 

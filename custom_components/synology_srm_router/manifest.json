@@ -3,7 +3,7 @@
   "name": "Synology SRM Router",
   "codeowners": ["@eizedev"],
   "config_flow": true,
-  "documentation": "https://github.com/eizedev/ha-synology-srm-router",
+  "documentation": "https://ha-synology-srm-router.eize.dev/",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/eizedev/ha-synology-srm-router/issues",

@@ -15,11 +15,13 @@
           "port": "Leer lassen für die Voreinstellung von SRM: 8001 für HTTPS, 8000 für HTTP.",
           "use_https": "Empfohlen: Das Passwort wird verschlüsselt übertragen.",
           "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung des Fingerabdrucks fest hinterlegt. Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
-        }
+        },
+        "submit": "Weiter"
       },
       "certificate": {
         "title": "Zertifikat bestätigen",
-        "description": "Das Gerät zeigt ein Zertifikat mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\nVergleiche ihn mit dem Zertifikat in den Einstellungen von SRM. Fahre nur fort, wenn er übereinstimmt; Home Assistant vertraut dann genau diesem Zertifikat."
+        "description": "Das Gerät zeigt ein Zertifikat mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\nZum Vergleichen öffne {url} im Browser, klicke auf das Schloss oder die Warnung neben der Adresse und lass dir das Zertifikat anzeigen; dort steht der SHA-256-Fingerabdruck. Fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
+        "submit": "Vertrauen"
       },
       "credentials": {
         "title": "Administratorkonto",
@@ -31,19 +33,23 @@
         "data_description": {
           "username": "Ein SRM-Administratorkonto ohne Zwei-Faktor-Anmeldung; am besten ein eigenes Konto.",
           "password": "Das Passwort des Kontos."
-        }
+        },
+        "submit": "Weiter"
       },
       "clients": {
         "title": "Device-Tracker",
-        "description": "Wähle die Clients, die Home Assistant verfolgen soll. Das lässt sich später in den Optionen ändern.",
+        "description": "Wähle die Clients, die Home Assistant verfolgen soll. ● ist gerade online, ○ nicht; ein Datum sagt, wann Home Assistant den Client zuletzt gesehen hat. Das lässt sich später in den Optionen ändern. [Hilfe]({docs})",
         "data": {
           "track_all": "Alle Clients verfolgen",
-          "tracked": "Zu verfolgende Clients"
+          "tracked": "Zu verfolgende Clients",
+          "show_all": "Alle bekannten Clients zeigen"
         },
         "data_description": {
-          "track_all": "Legt für jeden Client einen Tracker an, auch für spätere neue.",
-          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine."
-        }
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
+          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
+        },
+        "submit": "Fertig"
       },
       "reauth_confirm": {
         "title": "Erneut anmelden",
@@ -55,15 +61,18 @@
         "data_description": {
           "username": "Ein SRM-Administratorkonto ohne Zwei-Faktor-Anmeldung; am besten ein eigenes Konto.",
           "password": "Das Passwort des Kontos."
-        }
+        },
+        "submit": "Fertig"
       },
       "reauth_certificate": {
         "title": "Neues Zertifikat",
-        "description": "Das Gerät zeigt jetzt ein anderes Zertifikat:\n\n`{fingerprint}`\n\nDas ist nach einer Erneuerung des Zertifikats normal. Vergleiche es mit SRM und fahre nur fort, wenn es übereinstimmt."
+        "description": "Das Gerät zeigt jetzt ein anderes Zertifikat:\n\n`{fingerprint}`\n\nDas ist nach einer Erneuerung des Zertifikats normal. Vergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. [So vergleichst du]({docs})",
+        "submit": "Vertrauen"
       },
       "reconfigure_certificate": {
         "title": "Zertifikat bestätigen",
-        "description": "Das Gerät zeigt ein anderes Zertifikat als das bisher vertraute:\n\n`{fingerprint}`\n\nVergleiche es mit dem Zertifikat in den Einstellungen von SRM. Fahre nur fort, wenn es übereinstimmt; Home Assistant vertraut dann genau diesem Zertifikat."
+        "description": "Das Gerät zeigt ein anderes Zertifikat als das bisher vertraute:\n\n`{fingerprint}`\n\nVergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
+        "submit": "Vertrauen"
       },
       "reconfigure": {
         "title": "Verbindung ändern",
@@ -79,6 +88,15 @@
           "port": "Leer lassen für die Voreinstellung von SRM: 8001 für HTTPS, 8000 für HTTP.",
           "use_https": "Empfohlen: Das Passwort wird verschlüsselt übertragen.",
           "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung des Fingerabdrucks fest hinterlegt. Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
+        },
+        "submit": "Speichern"
+      },
+      "access_point": {
+        "title": "Device-Tracker",
+        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. Wählst du hier Tracker und dann keinen Client aus, führt der Router alle. [Hilfe]({docs})",
+        "menu_options": {
+          "router_keeps_trackers": "Fertig: der Router führt die Tracker",
+          "own_trackers": "Tracker für diesen Access Point auswählen →"
         }
       }
     },
@@ -91,7 +109,8 @@
       "invalid_host": "Gib einen Hostnamen oder eine IP-Adresse an, ohne Port oder Pfad.",
       "not_admin": "Das Konto ist kein Administrator. Die Web-API von SRM antwortet nur Administratoren.",
       "no_serial": "Das Gerät meldet keine Seriennummer und kann deshalb nicht eingerichtet werden.",
-      "unknown": "Unerwarteter Fehler, siehe Log."
+      "unknown": "Unerwarteter Fehler, siehe Log.",
+      "session_ended": "SRM hat die Sitzung direkt nach der Anmeldung beendet, meist weil sich dasselbe Konto anderswo unter demselben Namen angemeldet hat. Versuche es noch einmal."
     },
     "abort": {
       "already_configured": "Dieses Gerät ist schon eingerichtet.",
@@ -108,13 +127,55 @@
           "track_all": "Alle Clients verfolgen",
           "tracked": "Zu verfolgende Clients",
           "fast_interval": "Schnelles Abfrageintervall",
+          "slow_interval": "Langsames Abfrageintervall",
+          "show_all": "Alle bekannten Clients zeigen",
+          "consider_home": "Wartezeit bis abwesend"
+        },
+        "data_description": {
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
+          "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
+          "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s.",
+          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene.",
+          "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s."
+        },
+        "submit": "Speichern"
+      },
+      "access_point": {
+        "title": "Access Point",
+        "description": "Der Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. [Hilfe]({docs})",
+        "menu_options": {
+          "timings": "Zeiten und Abfrage",
+          "trackers": "Tracker dieses Access Points"
+        }
+      },
+      "timings": {
+        "title": "Zeiten und Abfrage",
+        "submit": "Speichern",
+        "data": {
+          "consider_home": "Wartezeit bis abwesend",
+          "fast_interval": "Schnelles Abfrageintervall",
           "slow_interval": "Langsames Abfrageintervall"
         },
         "data_description": {
-          "track_all": "Legt für jeden Client einen Tracker an, auch für spätere neue.",
-          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
+          "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s.",
           "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
           "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s."
+        }
+      },
+      "trackers": {
+        "title": "Tracker dieses Access Points",
+        "description": "Clients, die dieser Access Point kennt. Wählst du keinen, führt der Router alle Tracker. ● ist gerade online, ○ nicht. [Hilfe]({docs})",
+        "submit": "Speichern",
+        "data": {
+          "track_all": "Alle Clients verfolgen",
+          "tracked": "Zu verfolgende Clients",
+          "show_all": "Alle bekannten Clients zeigen"
+        },
+        "data_description": {
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
+          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
         }
       }
     }

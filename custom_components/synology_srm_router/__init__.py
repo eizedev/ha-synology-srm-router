@@ -13,7 +13,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
@@ -35,17 +35,25 @@ from .coordinator import (
 )
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER, Platform.SENSOR]
-# The reads the fast coordinator uses; each is checked against the device's API catalog once.
+# The reads the coordinators use; each is checked against the device's API catalog once.
 GETTERS = (
     "get_utilization",
     "get_network_devices",
     "get_wifi_devices",
     "get_connection_status",
     "get_external_ip",
+    "get_dhcp_clients",
+    "get_dhcp_reservations",
 )
 
 
-def create_client(hass: HomeAssistant, data: dict[str, object]) -> SrmClient:
+async def session_name(hass: HomeAssistant, purpose: str | None = None) -> str:
+    """Name the SRM session after this installation, so two of them do not end each other's."""
+    name = f"{SESSION_NAME}-{(await instance_id.async_get(hass))[:8]}"
+    return f"{name}-{purpose}" if purpose else name
+
+
+def create_client(hass: HomeAssistant, data: dict[str, object], session: str) -> SrmClient:
     """Build a client from an entry's data: pinned certificate, or none checked when chosen."""
     fingerprint = data.get(CONF_FINGERPRINT)
     use_https = bool(data[CONF_USE_HTTPS])
@@ -61,13 +69,13 @@ def create_client(hass: HomeAssistant, data: dict[str, object]) -> SrmClient:
         use_https=use_https,
         ssl=ssl,
         timeout=REQUEST_TIMEOUT,
-        session_name=SESSION_NAME,
+        session_name=session,
     )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
     """Connect to one SRM device and start polling it."""
-    client = create_client(hass, dict(entry.data))
+    client = create_client(hass, dict(entry.data), await session_name(hass))
     try:
         await client.login()
         topology = await client.get_topology()
@@ -76,7 +84,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         )
         is_router = topology.net_topology == "router"
         fast = SrmFastCoordinator(hass, entry, client, supported, is_router=is_router)
-        slow = SrmSlowCoordinator(hass, entry, client)
+        slow = SrmSlowCoordinator(hass, entry, client, supported, is_router=is_router)
         entry.runtime_data = SrmRuntimeData(
             client=client, topology=topology, supported=supported, fast=fast, slow=slow
         )
@@ -101,7 +109,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_IS_ROUTER: is_router}
         )
-    get_hub(hass).async_add(entry)
+    hub = get_hub(hass)
+    await hub.async_load()
+    hub.async_add(entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
