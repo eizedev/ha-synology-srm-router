@@ -1,0 +1,18 @@
+{
+  "offset": 0,
+  "total": 1,
+  "volumes": [
+    {
+      "container": "external",
+      "display_name": "display_name-1",
+      "fs_type": "ext4",
+      "location": "usb",
+      "raid_type": "-",
+      "readonly": false,
+      "single_volume": false,
+      "size_free_byte": "487356801024",
+      "size_total_byte": "492121997312",
+      "volume_path": "/volumeUSB1/usbshare"
+    }
+  ]
+}

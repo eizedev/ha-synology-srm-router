@@ -1,0 +1,206 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Synology router or access point",
+        "description": "Connect to one SRM device. Add each router and access point on its own; their client lists are combined. Help: [documentation]({docs})",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "use_https": "Use HTTPS",
+          "verify_certificate": "Check the certificate"
+        },
+        "data_description": {
+          "host": "Address or host name of the router or access point.",
+          "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
+          "use_https": "Recommended: the password travels encrypted.",
+          "verify_certificate": "Pin the device's certificate after you confirmed its fingerprint. Turn off only if you accept that anyone in your network could read the password."
+        }
+      },
+      "certificate": {
+        "title": "Confirm the certificate",
+        "description": "The device presents a certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nCompare it with the certificate shown in SRM's settings. Continue only if it matches; Home Assistant then trusts exactly this certificate."
+      },
+      "credentials": {
+        "title": "Administrator account",
+        "description": "SRM's Web API only answers administrators. Help: [documentation]({docs})",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "An SRM administrator account without two-factor authentication; a dedicated account is best.",
+          "password": "The account's password."
+        }
+      },
+      "clients": {
+        "title": "Device trackers",
+        "description": "Choose the clients Home Assistant should track. You can change this later in the options.",
+        "data": {
+          "track_all": "Track all clients",
+          "tracked": "Clients to track"
+        },
+        "data_description": {
+          "track_all": "Creates a tracker for every client, including new ones later.",
+          "tracked": "Only these clients get a tracker. Leave empty for none."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in again",
+        "description": "Home Assistant could not sign in to {host}. Enter the account again.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "An SRM administrator account without two-factor authentication; a dedicated account is best.",
+          "password": "The account's password."
+        }
+      },
+      "reauth_certificate": {
+        "title": "New certificate",
+        "description": "The device now presents a different certificate:\n\n`{fingerprint}`\n\nThis is expected after a certificate renewal. Compare it with SRM and continue only if it matches."
+      },
+      "reconfigure_certificate": {
+        "title": "Confirm the certificate",
+        "description": "The device presents a different certificate than the one trusted so far:\n\n`{fingerprint}`\n\nCompare it with the certificate shown in SRM's settings. Continue only if it matches; Home Assistant then trusts exactly this certificate."
+      },
+      "reconfigure": {
+        "title": "Change the connection",
+        "description": "Change how Home Assistant reaches this device.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "use_https": "Use HTTPS",
+          "verify_certificate": "Check the certificate"
+        },
+        "data_description": {
+          "host": "Address or host name of the router or access point.",
+          "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
+          "use_https": "Recommended: the password travels encrypted.",
+          "verify_certificate": "Pin the device's certificate after you confirmed its fingerprint. Turn off only if you accept that anyone in your network could read the password."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The device could not be reached.",
+      "invalid_auth": "Wrong username or password, or the account may not log in.",
+      "two_factor": "The account uses two-factor authentication. Use an account without it.",
+      "blocked": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires.",
+      "certificate": "The certificate does not match. Check the address, then confirm the new fingerprint.",
+      "invalid_host": "Enter a host name or an IP address, without port or path.",
+      "not_admin": "The account is not an administrator. SRM's Web API only answers administrators.",
+      "no_serial": "The device reports no serial number, so it cannot be set up.",
+      "unknown": "Unexpected error, see the log."
+    },
+    "abort": {
+      "already_configured": "This device is already set up.",
+      "reauth_successful": "Signed in again.",
+      "reconfigure_successful": "Connection changed.",
+      "wrong_device": "This is a different device than the one set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "track_all": "Track all clients",
+          "tracked": "Clients to track",
+          "fast_interval": "Fast polling interval",
+          "slow_interval": "Slow polling interval"
+        },
+        "data_description": {
+          "track_all": "Creates a tracker for every client, including new ones later.",
+          "tracked": "Only these clients get a tracker. Leave empty for none.",
+          "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
+          "slow_interval": "System information (firmware, uptime). Default 300 s."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cpu_load": {
+        "name": "CPU load"
+      },
+      "memory_usage": {
+        "name": "Memory usage"
+      },
+      "load_1min": {
+        "name": "Load average (1 min)"
+      },
+      "load_5min": {
+        "name": "Load average (5 min)"
+      },
+      "load_15min": {
+        "name": "Load average (15 min)"
+      },
+      "download_rate": {
+        "name": "Download rate"
+      },
+      "upload_rate": {
+        "name": "Upload rate"
+      },
+      "public_ipv4": {
+        "name": "Public IPv4 address"
+      },
+      "ipv6_address": {
+        "name": "IPv6 address"
+      },
+      "wan_ipv4": {
+        "name": "WAN IPv4 address"
+      },
+      "wan_address_type": {
+        "name": "WAN address type",
+        "state": {
+          "public": "Public",
+          "private": "Private (behind another router)",
+          "cgnat": "Carrier-grade NAT",
+          "link_local": "Link-local",
+          "other": "Other"
+        }
+      },
+      "last_boot": {
+        "name": "Last boot"
+      },
+      "clients": {
+        "name": "Clients"
+      }
+    },
+    "binary_sensor": {
+      "wan_connected": {
+        "name": "WAN connection"
+      },
+      "behind_nat": {
+        "name": "Behind NAT"
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_auth": {
+      "message": "Wrong username or password, or the account may not log in."
+    },
+    "two_factor": {
+      "message": "The account uses two-factor authentication. Use an account without it."
+    },
+    "certificate": {
+      "message": "The certificate does not match. Check the address, then confirm the new fingerprint."
+    },
+    "not_admin": {
+      "message": "The account is not an administrator. SRM's Web API only answers administrators."
+    },
+    "blocked": {
+      "message": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires."
+    },
+    "communication_error": {
+      "message": "Could not read the device: {error}"
+    }
+  },
+  "issues": {
+    "blocked": {
+      "title": "{name} blocks Home Assistant",
+      "description": "SRM's auto block refuses logins from Home Assistant after failed attempts, so {name} is not read. Home Assistant tries to log in again every 15 minutes; each attempt counts towards the block. Unblock Home Assistant's address in SRM's auto block settings, or wait until the block expires. This message disappears after the next successful update."
+    }
+  }
+}

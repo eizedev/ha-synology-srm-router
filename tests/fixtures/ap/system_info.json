@@ -1,0 +1,19 @@
+{
+  "cpu_clock_speed": 717,
+  "cpu_cores": "4",
+  "cpu_family": "Dakota",
+  "cpu_series": "IPQ4019",
+  "cpu_vendor": "QUALCOMM",
+  "enabled_ntp": true,
+  "firmware_date": "2026/09/11",
+  "firmware_ver": "SRM 1.3.2-9366 Update 3",
+  "model": "MR2200ac",
+  "ntp_server": "192.0.2.49",
+  "ram_size": 256,
+  "sd_dev": [],
+  "serial": "XXXXXXXX",
+  "time": "2026-01-01 00:00:00",
+  "time_zone": "UTC",
+  "up_time": "159:35:38",
+  "usb_dev": []
+}

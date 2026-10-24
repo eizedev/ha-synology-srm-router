@@ -1,0 +1,25 @@
+{
+  "cpu_clock_speed": 1725,
+  "cpu_cores": "2",
+  "cpu_family": "Krait",
+  "cpu_series": "IPQ8065",
+  "cpu_vendor": "QUALCOMM",
+  "enabled_ntp": true,
+  "firmware_date": "2026/09/11",
+  "firmware_ver": "SRM 1.3.2-9366 Update 3",
+  "model": "RT2600ac",
+  "ntp_server": "192.0.2.49",
+  "ram_size": 512,
+  "sd_dev": [],
+  "serial": "XXXXXXXX",
+  "time": "2026-01-01 00:00:00",
+  "time_zone": "UTC",
+  "up_time": "143:35:20",
+  "usb_dev": [
+    {
+      "cls": "disk",
+      "producer": "producer-1",
+      "product": "product-1"
+    }
+  ]
+}

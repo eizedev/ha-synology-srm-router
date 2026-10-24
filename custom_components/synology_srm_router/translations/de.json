@@ -1,0 +1,206 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Synology-Router oder Access Point",
+        "description": "Verbindung zu einem SRM-Gerät. Richte jeden Router und Access Point einzeln ein; ihre Client-Listen werden zusammengeführt. Hilfe: [Dokumentation]({docs})",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "use_https": "HTTPS verwenden",
+          "verify_certificate": "Zertifikat prüfen"
+        },
+        "data_description": {
+          "host": "Adresse oder Hostname des Routers oder Access Points.",
+          "port": "Leer lassen für die Voreinstellung von SRM: 8001 für HTTPS, 8000 für HTTP.",
+          "use_https": "Empfohlen: Das Passwort wird verschlüsselt übertragen.",
+          "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung des Fingerabdrucks fest hinterlegt. Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
+        }
+      },
+      "certificate": {
+        "title": "Zertifikat bestätigen",
+        "description": "Das Gerät zeigt ein Zertifikat mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\nVergleiche ihn mit dem Zertifikat in den Einstellungen von SRM. Fahre nur fort, wenn er übereinstimmt; Home Assistant vertraut dann genau diesem Zertifikat."
+      },
+      "credentials": {
+        "title": "Administratorkonto",
+        "description": "Die Web-API von SRM antwortet nur Administratoren. Hilfe: [Dokumentation]({docs})",
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort"
+        },
+        "data_description": {
+          "username": "Ein SRM-Administratorkonto ohne Zwei-Faktor-Anmeldung; am besten ein eigenes Konto.",
+          "password": "Das Passwort des Kontos."
+        }
+      },
+      "clients": {
+        "title": "Device-Tracker",
+        "description": "Wähle die Clients, die Home Assistant verfolgen soll. Das lässt sich später in den Optionen ändern.",
+        "data": {
+          "track_all": "Alle Clients verfolgen",
+          "tracked": "Zu verfolgende Clients"
+        },
+        "data_description": {
+          "track_all": "Legt für jeden Client einen Tracker an, auch für spätere neue.",
+          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneut anmelden",
+        "description": "Home Assistant konnte sich nicht bei {host} anmelden. Gib das Konto erneut ein.",
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort"
+        },
+        "data_description": {
+          "username": "Ein SRM-Administratorkonto ohne Zwei-Faktor-Anmeldung; am besten ein eigenes Konto.",
+          "password": "Das Passwort des Kontos."
+        }
+      },
+      "reauth_certificate": {
+        "title": "Neues Zertifikat",
+        "description": "Das Gerät zeigt jetzt ein anderes Zertifikat:\n\n`{fingerprint}`\n\nDas ist nach einer Erneuerung des Zertifikats normal. Vergleiche es mit SRM und fahre nur fort, wenn es übereinstimmt."
+      },
+      "reconfigure_certificate": {
+        "title": "Zertifikat bestätigen",
+        "description": "Das Gerät zeigt ein anderes Zertifikat als das bisher vertraute:\n\n`{fingerprint}`\n\nVergleiche es mit dem Zertifikat in den Einstellungen von SRM. Fahre nur fort, wenn es übereinstimmt; Home Assistant vertraut dann genau diesem Zertifikat."
+      },
+      "reconfigure": {
+        "title": "Verbindung ändern",
+        "description": "Ändere, wie Home Assistant dieses Gerät erreicht.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "use_https": "HTTPS verwenden",
+          "verify_certificate": "Zertifikat prüfen"
+        },
+        "data_description": {
+          "host": "Adresse oder Hostname des Routers oder Access Points.",
+          "port": "Leer lassen für die Voreinstellung von SRM: 8001 für HTTPS, 8000 für HTTP.",
+          "use_https": "Empfohlen: Das Passwort wird verschlüsselt übertragen.",
+          "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung des Fingerabdrucks fest hinterlegt. Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Das Gerät ist nicht erreichbar.",
+      "invalid_auth": "Benutzername oder Passwort falsch, oder das Konto darf sich nicht anmelden.",
+      "two_factor": "Das Konto nutzt die Zwei-Faktor-Anmeldung. Nimm ein Konto ohne.",
+      "blocked": "Das Gerät sperrt Anmeldungen von Home Assistant nach Fehlversuchen. Gib die Adresse in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft.",
+      "certificate": "Das Zertifikat passt nicht. Prüfe die Adresse und bestätige dann den neuen Fingerabdruck.",
+      "invalid_host": "Gib einen Hostnamen oder eine IP-Adresse an, ohne Port oder Pfad.",
+      "not_admin": "Das Konto ist kein Administrator. Die Web-API von SRM antwortet nur Administratoren.",
+      "no_serial": "Das Gerät meldet keine Seriennummer und kann deshalb nicht eingerichtet werden.",
+      "unknown": "Unerwarteter Fehler, siehe Log."
+    },
+    "abort": {
+      "already_configured": "Dieses Gerät ist schon eingerichtet.",
+      "reauth_successful": "Erneut angemeldet.",
+      "reconfigure_successful": "Verbindung geändert.",
+      "wrong_device": "Das ist ein anderes Gerät als das eingerichtete."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "data": {
+          "track_all": "Alle Clients verfolgen",
+          "tracked": "Zu verfolgende Clients",
+          "fast_interval": "Schnelles Abfrageintervall",
+          "slow_interval": "Langsames Abfrageintervall"
+        },
+        "data_description": {
+          "track_all": "Legt für jeden Client einen Tracker an, auch für spätere neue.",
+          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
+          "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
+          "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cpu_load": {
+        "name": "CPU-Last"
+      },
+      "memory_usage": {
+        "name": "Speicherauslastung"
+      },
+      "load_1min": {
+        "name": "Lastmittel (1 min)"
+      },
+      "load_5min": {
+        "name": "Lastmittel (5 min)"
+      },
+      "load_15min": {
+        "name": "Lastmittel (15 min)"
+      },
+      "download_rate": {
+        "name": "Download-Rate"
+      },
+      "upload_rate": {
+        "name": "Upload-Rate"
+      },
+      "public_ipv4": {
+        "name": "Öffentliche IPv4-Adresse"
+      },
+      "ipv6_address": {
+        "name": "IPv6-Adresse"
+      },
+      "wan_ipv4": {
+        "name": "WAN-IPv4-Adresse"
+      },
+      "wan_address_type": {
+        "name": "Art der WAN-Adresse",
+        "state": {
+          "public": "Öffentlich",
+          "private": "Privat (hinter einem anderen Router)",
+          "cgnat": "Carrier-Grade-NAT",
+          "link_local": "Link-lokal",
+          "other": "Andere"
+        }
+      },
+      "last_boot": {
+        "name": "Letzter Start"
+      },
+      "clients": {
+        "name": "Clients"
+      }
+    },
+    "binary_sensor": {
+      "wan_connected": {
+        "name": "WAN-Verbindung"
+      },
+      "behind_nat": {
+        "name": "Hinter NAT"
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_auth": {
+      "message": "Benutzername oder Passwort falsch, oder das Konto darf sich nicht anmelden."
+    },
+    "two_factor": {
+      "message": "Das Konto nutzt die Zwei-Faktor-Anmeldung. Nimm ein Konto ohne."
+    },
+    "certificate": {
+      "message": "Das Zertifikat passt nicht. Prüfe die Adresse und bestätige dann den neuen Fingerabdruck."
+    },
+    "not_admin": {
+      "message": "Das Konto ist kein Administrator. Die Web-API von SRM antwortet nur Administratoren."
+    },
+    "blocked": {
+      "message": "Das Gerät sperrt Anmeldungen von Home Assistant nach Fehlversuchen. Gib die Adresse in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft."
+    },
+    "communication_error": {
+      "message": "Gerät konnte nicht gelesen werden: {error}"
+    }
+  },
+  "issues": {
+    "blocked": {
+      "title": "{name} sperrt Home Assistant",
+      "description": "Die automatische Sperre von SRM weist Anmeldungen von Home Assistant nach Fehlversuchen ab, deshalb wird {name} nicht gelesen. Home Assistant versucht alle 15 Minuten, sich erneut anzumelden; jeder Versuch zählt für die Sperre mit. Gib die Adresse von Home Assistant in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft. Diese Meldung verschwindet nach der nächsten erfolgreichen Abfrage."
+    }
+  }
+}

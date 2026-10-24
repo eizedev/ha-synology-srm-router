@@ -1,0 +1,13 @@
+{
+  "domain": "synology_srm_router",
+  "name": "Synology SRM Router",
+  "codeowners": ["@eizedev"],
+  "config_flow": true,
+  "documentation": "https://github.com/eizedev/ha-synology-srm-router",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/eizedev/ha-synology-srm-router/issues",
+  "loggers": ["aiosynologysrm"],
+  "requirements": ["aiosynologysrm==0.6.0"],
+  "version": "0.1.0"
+}

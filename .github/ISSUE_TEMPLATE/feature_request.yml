@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest something the integration should show or do.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should the integration show or do, and what would you use it for?
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where does SRM show it?
+      description: The page in the SRM web interface, if you know it.

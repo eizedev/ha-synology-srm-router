@@ -1,0 +1,381 @@
+"""Data update coordinators and the cross-entry client locator."""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any
+
+from aiosynologysrm import (
+    ConnectionStatus,
+    ExternalIp,
+    NetworkDevices,
+    SrmAuthenticationError,
+    SrmBlockedError,
+    SrmCertificateError,
+    SrmClient,
+    SrmError,
+    SrmPermissionError,
+    SrmTwoFactorRequiredError,
+    SystemInfo,
+    Topology,
+    Utilization,
+    WifiDevices,
+    helpers,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
+from homeassistant.util.hass_dict import HassKey
+
+from .const import (
+    BLOCKED_RETRY,
+    CONF_FAST_INTERVAL,
+    CONF_IS_ROUTER,
+    CONF_SLOW_INTERVAL,
+    DEFAULT_FAST_INTERVAL,
+    DEFAULT_SLOW_INTERVAL,
+    DOMAIN,
+    LOGGER,
+    UPDATE_TIMEOUT,
+)
+
+SIGNAL_LOCATIONS = f"{DOMAIN}_locations"
+HUB_KEY: HassKey[LocationHub] = HassKey(DOMAIN)
+
+type SrmConfigEntry = ConfigEntry[SrmRuntimeData]
+
+
+@dataclass(kw_only=True)
+class FastData:
+    """What changes quickly: load, clients, Wi-Fi clients, WAN."""
+
+    utilization: Utilization | None = None
+    devices: NetworkDevices | None = None
+    wifi: WifiDevices | None = None
+    connection: ConnectionStatus | None = None
+    external_ip: tuple[ExternalIp, ...] = ()
+
+
+@dataclass(kw_only=True)
+class SlowData:
+    """What changes rarely: system information (firmware, uptime)."""
+
+    system: SystemInfo
+    boot_time: datetime | None = None
+
+
+@dataclass(kw_only=True)
+class SrmRuntimeData:
+    """Everything one config entry keeps while it is loaded."""
+
+    client: SrmClient
+    topology: Topology
+    supported: frozenset[str]
+    fast: SrmFastCoordinator
+    slow: SrmSlowCoordinator
+
+    @property
+    def is_router(self) -> bool:
+        """Whether the device runs as router (not as standalone access point)."""
+        return self.topology.net_topology == "router"
+
+
+def map_error(err: SrmError) -> Exception:
+    """Translate a library error into what Home Assistant expects from an update."""
+    if isinstance(err, SrmTwoFactorRequiredError):
+        return ConfigEntryAuthFailed(translation_domain=DOMAIN, translation_key="two_factor")
+    if isinstance(err, SrmAuthenticationError):
+        return ConfigEntryAuthFailed(translation_domain=DOMAIN, translation_key="invalid_auth")
+    if isinstance(err, SrmPermissionError):
+        return ConfigEntryAuthFailed(translation_domain=DOMAIN, translation_key="not_admin")
+    if isinstance(err, SrmCertificateError):
+        return ConfigEntryAuthFailed(translation_domain=DOMAIN, translation_key="certificate")
+    if isinstance(err, SrmBlockedError):
+        return UpdateFailed(translation_domain=DOMAIN, translation_key="blocked")
+    return UpdateFailed(
+        translation_domain=DOMAIN,
+        translation_key="communication_error",
+        translation_placeholders={"error": type(err).__name__},
+    )
+
+
+# Errors that need the user and must not be hidden behind a partial result.
+_NEEDS_USER = (SrmAuthenticationError, SrmCertificateError, SrmPermissionError, SrmBlockedError)
+
+
+async def gather_partial(
+    calls: dict[str, Callable[[], Awaitable[Any]]],
+) -> dict[str, Any]:
+    """Run reads concurrently; a read that fails is left out, unless every read failed.
+
+    Errors that need the user (credentials, certificate, permission, auto block) always win.
+    """
+    names = list(calls)
+    results = await asyncio.gather(*(calls[n]() for n in names), return_exceptions=True)
+    errors: list[SrmError] = []
+    for name, result in zip(names, results, strict=True):
+        if isinstance(result, SrmError):
+            LOGGER.debug("Reading %s failed: %s", name, type(result).__name__)
+            errors.append(result)
+        elif isinstance(result, BaseException):
+            raise result
+    for error in errors:
+        if isinstance(error, _NEEDS_USER):
+            raise map_error(error) from error
+    if errors and len(errors) == len(results):
+        raise map_error(errors[0]) from errors[0]
+    return {n: r for n, r in zip(names, results, strict=True) if not isinstance(r, BaseException)}
+
+
+class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
+    """Reads load, clients, Wi-Fi clients and WAN state every 30 s by default."""
+
+    config_entry: SrmConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: SrmConfigEntry,
+        client: SrmClient,
+        supported: frozenset[str],
+        *,
+        is_router: bool,
+    ) -> None:
+        """Prepare the coordinator; the interval comes from the entry's options."""
+        seconds = entry.options.get(CONF_FAST_INTERVAL, DEFAULT_FAST_INTERVAL.seconds)
+        super().__init__(
+            hass,
+            LOGGER,
+            config_entry=entry,
+            name=f"{DOMAIN} fast {entry.title}",
+            update_interval=timedelta(seconds=seconds),
+            always_update=True,
+        )
+        self.client = client
+        self.supported = supported
+        self.is_router = is_router
+        self.blocked_since: datetime | None = None
+
+    @property
+    def _issue_id(self) -> str:
+        return f"blocked_{self.config_entry.entry_id}"
+
+    async def _async_update_data(self) -> FastData:
+        await self._retry_after_block()
+        calls: dict[str, Callable[[], Awaitable[Any]]] = {}
+        for name, getter in (
+            ("utilization", self.client.get_utilization),
+            ("devices", self.client.get_network_devices),
+            ("wifi", self.client.get_wifi_devices),
+        ):
+            if getter.__name__ in self.supported:
+                calls[name] = getter
+        if self.is_router:
+            if "get_connection_status" in self.supported:
+                calls["connection"] = self.client.get_connection_status
+            if "get_external_ip" in self.supported:
+                calls["external_ip"] = self.client.get_external_ip
+        try:
+            async with asyncio.timeout(UPDATE_TIMEOUT):
+                results = await gather_partial(calls)
+        except UpdateFailed as err:
+            if isinstance(err.__cause__, SrmBlockedError):
+                self._blocked()
+            raise
+        self._unblocked()
+        return FastData(**results)
+
+    async def _retry_after_block(self) -> None:
+        """Log in once more a while after a block; the library does not retry on its own."""
+        if self.blocked_since is None or dt_util.utcnow() - self.blocked_since < BLOCKED_RETRY:
+            return
+        self.blocked_since = dt_util.utcnow()
+        try:
+            await self.client.login()
+        except SrmError as err:
+            raise map_error(err) from err
+
+    def _blocked(self) -> None:
+        if self.blocked_since is None:
+            self.blocked_since = dt_util.utcnow()
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            self._issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key="blocked",
+            translation_placeholders={"name": self.config_entry.title},
+        )
+
+    def _unblocked(self) -> None:
+        if self.blocked_since is not None:
+            self.blocked_since = None
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
+
+
+class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
+    """Reads system information every 5 min by default."""
+
+    config_entry: SrmConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: SrmConfigEntry,
+        client: SrmClient,
+    ) -> None:
+        """Prepare the coordinator; the interval comes from the entry's options."""
+        seconds = entry.options.get(CONF_SLOW_INTERVAL, DEFAULT_SLOW_INTERVAL.seconds)
+        super().__init__(
+            hass,
+            LOGGER,
+            config_entry=entry,
+            name=f"{DOMAIN} slow {entry.title}",
+            update_interval=timedelta(seconds=seconds),
+        )
+        self.client = client
+
+    async def _async_update_data(self) -> SlowData:
+        try:
+            async with asyncio.timeout(UPDATE_TIMEOUT):
+                system = await self.client.get_system_info()
+        except SrmError as err:
+            raise map_error(err) from err
+        uptime = helpers.up_time(system.up_time)
+        boot = None
+        if uptime is not None:
+            boot = (dt_util.utcnow() - uptime).replace(second=0, microsecond=0)
+            # Keep the boot time stable between updates; only a real restart moves it.
+            previous = self.data.boot_time if self.data else None
+            if previous is not None and abs((boot - previous).total_seconds()) < 120:  # noqa: PLR2004
+                boot = previous
+        self._update_device(system)
+        return SlowData(system=system, boot_time=boot)
+
+    def _update_device(self, system: SystemInfo) -> None:
+        """Keep the device registry's firmware version current after an update."""
+        registry = dr.async_get(self.hass)
+        device = registry.async_get_device_by_identifier(
+            (DOMAIN, self.config_entry.unique_id or self.config_entry.entry_id),
+            self.config_entry.entry_id,
+        )
+        if device is not None and device.sw_version != system.firmware_ver:
+            registry.async_update_device(device.id, sw_version=system.firmware_ver)
+
+
+@dataclass
+class LocationHub:
+    """Combines the client lists of every configured entry into one location per client.
+
+    Entries that are configured but not loaded, or whose last update failed, count as missing,
+    so their clients are not silently moved to the router.
+    """
+
+    hass: HomeAssistant
+    loaded: dict[str, SrmConfigEntry] = field(default_factory=dict)
+    _cache: dict[str, helpers.ClientLocation] | None = None
+    _missing: frozenset[str] = frozenset()
+
+    @callback
+    def async_add(self, entry: SrmConfigEntry) -> None:
+        """Start using an entry and recompute when its fast data changes."""
+        self.loaded[entry.entry_id] = entry
+        entry.async_on_unload(entry.runtime_data.fast.async_add_listener(self.async_invalidate))
+        self.async_invalidate()
+
+    @callback
+    def async_remove(self, entry: SrmConfigEntry) -> None:
+        """Stop using an entry; its clients then count as unknown, not as moved."""
+        self.loaded.pop(entry.entry_id, None)
+        self.async_invalidate()
+
+    @callback
+    def async_invalidate(self) -> None:
+        """Drop the cached locations and tell the trackers."""
+        self._cache = None
+        async_dispatcher_send(self.hass, SIGNAL_LOCATIONS)
+
+    def configured(self) -> list[ConfigEntry]:
+        """Return the enabled entries, routers first, then by unique id: a fixed order."""
+        entries = [
+            e for e in self.hass.config_entries.async_entries(DOMAIN) if e.disabled_by is None
+        ]
+        return sorted(entries, key=lambda e: (not e.data.get(CONF_IS_ROUTER), e.unique_id or ""))
+
+    def _view(self, entry: ConfigEntry) -> helpers.SourceView:
+        loaded = self.loaded.get(entry.entry_id)
+        if loaded is None or not loaded.runtime_data.fast.last_update_success:
+            return helpers.SourceView(entry.entry_id, None)
+        runtime = loaded.runtime_data
+        data = runtime.fast.data
+        wifi = data.wifi
+        if wifi is None and "get_wifi_devices" not in runtime.supported:
+            wifi = WifiDevices()  # the device has no Wi-Fi list to wait for
+        return helpers.SourceView(entry.entry_id, data.devices, wifi)
+
+    def _refresh(self) -> dict[str, helpers.ClientLocation]:
+        if self._cache is None:
+            views = [self._view(entry) for entry in self.configured()]
+            self._missing = frozenset(
+                v.name
+                for v in views
+                if v.devices is None or v.wifi is None or v.devices.exceed_dev_list_max is True
+            )
+            self._cache = helpers.locate_clients(views)
+        return self._cache
+
+    @property
+    def locations(self) -> dict[str, helpers.ClientLocation]:
+        """Where every known client is, by normalized MAC address."""
+        return self._refresh()
+
+    @property
+    def missing(self) -> frozenset[str]:
+        """Entries whose client lists are not available right now."""
+        self._refresh()
+        return self._missing
+
+    @property
+    def anything_available(self) -> bool:
+        """Whether at least one entry delivered client data."""
+        self._refresh()
+        return any(e.entry_id not in self._missing for e in self.configured())
+
+    def owner(self, mac: str) -> str | None:
+        """Return the entry that creates a client's tracker.
+
+        Routers own the trackers (access points only when no router is set up). With one
+        candidate it owns every client; with several, the first that knows the client, in an
+        order that does not depend on which entry loaded first.
+        """
+        entries = self.configured()
+        candidates = [e for e in entries if e.data.get(CONF_IS_ROUTER)] or entries
+        if len(candidates) == 1:
+            return candidates[0].entry_id
+        for entry in candidates:
+            loaded = self.loaded.get(entry.entry_id)
+            data = loaded.runtime_data.fast.data if loaded else None
+            devices = data.devices.devices if data and data.devices else ()
+            if any(helpers.normalize_mac(d.mac) == mac for d in devices):
+                return entry.entry_id
+        return None
+
+    def name_of(self, entry_id: str | None) -> str | None:
+        """Return the title of an entry, which says where a client is attached."""
+        entry = self.hass.config_entries.async_get_entry(entry_id or "")
+        return entry.title if entry else None
+
+
+def get_hub(hass: HomeAssistant) -> LocationHub:
+    """Return the hub shared by all entries of this integration."""
+    if HUB_KEY not in hass.data:
+        hass.data[HUB_KEY] = LocationHub(hass)
+    return hass.data[HUB_KEY]

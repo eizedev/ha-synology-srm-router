@@ -1,0 +1,19 @@
+{
+  "status_list": [
+    {
+      "bssid": "02:00:00:00:00:4a",
+      "channel": 11,
+      "radio_type": "2.4G"
+    },
+    {
+      "bssid": "02:00:00:00:00:4b",
+      "channel": 100,
+      "radio_type": "5G-1"
+    },
+    {
+      "bssid": "02:00:00:00:00:4c",
+      "channel": 44,
+      "radio_type": "5G-2"
+    }
+  ]
+}

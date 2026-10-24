@@ -1,0 +1,4 @@
+# Default owner. When more maintainers join, list them here per path so reviews are requested
+# automatically.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+* @eizedev

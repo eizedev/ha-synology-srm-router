@@ -1,0 +1,81 @@
+{
+  "cpu": {
+    "15min_load": 53,
+    "1min_load": 47,
+    "5min_load": 52,
+    "device": "System",
+    "other_load": 1,
+    "system_load": 5,
+    "user_load": 11
+  },
+  "disk": {
+    "disk": [],
+    "total": {
+      "device": "total",
+      "read_access": 0,
+      "read_byte": 0,
+      "utilization": 0,
+      "write_access": 0,
+      "write_byte": 0
+    }
+  },
+  "memory": {
+    "avail_real": 49240,
+    "avail_swap": 214228,
+    "buffer": 9244,
+    "cached": 74984,
+    "device": "Memory",
+    "memory_size": 262144,
+    "real_usage": 45,
+    "si_disk": 0,
+    "so_disk": 0,
+    "swap_usage": 18,
+    "total_real": 245956,
+    "total_swap": 262140
+  },
+  "network": [
+    {
+      "device": "total",
+      "rx": 3684,
+      "tx": 1748
+    },
+    {
+      "device": "br0",
+      "rx": 3684,
+      "tx": 1748
+    },
+    {
+      "device": "bwlan0",
+      "rx": 0,
+      "tx": 0
+    },
+    {
+      "device": "bwlan1",
+      "rx": 0,
+      "tx": 0
+    }
+  ],
+  "space": {
+    "lun": [],
+    "total": {
+      "device": "total",
+      "read_access": 0,
+      "read_byte": 0,
+      "utilization": 0,
+      "write_access": 0,
+      "write_byte": 0
+    },
+    "volume": [
+      {
+        "device": "mmcblk0p6",
+        "display_name": "display_name-3",
+        "read_access": 0,
+        "read_byte": 0,
+        "utilization": 0,
+        "write_access": 0,
+        "write_byte": 0
+      }
+    ]
+  },
+  "time": 1767225600
+}

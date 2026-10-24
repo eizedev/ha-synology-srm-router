@@ -1,0 +1,50 @@
+{
+  "entity": {
+    "sensor": {
+      "cpu_load": {
+        "default": "mdi:cpu-64-bit"
+      },
+      "memory_usage": {
+        "default": "mdi:memory"
+      },
+      "load_1min": {
+        "default": "mdi:chart-line"
+      },
+      "load_5min": {
+        "default": "mdi:chart-line"
+      },
+      "load_15min": {
+        "default": "mdi:chart-line"
+      },
+      "download_rate": {
+        "default": "mdi:download"
+      },
+      "upload_rate": {
+        "default": "mdi:upload"
+      },
+      "public_ipv4": {
+        "default": "mdi:ip-network"
+      },
+      "ipv6_address": {
+        "default": "mdi:ip-network-outline"
+      },
+      "wan_ipv4": {
+        "default": "mdi:wan"
+      },
+      "wan_address_type": {
+        "default": "mdi:router-network"
+      },
+      "clients": {
+        "default": "mdi:devices"
+      }
+    },
+    "binary_sensor": {
+      "behind_nat": {
+        "default": "mdi:shield-check",
+        "state": {
+          "on": "mdi:shield-lock"
+        }
+      }
+    }
+  }
+}

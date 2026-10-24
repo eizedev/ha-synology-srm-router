@@ -1,0 +1,321 @@
+"""Setup, reauth, reconfigure and options flows."""
+
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
+import dataclasses
+from typing import Any
+from unittest.mock import patch
+
+from aiosynologysrm import (
+    SrmAuthenticationError,
+    SrmBlockedError,
+    SrmCertificateError,
+    SrmConnectionError,
+    SrmError,
+    SrmPermissionError,
+    SrmTwoFactorRequiredError,
+)
+from homeassistant.config_entries import SOURCE_USER, ConfigFlowResult
+from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
+import pytest
+
+from custom_components.synology_srm_router.const import (
+    CONF_FINGERPRINT,
+    CONF_TRACK_ALL,
+    CONF_TRACKED,
+    CONF_USE_HTTPS,
+    CONF_VERIFY_CERTIFICATE,
+    DOMAIN,
+)
+
+from .conftest import (
+    ERRORS,
+    FINGERPRINT,
+    FINGERPRINTS,
+    ROUTER_HOST,
+    SERIALS,
+    FakeClient,
+    make_entry,
+)
+
+CONNECTION = {
+    "host": ROUTER_HOST,
+    "port": 8001,
+    CONF_USE_HTTPS: True,
+    CONF_VERIFY_CERTIFICATE: True,
+}
+CREDENTIALS = {"username": "homeassistant", "password": "secret"}
+
+
+@pytest.fixture(autouse=True)
+async def finish_reloads(hass: HomeAssistant) -> AsyncGenerator[None]:
+    """Let the reload that a finished reauth or reconfigure starts complete within the test."""
+    yield
+    await hass.async_block_till_done()
+
+
+async def _start(
+    hass: HomeAssistant, connection: dict[str, object] | None = None
+) -> ConfigFlowResult:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], connection or CONNECTION
+    )
+
+
+async def test_full_flow_pins_the_certificate(hass: HomeAssistant) -> None:
+    result = await _start(hass)
+    assert result["step_id"] == "certificate"
+    placeholders = result["description_placeholders"]
+    assert placeholders is not None
+    assert placeholders["fingerprint"].startswith("AB:AB:")
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "credentials"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "clients"
+    schema = result["data_schema"]
+    assert schema is not None
+    options = schema.schema[CONF_TRACKED].config["options"]
+    assert options
+    assert all(":" in o["value"] for o in options)
+    chosen = options[0]["value"]
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: False, CONF_TRACKED: [chosen]}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == f"RT2600ac ({ROUTER_HOST})"
+    assert result["result"].unique_id == SERIALS["router"]
+    assert result["data"][CONF_FINGERPRINT] == FINGERPRINT
+    assert CONF_VERIFY_CERTIFICATE not in result["data"]
+    assert result["options"][CONF_TRACKED] == [chosen]
+
+
+async def test_plain_http_skips_the_certificate(hass: HomeAssistant) -> None:
+    result = await _start(hass, {**CONNECTION, CONF_USE_HTTPS: False, "port": 8000})
+    assert result["step_id"] == "credentials"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: True}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_FINGERPRINT] is None
+    assert result["options"][CONF_TRACK_ALL] is True
+
+
+@pytest.mark.parametrize(
+    ("error", "key"),
+    [
+        (SrmConnectionError("x"), "cannot_connect"),
+        (SrmCertificateError("x"), "certificate"),
+        (ValueError("bad host"), "invalid_host"),
+    ],
+)
+async def test_fingerprint_errors(hass: HomeAssistant, error: Exception, key: str) -> None:
+    ERRORS[ROUTER_HOST] = {"fingerprint": error}
+    result = await _start(hass)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": key}
+
+
+@pytest.mark.parametrize(
+    ("error", "key"),
+    [
+        (SrmAuthenticationError(400, "SYNO.API.Auth"), "invalid_auth"),
+        (SrmTwoFactorRequiredError(403, "SYNO.API.Auth"), "two_factor"),
+        (SrmBlockedError(407, "SYNO.API.Auth"), "blocked"),
+        (SrmConnectionError("x"), "cannot_connect"),
+        (SrmError("x"), "unknown"),
+    ],
+)
+async def test_login_errors_then_success(hass: HomeAssistant, error: Exception, key: str) -> None:
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    ERRORS[ROUTER_HOST] = {"login": error}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["errors"] == {"base": key}
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "clients"
+
+
+async def test_same_device_twice_aborts(hass: HomeAssistant) -> None:
+    make_entry().add_to_hass(hass)
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+
+
+async def test_reauth_with_a_new_password(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    assert result["step_id"] == "reauth_confirm"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"username": "homeassistant", "password": "new"}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert entry.data["password"] == "new"
+
+
+async def test_reauth_after_a_certificate_change(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("changed")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_certificate"
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+
+
+async def test_reauth_errors(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmAuthenticationError(400, "SYNO.API.Auth")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["errors"] == {"base": "invalid_auth"}
+    ERRORS[ROUTER_HOST] = {
+        "login": SrmCertificateError("x"),
+        "fingerprint": SrmConnectionError("x"),
+    }
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("x")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_certificate"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["errors"] == {"base": "certificate"}
+
+
+async def test_reauth_on_a_different_device_aborts(hass: HomeAssistant) -> None:
+    entry = make_entry("ap")
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, "host": ROUTER_HOST})
+    result = await entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["reason"] == "wrong_device"
+
+
+async def test_reconfigure(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["step_id"] == "reconfigure"
+    ERRORS[ROUTER_HOST] = {"fingerprint": SrmConnectionError("x")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONNECTION, CONF_VERIFY_CERTIFICATE: False}
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_FINGERPRINT] is None
+
+
+async def test_options(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "init"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_TRACK_ALL: True, CONF_TRACKED: [], "fast_interval": 60, "slow_interval": 600},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options["fast_interval"] == 60
+    assert entry.runtime_data.fast.update_interval.total_seconds() == 60
+
+
+async def test_an_empty_port_means_the_default_of_the_protocol(hass: HomeAssistant) -> None:
+    result = await _start(
+        hass, {"host": ROUTER_HOST, CONF_USE_HTTPS: False, CONF_VERIFY_CERTIFICATE: False}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["data"]["port"] == 8000
+    assert result["data"]["is_router"] is True
+
+
+@pytest.mark.parametrize(
+    ("error", "key"),
+    [
+        (SrmPermissionError(105, "SYNO.Core.System"), "not_admin"),
+        (RuntimeError("bug"), "unknown"),
+    ],
+)
+async def test_unexpected_and_permission_errors(
+    hass: HomeAssistant, error: Exception, key: str
+) -> None:
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    ERRORS[ROUTER_HOST] = {"get_system_info": error}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["errors"] == {"base": key}
+
+
+async def test_a_device_without_serial_is_refused(hass: HomeAssistant) -> None:
+    original = FakeClient.get_system_info
+
+    async def no_serial(self: FakeClient) -> Any:
+        return dataclasses.replace(await original(self), serial=None)
+
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    with patch.object(FakeClient, "get_system_info", no_serial):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["errors"] == {"base": "no_serial"}
+
+
+async def test_the_same_device_at_a_new_address_updates_the_entry(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await _start(hass, {**CONNECTION, "host": "192.0.2.9"})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["reason"] == "already_configured"
+    assert entry.data["host"] == "192.0.2.9"
+
+
+async def test_reconfigure_confirms_a_new_certificate(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    FINGERPRINTS["192.0.2.9"] = "cd" * 32
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONNECTION, "host": "192.0.2.9"}
+    )
+    assert result["step_id"] == "reconfigure_certificate"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT  # nothing is pinned before confirmation
+    ERRORS["192.0.2.9"] = {"login": SrmConnectionError("x")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_FINGERPRINT] == "cd" * 32
+    assert entry.data["host"] == "192.0.2.9"
+
+
+async def test_reconfigure_with_the_same_certificate_needs_no_confirmation(
+    hass: HomeAssistant,
+) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONNECTION, "port": 8443}
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data["port"] == 8443

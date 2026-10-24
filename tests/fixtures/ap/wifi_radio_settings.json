@@ -1,0 +1,40 @@
+{
+  "radio_list": [
+    {
+      "allow_auto_switch_dfs": false,
+      "channel": 11,
+      "channel2": 0,
+      "channel_width": "20",
+      "downgrade_usb_3.0": true,
+      "enable_5_9G_compatibility_mode": true,
+      "enable_auto_switch_5_9G": false,
+      "radio_type": "2.4G",
+      "transmit_power": "high",
+      "wireless_mode": "b_g_n"
+    },
+    {
+      "allow_auto_switch_dfs": false,
+      "channel": 0,
+      "channel2": 0,
+      "channel_width": "20_40_80",
+      "downgrade_usb_3.0": true,
+      "enable_5_9G_compatibility_mode": true,
+      "enable_auto_switch_5_9G": false,
+      "radio_type": "5G-1",
+      "transmit_power": "high",
+      "wireless_mode": "a_n_ac"
+    },
+    {
+      "allow_auto_switch_dfs": false,
+      "channel": 44,
+      "channel2": 0,
+      "channel_width": "20_40",
+      "downgrade_usb_3.0": true,
+      "enable_5_9G_compatibility_mode": true,
+      "enable_auto_switch_5_9G": false,
+      "radio_type": "5G-2",
+      "transmit_power": "high",
+      "wireless_mode": "a_n_ac"
+    }
+  ]
+}

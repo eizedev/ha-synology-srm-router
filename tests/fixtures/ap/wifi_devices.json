@@ -1,0 +1,64 @@
+{
+  "device_list": [
+    {
+      "associate_up_time": 238269,
+      "bytes_rx": 11991279968,
+      "bytes_tx": 2367140740,
+      "current_rate": 130,
+      "interface_name": "wlan000",
+      "mac_address": "02:00:00:00:00:1a",
+      "maximum_rate": 173,
+      "network_id": 0,
+      "radio_type": "2.4G",
+      "signal": 100
+    },
+    {
+      "associate_up_time": 244772,
+      "bytes_rx": 385925141,
+      "bytes_tx": 414689281,
+      "current_rate": 400,
+      "interface_name": "wlan200",
+      "mac_address": "02:00:00:00:00:1f",
+      "maximum_rate": 400,
+      "network_id": 0,
+      "radio_type": "5G-2",
+      "signal": 100
+    },
+    {
+      "associate_up_time": 5733469,
+      "bytes_rx": 3097747346,
+      "bytes_tx": 267485735,
+      "current_rate": 54,
+      "interface_name": "wlan200",
+      "mac_address": "02:00:00:00:00:05",
+      "maximum_rate": 54,
+      "network_id": 0,
+      "radio_type": "5G-2",
+      "signal": 46
+    },
+    {
+      "associate_up_time": 6455388,
+      "bytes_rx": 953980717,
+      "bytes_tx": 2647329304,
+      "current_rate": 130,
+      "interface_name": "wlan200",
+      "mac_address": "02:00:00:00:00:1b",
+      "maximum_rate": 130,
+      "network_id": 0,
+      "radio_type": "5G-2",
+      "signal": 72
+    },
+    {
+      "associate_up_time": 52140222,
+      "bytes_rx": 8057764,
+      "bytes_tx": 18572519,
+      "current_rate": 270,
+      "interface_name": "wlan200",
+      "mac_address": "02:00:00:00:00:13",
+      "maximum_rate": 400,
+      "network_id": 0,
+      "radio_type": "5G-2",
+      "signal": 62
+    }
+  ]
+}
