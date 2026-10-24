@@ -93,11 +93,26 @@
       },
       "access_point": {
         "title": "Device-Tracker",
-        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. Wählst du hier Tracker und dann keinen Client aus, führt der Router alle. [Hilfe]({docs})",
+        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. [Hilfe]({docs})",
         "menu_options": {
           "router_keeps_trackers": "Fertig: der Router führt die Tracker",
           "own_trackers": "Tracker für diesen Access Point auswählen →"
         }
+      },
+      "own_clients": {
+        "title": "Device-Tracker",
+        "description": "Clients, die dieser Access Point kennt. Wählst du keinen und klickst Fertig, führt der Router alle Tracker, wie bei der ersten Zeile der vorigen Seite. ● ist gerade online, ○ nicht. [Hilfe]({docs})",
+        "data": {
+          "track_all": "Alle Clients verfolgen",
+          "tracked": "Zu verfolgende Clients",
+          "show_all": "Alle bekannten Clients zeigen"
+        },
+        "data_description": {
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
+          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
+        },
+        "submit": "Fertig"
       }
     },
     "error": {
