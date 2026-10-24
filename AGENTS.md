@@ -47,7 +47,11 @@ hassfest and the HACS check run in CI only.
   Commits.
 
 ## Don'ts
-
+- **Website**: `docs/` and `zensical.toml` are https://ha-synology-srm-router.eize.dev/, built by
+  `.github/workflows/docs.yml` with the shared design from eizedev/brand (`docs-site/`);
+  `docs/assets/site.css` is copied in at build time and not committed. Every repair has a page in
+  `docs/repairs/`, linked from the repair with `learn_more_url`; help links in the config flow
+  point to sections of `docs/configuration.md` (`DOCS_*` in `config_flow.py`).
 - Don't contact real devices from tests; use `tests/conftest.py`'s `FakeClient`.
 - Don't add write actions (services, switches, buttons that change the router).
 - Don't edit `uv.lock` by hand.

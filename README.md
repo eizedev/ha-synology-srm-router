@@ -18,40 +18,35 @@ radio, a client is connected to. Read only: it never changes a setting.
 
 > **Unofficial.** Not affiliated with, endorsed by or supported by Synology Inc.
 
+**Documentation: [ha-synology-srm-router.eize.dev](https://ha-synology-srm-router.eize.dev/)**
+
 ## What you get
 
-- One device per router or access point, with CPU load, memory, download and upload rate, the
-  number of clients on it, and the last boot.
-- On routers: WAN connection, public IPv4 and IPv6 address, and whether the router sits behind
-  another router or the provider's carrier-grade NAT.
-- Device trackers for the clients you choose (or all). Each says whether the client is home and
-  which device, connection and radio it uses. Clients on a standalone access point are found
-  there, even though the router itself reports them as wired.
-- Certificate pinning: the router's certificate is shown once for you to confirm, then trusted
-  exactly.
+- One device per router or access point: CPU load, memory, download and upload rate, clients,
+  last boot; on routers WAN connection, public IPv4 and IPv6 address, and whether the router is
+  behind NAT.
+- Device trackers that know which router or access point, connection and radio each client
+  uses, named as in SRM.
+- Certificate pinning, and nothing but reading: the integration never changes a setting.
 
 ## Install
 
-1. Use the button above, or in HACS open the three dots, *Custom repositories*, and add this
-   URL with the type *Integration*:
+In HACS, add this repository as a custom repository of the type *Integration* (or use the button
+above), install **Synology SRM Router** and restart Home Assistant:
 
-   ```text
-   https://github.com/eizedev/ha-synology-srm-router
-   ```
+```text
+https://github.com/eizedev/ha-synology-srm-router
+```
 
-   Then install **Synology SRM Router**.
-2. Restart Home Assistant.
-3. Add the integration once per router and per access point (button above, or *Settings, Devices
-   & services, Add integration*). Use an SRM administrator account without two-factor
-   authentication; a dedicated account is best.
-
-Requires Home Assistant 2026.10 or newer.
+Then add the integration once per router and per access point, router first. Requires Home
+Assistant 2026.10 or newer. Details: [Installation](https://ha-synology-srm-router.eize.dev/installation/).
 
 ## Documentation
 
-- [Configuration and options](docs/configuration.md)
-- [Entities](docs/entities.md)
-- [Troubleshooting and removal](docs/troubleshooting.md)
+- [Configuration](https://ha-synology-srm-router.eize.dev/configuration/): certificate, account, device trackers, options
+- [Entities](https://ha-synology-srm-router.eize.dev/entities/)
+- [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by device and by radio
+- [Troubleshooting](https://ha-synology-srm-router.eize.dev/troubleshooting/): messages, repairs, diagnostics, removal
 
 ## Credits
 
