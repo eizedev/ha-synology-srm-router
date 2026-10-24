@@ -23,8 +23,8 @@ hide:
 - [**Configuration**](configuration.md)<br>Certificate, device trackers, options.
 - [**Entities**](entities.md)<br>Sensors of routers and access points.
 - [**Dashboards**](dashboards.md)<br>Who is where, by device and by radio.
+- [**Ideas and automations**](ideas.md)<br>Presence, internet down, offline devices, data per day.
 - [**Troubleshooting**](troubleshooting.md)<br>Messages, repairs, diagnostics, removal.
-- [**Source code**](https://github.com/eizedev/ha-synology-srm-router)<br>Issues, discussions, contributing.
 
 </div>
 

@@ -1,0 +1,14 @@
+# An important device is gone for 10 minutes. Pick its tracker (Settings, Entities, filter
+# device_tracker); the integration's time until away already ignores short dropouts.
+automation:
+  - alias: NAS offline
+    triggers:
+      - trigger: state
+        entity_id: device_tracker.nas
+        to: not_home
+        for: {minutes: 10}
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: NAS offline
+          message: "It left the network at {{ trigger.from_state.last_changed | as_local }}."

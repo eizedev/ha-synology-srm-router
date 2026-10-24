@@ -1,0 +1,16 @@
+# A device that should stay put has a weak Wi-Fi signal for 10 minutes; a hint to move it to the
+# access point or to 5 GHz. SRM's signal is 0 to 100.
+automation:
+  - alias: Weak Wi-Fi
+    triggers:
+      - trigger: template
+        value_template: "{{ (state_attr('device_tracker.living_room_tv', 'signal') or 100) < 30 }}"
+        for: {minutes: 10}
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: Weak Wi-Fi
+          message: >
+            Living room TV: signal {{ state_attr('device_tracker.living_room_tv', 'signal') }}
+            on {{ state_attr('device_tracker.living_room_tv', 'radio') }} at
+            {{ state_attr('device_tracker.living_room_tv', 'connected_to') }}.

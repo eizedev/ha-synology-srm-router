@@ -39,6 +39,8 @@ homeassistant:
   time_zone: Europe/Berlin
   currency: EUR
   country: DE
+  # The examples of the "Ideas and automations" page, so every demo start checks them.
+  packages: !include_dir_named ideas
 frontend:
 config:
 history:
@@ -119,6 +121,9 @@ async def main(args: argparse.Namespace) -> None:
     link = CONFIG / "custom_components" / "synology_srm_router"
     if not link.exists():
         link.symlink_to(REPO / "custom_components" / "synology_srm_router")
+    ideas = CONFIG / "ideas"
+    if not ideas.exists():
+        ideas.symlink_to(REPO / "docs" / "assets" / "ideas")
     (CONFIG / "configuration.yaml").write_text(CONFIGURATION.format(port=args.port))
 
     devices = await asyncio.create_subprocess_exec(

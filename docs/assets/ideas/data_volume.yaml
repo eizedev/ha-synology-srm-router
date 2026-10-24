@@ -1,0 +1,38 @@
+# Downloaded data per day and month, estimated from the download rate (read every 30 seconds, so
+# short bursts in between are missed). The integral adds up the rate over time in the rate's
+# display unit (Mbit for Mbit/s, kB for kB/s, ...); the template turns any of them into GB; the
+# utility meters reset daily and monthly.
+sensor:
+  - platform: integration
+    name: Downloaded data raw
+    unique_id: downloaded_data_raw
+    source: sensor.rt2600ac_download_rate
+    unit_time: s
+    method: left
+    round: 2
+template:
+  - sensor:
+      - name: Downloaded data
+        unique_id: downloaded_data
+        device_class: data_size
+        state_class: total_increasing
+        unit_of_measurement: GB
+        state: >
+          {% set gb = {'bit': 1.25e-10, 'kbit': 1.25e-7, 'Mbit': 1.25e-4, 'Gbit': 0.125,
+                       'B': 1e-9, 'kB': 1e-6, 'MB': 1e-3, 'GB': 1,
+                       'KiB': 1.024e-6, 'MiB': 1.048576e-3, 'GiB': 1.073741824} %}
+          {% set unit = state_attr('sensor.downloaded_data_raw', 'unit_of_measurement') %}
+          {{ (states('sensor.downloaded_data_raw') | float(0) * gb[unit]) | round(3) }}
+        availability: >
+          {{ has_value('sensor.downloaded_data_raw') and state_attr('sensor.downloaded_data_raw',
+             'unit_of_measurement') in ['bit', 'kbit', 'Mbit', 'Gbit', 'B', 'kB', 'MB', 'GB',
+             'KiB', 'MiB', 'GiB'] }}
+utility_meter:
+  downloaded_today:
+    name: Downloaded today
+    source: sensor.downloaded_data
+    cycle: daily
+  downloaded_this_month:
+    name: Downloaded this month
+    source: sensor.downloaded_data
+    cycle: monthly
