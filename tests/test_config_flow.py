@@ -375,8 +375,11 @@ async def _router_loaded(hass: HomeAssistant) -> None:
 async def test_an_access_point_next_to_a_router_has_no_tracker_step(hass: HomeAssistant) -> None:
     await _router_loaded(hass)
     result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
+    assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "access_point"
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "router_keeps_trackers"}
+    )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["options"][CONF_TRACKED] == []
     assert result["options"]["own_trackers"] is False
@@ -387,7 +390,7 @@ async def test_an_access_point_may_keep_trackers_anyway(hass: HomeAssistant) -> 
     await _router_loaded(hass)
     result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"own_trackers": True}
+        result["flow_id"], {"next_step_id": "own_trackers"}
     )
     assert result["step_id"] == "clients"
     result = await hass.config_entries.flow.async_configure(
@@ -433,13 +436,32 @@ async def test_options_of_an_access_point_next_to_a_router(hass: HomeAssistant) 
     router, ap = make_entry(), make_entry("ap")
     for entry in (router, ap):
         entry.add_to_hass(hass)
-    result = await hass.config_entries.options.async_init(ap.entry_id)
-    assert result["step_id"] == "access_point"
+        await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    menu = await hass.config_entries.options.async_init(ap.entry_id)
+    assert menu["type"] is FlowResultType.MENU
+    result = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "timings"}
+    )
     assert CONF_TRACKED not in result["data_schema"].schema  # type: ignore[union-attr]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"consider_home": 60, "fast_interval": 30, "slow_interval": 300}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert ap.options["consider_home"] == 60
+
+    menu = await hass.config_entries.options.async_init(ap.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "trackers"}
+    )
+    assert _offered(result)
+    assert "fast_interval" not in result["data_schema"].schema  # type: ignore[union-attr]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: True, CONF_TRACKED: []}
+    )
+    await hass.async_block_till_done()
+    assert ap.options["own_trackers"] is True
 
 
 async def test_options_show_all_known_clients_on_request(hass: HomeAssistant) -> None:

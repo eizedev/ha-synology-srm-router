@@ -93,13 +93,10 @@
       },
       "access_point": {
         "title": "Device trackers",
-        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. You can still keep trackers here, for clients that only this access point knows. [Help]({docs})",
-        "submit": "Finish",
-        "data": {
-          "own_trackers": "Keep trackers here anyway"
-        },
-        "data_description": {
-          "own_trackers": "For clients that only this access point knows, for example when it serves a network of its own; the router keeps the trackers of the clients it knows."
+        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. [Help]({docs})",
+        "menu_options": {
+          "router_keeps_trackers": "Finish: the router keeps the trackers",
+          "own_trackers": "Choose trackers for this access point →"
         }
       }
     },
@@ -145,26 +142,40 @@
         "submit": "Save"
       },
       "access_point": {
-        "title": "Options",
-        "description": "The router keeps the device trackers of the clients it knows, including the ones on this access point. Switch on and save to choose clients here as well. [Help]({docs})",
+        "title": "Access point",
+        "description": "The router keeps the device trackers of the clients it knows, including the ones on this access point. [Help]({docs})",
+        "menu_options": {
+          "timings": "Times and polling",
+          "trackers": "Trackers of this access point"
+        }
+      },
+      "timings": {
+        "title": "Times and polling",
         "submit": "Save",
         "data": {
-          "own_trackers": "Keep trackers here anyway",
-          "track_all": "Track all clients",
-          "tracked": "Clients to track",
+          "consider_home": "Time until away",
           "fast_interval": "Fast polling interval",
-          "slow_interval": "Slow polling interval",
-          "show_all": "Show all known clients",
-          "consider_home": "Time until away"
+          "slow_interval": "Slow polling interval"
         },
         "data_description": {
-          "own_trackers": "For clients that only this access point knows, for example when it serves a network of its own; the router keeps the trackers of the clients it knows.",
+          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
+          "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
+          "slow_interval": "System information (firmware, uptime). Default 300 s."
+        }
+      },
+      "trackers": {
+        "title": "Trackers of this access point",
+        "description": "Clients this access point knows. Choosing none leaves all trackers to the router. ● is online now, ○ is not. [Help]({docs})",
+        "submit": "Save",
+        "data": {
+          "track_all": "Track all clients",
+          "tracked": "Clients to track",
+          "show_all": "Show all known clients"
+        },
+        "data_description": {
           "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
           "tracked": "Only these clients get a tracker. Leave empty for none.",
-          "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
-          "slow_interval": "System information (firmware, uptime). Default 300 s.",
-          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
-          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s."
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago."
         }
       }
     }

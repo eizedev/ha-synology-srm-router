@@ -47,8 +47,9 @@ the account.
 
 A tracker is *home* while the client is on the network. Each router offers the clients it knows,
 and keeps the trackers of the ones you choose. An access point next to a router leaves its clients
-to the router, unless you switch on *Keep trackers here anyway*; an access point whose clients no
-configured router knows (a network of its own) offers them right away. So two routers of separate
+to the router; its setup and its options offer a menu to choose trackers of its own instead. An
+access point whose clients no configured router knows (a network of its own) offers them right
+away. So two routers of separate
 networks, for example one for work and one at home, each keep their own trackers. A client known
 to several devices gets one tracker, from the first device that wants it, routers first.
 

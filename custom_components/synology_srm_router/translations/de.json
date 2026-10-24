@@ -93,13 +93,10 @@
       },
       "access_point": {
         "title": "Device-Tracker",
-        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. Eigene Tracker kannst du hier trotzdem führen, für Clients, die nur dieser Access Point kennt. [Hilfe]({docs})",
-        "submit": "Fertig",
-        "data": {
-          "own_trackers": "Trotzdem eigene Tracker hier"
-        },
-        "data_description": {
-          "own_trackers": "Für Clients, die nur dieser Access Point kennt, zum Beispiel wenn er ein eigenes Netz versorgt; die Tracker der Clients, die der Router kennt, führt der Router."
+        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. [Hilfe]({docs})",
+        "menu_options": {
+          "router_keeps_trackers": "Fertig: der Router führt die Tracker",
+          "own_trackers": "Tracker für diesen Access Point auswählen →"
         }
       }
     },
@@ -145,26 +142,40 @@
         "submit": "Speichern"
       },
       "access_point": {
-        "title": "Optionen",
-        "description": "Der Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. Einschalten und speichern, um hier zusätzlich Clients auszuwählen. [Hilfe]({docs})",
+        "title": "Access Point",
+        "description": "Der Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. [Hilfe]({docs})",
+        "menu_options": {
+          "timings": "Zeiten und Abfrage",
+          "trackers": "Tracker dieses Access Points"
+        }
+      },
+      "timings": {
+        "title": "Zeiten und Abfrage",
         "submit": "Speichern",
         "data": {
-          "own_trackers": "Trotzdem eigene Tracker hier",
-          "track_all": "Alle Clients verfolgen",
-          "tracked": "Zu verfolgende Clients",
+          "consider_home": "Wartezeit bis abwesend",
           "fast_interval": "Schnelles Abfrageintervall",
-          "slow_interval": "Langsames Abfrageintervall",
-          "show_all": "Alle bekannten Clients zeigen",
-          "consider_home": "Wartezeit bis abwesend"
+          "slow_interval": "Langsames Abfrageintervall"
         },
         "data_description": {
-          "own_trackers": "Für Clients, die nur dieser Access Point kennt, zum Beispiel wenn er ein eigenes Netz versorgt; die Tracker der Clients, die der Router kennt, führt der Router.",
+          "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s.",
+          "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
+          "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s."
+        }
+      },
+      "trackers": {
+        "title": "Tracker dieses Access Points",
+        "description": "Clients, die dieser Access Point kennt. Wählst du keinen, führt der Router alle Tracker. ● ist gerade online, ○ nicht. [Hilfe]({docs})",
+        "submit": "Speichern",
+        "data": {
+          "track_all": "Alle Clients verfolgen",
+          "tracked": "Zu verfolgende Clients",
+          "show_all": "Alle bekannten Clients zeigen"
+        },
+        "data_description": {
           "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
-          "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
-          "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s.",
-          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene.",
-          "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s."
+          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
         }
       }
     }
