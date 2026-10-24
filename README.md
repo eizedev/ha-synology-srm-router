@@ -4,7 +4,10 @@
 | ---- | ------- | -- | ------- |
 | [![HACS custom](https://img.shields.io/badge/HACS-custom-41BDF5?cacheSeconds=3600)](https://hacs.xyz/docs/faq/custom_repositories/) | [![Release](https://img.shields.io/github/v/release/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/releases) | [![CI](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml/badge.svg)](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml) | [![License](https://img.shields.io/github/license/eizedev/ha-synology-srm-router?cacheSeconds=3600)](LICENSE) |
 
-<img src="assets/icon.png" alt="" width="96" align="right">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/assets/header-dark.svg">
+  <img alt="Synology SRM Router for Home Assistant" src="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/assets/header-light.svg" height="72">
+</picture>
 
 Shows your **Synology routers and access points** (SRM) in Home Assistant: load, memory, traffic,
 WAN state and addresses, and device trackers that tell which router or access point, and which
@@ -53,5 +56,5 @@ integrations that showed what is possible:
 
 ## License
 
-[MIT](LICENSE). The icon is CC BY 4.0; its source is in
+[MIT](LICENSE). The icon and header are CC BY 4.0; their source is in
 [eizedev/brand](https://github.com/eizedev/brand).
