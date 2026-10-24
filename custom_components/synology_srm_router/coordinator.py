@@ -415,6 +415,11 @@ class LocationHub:
         client = self.clients.get(mac)
         return client.name if client else None
 
+    def ip6(self, mac: str) -> str | None:
+        """Return a client's IPv6 address other than link-local, from any device's list."""
+        client = self.clients.get(mac)
+        return client.ip6 if client else None
+
     def relevant(self, mac: str) -> bool:
         """Whether "track all" covers the client (see clients.Client.relevant)."""
         client = self.clients.get(mac)

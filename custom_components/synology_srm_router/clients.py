@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
+import ipaddress
 
 from aiosynologysrm import DhcpClients, DhcpReservations, NetworkDevices, helpers
 from homeassistant.helpers.selector import SelectOptionDict
@@ -24,6 +25,8 @@ class Client:
     mac: str
     name: str | None
     ip: str | None
+    ip6: str | None
+    """An IPv6 address other than link-local, when SRM knows one."""
     online: bool
     named: bool
     """The name was given in SRM (not reported by the client itself)."""
@@ -47,6 +50,17 @@ def dhcp_macs(clients: DhcpClients | None, reservations: DhcpReservations | None
     return frozenset(mac for clid in clids if (mac := helpers.normalize_mac(clid)))
 
 
+def usable_ipv6(value: str | None) -> str | None:
+    """Return an IPv6 address other hosts can reach (not link-local), or None."""
+    try:
+        address = ipaddress.IPv6Address((value or "").split("/")[0].strip())
+    except ValueError:
+        return None
+    if address.is_link_local or address.is_loopback or address.is_unspecified:
+        return None
+    return str(address)
+
+
 def combine(
     lists: Iterable[NetworkDevices | None],
     dhcp: frozenset[str],
@@ -64,19 +78,21 @@ def combine(
             if mac is None:
                 continue
             item = found.setdefault(
-                mac, {"name": None, "ip": None, "online": False, "named": False}
+                mac, {"name": None, "ip": None, "ip6": None, "online": False, "named": False}
             )
             if device.is_manual_hostname and device.hostname and not item["named"]:
                 item["name"], item["named"] = device.hostname, True
             if item["name"] is None:
                 item["name"] = device.hostname
             item["ip"] = item["ip"] or device.ip_addr
+            item["ip6"] = item["ip6"] or usable_ipv6(device.ip6_addr)
             item["online"] = bool(item["online"] or device.is_online)
     return {
         mac: Client(
             mac=mac,
             name=item["name"],  # type: ignore[arg-type]
             ip=item["ip"],  # type: ignore[arg-type]
+            ip6=item["ip6"],  # type: ignore[arg-type]
             online=bool(item["online"]),
             named=bool(item["named"]),
             dhcp=mac in dhcp,

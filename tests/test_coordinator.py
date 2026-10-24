@@ -25,7 +25,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 import pytest
 
-from custom_components.synology_srm_router.clients import combine, options
+from custom_components.synology_srm_router.clients import combine, options, usable_ipv6
 from custom_components.synology_srm_router.const import DEFAULT_CONSIDER_HOME, LOCATION_GRACE
 from custom_components.synology_srm_router.coordinator import (
     FastData,
@@ -159,6 +159,16 @@ def test_sensor_helpers_without_data() -> None:
     assert _load(FastData(utilization=util), "load_1min") == 0.57
 
 
+def test_usable_ipv6() -> None:
+    assert usable_ipv6("2001:db8::5") == "2001:db8::5"
+    assert usable_ipv6("2001:db8::5/64") == "2001:db8::5"
+    assert usable_ipv6("fd00::5") == "fd00::5"  # unique local: reachable inside the home
+    assert usable_ipv6("fe80::7ea8:ecff:fe50:56ee") is None
+    assert usable_ipv6("::1") is None
+    assert usable_ipv6("") is None
+    assert usable_ipv6(None) is None
+
+
 def test_client_names_relevance_and_choice() -> None:
     now = dt_util.utcnow()
     router = NetworkDevices.from_api(
@@ -175,7 +185,12 @@ def test_client_names_relevance_and_choice() -> None:
     access_point = NetworkDevices.from_api(
         {
             "devices": [
-                {"mac": "aa:bb:cc:dd:ee:01", "hostname": "SonosZP", "ip_addr": "192.0.2.9"},
+                {
+                    "mac": "aa:bb:cc:dd:ee:01",
+                    "hostname": "SonosZP",
+                    "ip_addr": "192.0.2.9",
+                    "ip6_addr": "2001:db8::9",
+                },
                 {"mac": "aa:bb:cc:dd:ee:05", "hostname": "Hall", "is_manual_hostname": True},
             ]
         }
@@ -184,6 +199,7 @@ def test_client_names_relevance_and_choice() -> None:
     clients = combine([router, None, access_point], frozenset({"aa:bb:cc:dd:ee:03"}), seen)
     assert clients["aa:bb:cc:dd:ee:01"].name == "Living room"  # the name given in SRM wins
     assert clients["aa:bb:cc:dd:ee:01"].ip == "192.0.2.9"
+    assert clients["aa:bb:cc:dd:ee:01"].ip6 == "2001:db8::9"
     assert clients["aa:bb:cc:dd:ee:05"].named
     relevant = options(clients, now, show_all=False)
     assert [o["value"] for o in relevant] == [
@@ -221,6 +237,9 @@ class _Hub:
 
     def relevant(self, mac: str) -> bool:
         return False
+
+    def ip6(self, mac: str) -> str | None:
+        return None
 
     def wants(self, entry: object, mac: str) -> bool:
         return True
