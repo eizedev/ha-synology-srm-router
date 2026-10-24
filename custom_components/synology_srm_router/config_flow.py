@@ -84,9 +84,10 @@ def _connection_schema(defaults: Mapping[str, Any]) -> probatio.Schema:
     return probatio.Schema(
         {
             probatio.Required(CONF_HOST, default=host): TextSelector(),
-            # Empty means SRM's default port for the chosen protocol.
-            probatio.Optional(CONF_PORT): probatio.All(
-                probatio.Coerce(int), probatio.Range(min=1, max=65535)
+            # Empty means SRM's default port for the chosen protocol. A selector, not a plain
+            # integer: the frontend focuses a plain integer field first, before the host.
+            probatio.Optional(CONF_PORT): NumberSelector(
+                NumberSelectorConfig(min=1, max=65535, step=1, mode=NumberSelectorMode.BOX)
             ),
             probatio.Required(CONF_USE_HTTPS, default=https): BooleanSelector(),
             probatio.Required(CONF_VERIFY_CERTIFICATE, default=verify): BooleanSelector(),
@@ -97,7 +98,7 @@ def _connection_schema(defaults: Mapping[str, Any]) -> probatio.Schema:
 def _with_port(user_input: Mapping[str, Any]) -> dict[str, Any]:
     """Fill in SRM's default port for the chosen protocol when none was given."""
     default = DEFAULT_HTTPS_PORT if user_input[CONF_USE_HTTPS] else DEFAULT_HTTP_PORT
-    return {**user_input, CONF_PORT: user_input.get(CONF_PORT) or default}
+    return {**user_input, CONF_PORT: int(user_input.get(CONF_PORT) or default)}
 
 
 CREDENTIALS = {
