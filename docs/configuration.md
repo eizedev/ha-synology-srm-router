@@ -31,6 +31,8 @@ device and not to something in between:
 When the certificate changes later, for example after a renewal, Home Assistant asks again and
 shows the new fingerprint.
 
+![The certificate step with the fingerprint and how to compare it](assets/screenshots/setup-certificate.png){ width="560" }
+
 ## Account
 
 Use an SRM **administrator** account (SRM's Web API answers nothing else) without two-factor
@@ -49,15 +51,19 @@ A tracker is *home* while the client is on the network. Each router offers the c
 and keeps the trackers of the ones you choose. An access point next to a router leaves its clients
 to the router; its setup and its options offer a menu to choose trackers of its own instead. An
 access point whose clients no configured router knows (a network of its own) offers them right
-away. So two routers of separate
-networks, for example one for work and one at home, each keep their own trackers. A client known
-to several devices gets one tracker, from the first device that wants it, routers first.
+away. So two routers of separate networks, for example one for work and one at home, each keep
+their own trackers. A client known to several devices gets one tracker, from the first device
+that wants it, routers first.
+
+![An access point next to a router: finish, or choose trackers for it](assets/screenshots/setup-access-point.png){ width="560" }
 
 The list to choose from shows the clients that matter: those online now (●), those with a name
 given in SRM, those with a DHCP lease or reservation, and those Home Assistant saw online in the
 last 30 days (with the date, ○). SRM keeps every client it ever saw, so *Show all known clients*
 lists the rest as well. *Track all clients* covers exactly the clients that matter, and new ones as
 they appear; one gone for good does not get a tracker.
+
+![The tracker step: track all, choose clients, show all known clients](assets/screenshots/setup-trackers.png){ width="560" }
 
 A tracker is named after the name given in SRM, wherever it is set; otherwise after the name the
 client reports. Its attributes:

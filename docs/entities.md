@@ -1,5 +1,7 @@
 # Entities
 
+![A router's device page](assets/screenshots/device-router.png)
+
 ## Every router and access point
 
 | Entity | Unit | Notes |

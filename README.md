@@ -20,6 +20,8 @@ radio, a client is connected to. Read only: it never changes a setting.
 
 **Documentation: [ha-synology-srm-router.eize.dev](https://ha-synology-srm-router.eize.dev/)**
 
+![A dashboard with router, access point, Wi-Fi clients by radio and who is where](docs/assets/screenshots/dashboard.png)
+
 ## What you get
 
 - One device per router or access point: CPU load, memory, download and upload rate, clients,

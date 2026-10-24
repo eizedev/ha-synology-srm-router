@@ -9,3 +9,5 @@ htmlcov/
 .ruff_cache/
 site/
 docs/assets/site.css
+scripts/demo/.config/
+docs/assets/screenshots/failed.png
