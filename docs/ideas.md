@@ -51,6 +51,10 @@ Behind carrier-grade NAT the public address is shared and changes without notice
 --8<-- "docs/assets/ideas/device_offline.yaml"
 ```
 
+A device that barely talks to the router, for example a managed switch with a fixed address, can
+appear offline in SRM's client list although it works. For such devices, Home Assistant's
+[Ping](https://www.home-assistant.io/integrations/ping/) integration is the better source.
+
 ## Weak Wi-Fi
 
 ```yaml
