@@ -32,8 +32,14 @@ radio, a client is connected to. Read only: it never changes a setting.
 
 ## Install
 
-1. In HACS, add this repository as a custom repository (category *Integration*), or use the
-   button above, and install **Synology SRM Router**.
+1. Use the button above, or in HACS open the three dots, *Custom repositories*, and add this
+   URL with the type *Integration*:
+
+   ```text
+   https://github.com/eizedev/ha-synology-srm-router
+   ```
+
+   Then install **Synology SRM Router**.
 2. Restart Home Assistant.
 3. Add the integration once per router and per access point (button above, or *Settings, Devices
    & services, Add integration*). Use an SRM administrator account without two-factor
