@@ -93,7 +93,7 @@
       },
       "access_point": {
         "title": "Device trackers",
-        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. [Help]({docs})",
+        "description": "The router you set up already keeps the device trackers of the clients it knows, including the ones on this access point. If you choose trackers here and then pick no client, the router keeps them all. [Help]({docs})",
         "menu_options": {
           "router_keeps_trackers": "Finish: the router keeps the trackers",
           "own_trackers": "Choose trackers for this access point →"

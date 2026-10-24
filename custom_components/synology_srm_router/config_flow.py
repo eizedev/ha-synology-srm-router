@@ -334,7 +334,9 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         options = {
             CONF_TRACK_ALL: choice.get(CONF_TRACK_ALL, False),
             CONF_TRACKED: choice.get(CONF_TRACKED, []),
-            CONF_OWN_TRACKERS: self._own_trackers,
+            # Choosing nothing leaves the trackers to the router (dialogs have no "back").
+            CONF_OWN_TRACKERS: self._own_trackers
+            and bool(choice.get(CONF_TRACK_ALL) or choice.get(CONF_TRACKED)),
             CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.seconds,
             CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.seconds,
             CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.seconds,

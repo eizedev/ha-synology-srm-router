@@ -399,6 +399,18 @@ async def test_an_access_point_may_keep_trackers_anyway(hass: HomeAssistant) -> 
     assert result["options"]["own_trackers"] is True
 
 
+async def test_choosing_no_client_leaves_the_trackers_to_the_router(hass: HomeAssistant) -> None:
+    await _router_loaded(hass)
+    result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "own_trackers"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: False, CONF_TRACKED: []}
+    )
+    assert result["options"]["own_trackers"] is False
+
+
 async def test_an_access_point_of_another_network_keeps_its_trackers(
     hass: HomeAssistant,
 ) -> None:

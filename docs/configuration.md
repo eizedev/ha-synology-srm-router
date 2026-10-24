@@ -95,6 +95,20 @@ per call on an RT2600ac), so intervals much below the defaults mostly add load. 
 clients you no longer choose are removed (with *Track all clients*, none are removed); a client's
 device can also be deleted by hand.
 
+## Coming from the built-in Synology SRM integration
+
+Home Assistant's built-in `synology_srm` device tracker is set up in `configuration.yaml`. Once
+this integration runs, remove its block:
+
+```yaml
+device_tracker:
+  - platform: synology_srm   # remove this entry
+```
+
+and restart Home Assistant. Its entries in `known_devices.yaml` can go as well. If you keep both
+for a while, give this integration an SRM account of its own: the built-in tracker logs in every
+12 seconds and never logs out, and two programs with one account can end each other's sessions.
+
 ## Changing the connection or signing in again
 
 - *Reconfigure* changes host, port, HTTPS and certificate checking. A certificate that differs

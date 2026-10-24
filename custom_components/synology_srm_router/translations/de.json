@@ -93,7 +93,7 @@
       },
       "access_point": {
         "title": "Device-Tracker",
-        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. [Hilfe]({docs})",
+        "description": "Der bereits eingerichtete Router führt die Device-Tracker der Clients, die er kennt, auch die an diesem Access Point. Wählst du hier Tracker und dann keinen Client aus, führt der Router alle. [Hilfe]({docs})",
         "menu_options": {
           "router_keeps_trackers": "Fertig: der Router führt die Tracker",
           "own_trackers": "Tracker für diesen Access Point auswählen →"
