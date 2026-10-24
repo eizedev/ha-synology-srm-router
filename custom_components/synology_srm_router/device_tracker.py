@@ -175,4 +175,5 @@ class SrmTracker(ScannerEntity):
             "radio": loc.radio_type,
             "signal": loc.signal,
             "located_by": loc.basis,
+            "ip6_address": self._hub.ip6(self._attr_mac_address or ""),
         }

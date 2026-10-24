@@ -181,6 +181,7 @@ async def test_trackers_find_access_point_clients(
     assert state.state == "home"
     assert state.attributes["connected_to"] == ap.title
     assert state.attributes["located_by"] == "wifi_list"
+    assert "ip6_address" in state.attributes
     assert state.attributes["radio"] == ap_wifi[0]["radio_type"]
 
     # The access point goes away: its clients must not jump to the router.
