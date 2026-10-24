@@ -1,0 +1,28 @@
+# The internet is down for 2 minutes, and when it is back: for how long it was gone.
+# Replace notify.mobile_app_phone with your phone's notify action; while the internet is down,
+# a notification to a phone may not arrive, so the second automation reports afterwards.
+automation:
+  - alias: Internet down
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.rt2600ac_wan_connection
+        to: "off"
+        for: {minutes: 2}
+    actions:
+      - action: persistent_notification.create
+        data:
+          title: Internet down
+          message: "The router lost its WAN connection at {{ now().strftime('%H:%M') }}."
+  - alias: Internet back
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.rt2600ac_wan_connection
+        from: "off"
+        to: "on"
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: Internet back
+          message: >
+            Down for {{ ((as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed))
+            / 60) | round(0) | int }} minutes.

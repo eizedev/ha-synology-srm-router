@@ -13,6 +13,7 @@ nav = [
   { "Configuration" = "configuration.md" },
   { "Entities" = "entities.md" },
   { "Dashboards" = "dashboards.md" },
+  { "Ideas and automations" = "ideas.md" },
   { "Troubleshooting" = "troubleshooting.md" },
   { "Repairs" = [{ "Device blocks Home Assistant" = "repairs/blocked.md" }] },
 ]

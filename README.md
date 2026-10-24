@@ -48,6 +48,7 @@ Assistant 2026.10 or newer. Details: [Installation](https://ha-synology-srm-rout
 - [Configuration](https://ha-synology-srm-router.eize.dev/configuration/): certificate, account, device trackers, options
 - [Entities](https://ha-synology-srm-router.eize.dev/entities/)
 - [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by device and by radio
+- [Ideas and automations](https://ha-synology-srm-router.eize.dev/ideas/): presence, internet down, offline devices, data per day
 - [Troubleshooting](https://ha-synology-srm-router.eize.dev/troubleshooting/): messages, repairs, diagnostics, removal
 
 ## Credits

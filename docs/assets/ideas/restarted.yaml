@@ -1,0 +1,13 @@
+# The router or access point started again (planned or not).
+automation:
+  - alias: Router restarted
+    triggers:
+      - trigger: state
+        entity_id: [sensor.rt2600ac_last_boot, sensor.mr2200ac_last_boot]
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: "{{ trigger.to_state.attributes.friendly_name }}"
+          message: "Started at {{ as_datetime(trigger.to_state.state) | as_local }}."

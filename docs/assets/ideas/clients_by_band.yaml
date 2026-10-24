@@ -1,0 +1,21 @@
+# Clients at home per band, as sensors with history: how many still use 2.4 GHz in the evening?
+template:
+  - sensor:
+      - name: Wi-Fi clients 2.4 GHz
+        unique_id: wifi_clients_2_4_ghz
+        state_class: measurement
+        state: >
+          {{ states.device_tracker | selectattr('state', 'eq', 'home')
+             | selectattr('attributes.radio', 'eq', '2.4G') | list | count }}
+      - name: Wi-Fi clients 5 GHz
+        unique_id: wifi_clients_5_ghz
+        state_class: measurement
+        state: >
+          {{ states.device_tracker | selectattr('state', 'eq', 'home')
+             | selectattr('attributes.radio', 'in', ['5G', '5G-2']) | list | count }}
+      - name: Wired clients
+        unique_id: wired_clients
+        state_class: measurement
+        state: >
+          {{ states.device_tracker | selectattr('state', 'eq', 'home')
+             | selectattr('attributes.connection', 'eq', 'ethernet') | list | count }}

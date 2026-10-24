@@ -1,0 +1,13 @@
+# The address the internet sees has changed, for example for a firewall rule elsewhere.
+automation:
+  - alias: Public IP changed
+    triggers:
+      - trigger: state
+        entity_id: sensor.rt2600ac_public_ipv4_address
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: Public IP changed
+          message: "{{ trigger.from_state.state }} → {{ trigger.to_state.state }}"

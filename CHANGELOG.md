@@ -21,7 +21,7 @@ All notable changes to this project are documented here. The format follows
 - English and German.
 - Documentation website at https://ha-synology-srm-router.eize.dev/, with one page per repair
   (linked from the repair) and Markdown card templates for dashboards; screenshots and an example
-  dashboard to download.
+  dashboard to download; a page of ideas and tested example automations.
 - The tracker choice offers the clients that matter first (online, named in SRM, with a DHCP lease
   or reservation, or seen in the last 30 days); all known clients on request. "Track all" covers
   exactly those, and new clients as they appear.
