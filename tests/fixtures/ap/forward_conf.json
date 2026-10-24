@@ -1,0 +1,5 @@
+{
+  "dmz_auto_fw_rules": true,
+  "pf_auto_fw_rules": true,
+  "upnp_auto_fw_rules": true
+}

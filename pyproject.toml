@@ -1,0 +1,62 @@
+[project]
+name = "ha-synology-srm-router"
+version = "0.0.0"
+description = "Home Assistant integration for Synology routers and access points (SRM)"
+requires-python = ">=3.14.2"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest-homeassistant-custom-component==0.13.374",
+    "aiosynologysrm==0.6.0",
+    "mypy>=1.15",
+    "ruff>=0.11",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["custom_components"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+# The same rule set as aiosynologysrm.
+select = ["E", "W", "F", "I", "B", "UP", "ASYNC", "S", "SIM", "RUF", "PT", "C4", "PL", "D"]
+ignore = [
+    "D203",    # conflicts with D211
+    "D213",    # conflicts with D212
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D", "PLR2004", "S105", "S106"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components"]
+combine-as-imports = true
+
+[tool.mypy]
+strict = true
+python_version = "3.14"
+files = ["custom_components", "tests"]
+explicit_package_bases = true
+# Home Assistant's packages re-export names without __all__, as HA's own mypy setup allows.
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = ["pytest_homeassistant_custom_component.*"]
+ignore_missing_imports = true

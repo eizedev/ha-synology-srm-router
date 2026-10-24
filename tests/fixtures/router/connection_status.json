@@ -1,0 +1,15 @@
+{
+  "ipv4": {
+    "conn_status": "normal",
+    "ifname": "eth0",
+    "ip": "192.0.2.70",
+    "pppoe": false,
+    "vpn_profile": ""
+  },
+  "ipv6": {
+    "conn_status": "normal",
+    "ifname": "eth0",
+    "ip": "2001:db8:4::115",
+    "pppoe": false
+  }
+}

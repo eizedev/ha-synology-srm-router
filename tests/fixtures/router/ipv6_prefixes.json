@@ -1,0 +1,60 @@
+{
+  "prefix": [
+    {
+      "lan": "lbr0",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:1::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:5::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:6::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:7::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:8::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:9::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:a::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    },
+    {
+      "lan": "gbr0",
+      "preferred_lft": 3600,
+      "prefix": "2001:db8:2::",
+      "valid_lft": 3600,
+      "wan": "eth0"
+    }
+  ]
+}

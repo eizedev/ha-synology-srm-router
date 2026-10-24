@@ -1,0 +1,6 @@
+{
+  "attempts": 10,
+  "enable": true,
+  "expire_day": 0,
+  "within_mins": 5
+}

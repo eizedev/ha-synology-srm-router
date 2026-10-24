@@ -1,0 +1,47 @@
+{
+  "data": [
+    {
+      "ifname": "gbr0",
+      "ipv4": {
+        "begin": "192.0.2.45",
+        "dns1": "192.0.2.46",
+        "dns2": "0.0.0.0",
+        "domain": "",
+        "enable": false,
+        "end": "192.0.2.48",
+        "gateway": "192.0.2.46",
+        "lease": 86400,
+        "prefix": 24,
+        "use_host_dns": false
+      },
+      "ipv6": {
+        "begin": "::",
+        "dns1": "::",
+        "dns2": "::",
+        "enable": false,
+        "end": "::",
+        "gateway": "::",
+        "prefer_life_time": 86400,
+        "prefix": "::",
+        "type": "ra-only",
+        "use_host_dns": false,
+        "valid_life_time": 86400
+      }
+    },
+    {
+      "ifname": "lbr0",
+      "ipv4": {
+        "begin": "192.0.2.71",
+        "dns1": "192.0.2.72",
+        "dns2": "0.0.0.0",
+        "domain": "",
+        "enable": true,
+        "end": "192.0.2.73",
+        "gateway": "192.0.2.72",
+        "lease": 86400,
+        "prefix": 24,
+        "use_host_dns": false
+      }
+    }
+  ]
+}

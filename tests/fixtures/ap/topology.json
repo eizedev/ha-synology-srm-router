@@ -1,0 +1,10 @@
+{
+  "bridge_mode_forbidden": false,
+  "has_wifi_dongle": false,
+  "net_topology": "bridge",
+  "support_net_topology": true,
+  "supported_mode": "bridge router ",
+  "switching": false,
+  "wireless_repeating": false,
+  "wireless_repeating_mode_forbidden": false
+}

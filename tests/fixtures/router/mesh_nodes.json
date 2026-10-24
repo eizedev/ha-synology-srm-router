@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {
+      "band": "",
+      "blinking": false,
+      "capability": {
+        "support_custom_topology": true,
+        "support_force_ethernet": true
+      },
+      "connected_devices": 16,
+      "current_rate_rx": 365071,
+      "current_rate_tx": 191541,
+      "custom_topology_mode": "auto_detection",
+      "is_dual_band": true,
+      "is_wireless": true,
+      "led_mode": "schedule",
+      "name": "name-1",
+      "network_status": "online",
+      "node_id": 0,
+      "node_status": "good",
+      "node_status_msg": "good",
+      "parent_node_id": -1,
+      "signalstrength": -1
+    }
+  ],
+  "total": 1
+}

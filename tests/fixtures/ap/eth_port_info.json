@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "eth_port_info": [
+        {
+          "has_link": true,
+          "link_speed": 1000,
+          "port": "wp1"
+        },
+        {
+          "has_link": false,
+          "link_speed": 0,
+          "port": "lp1"
+        }
+      ],
+      "name": "name-16",
+      "node_id": 0,
+      "unique": "synology_dakota_mr2200ac"
+    }
+  ]
+}

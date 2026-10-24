@@ -1,0 +1,393 @@
+{
+  "clientList": {
+    "ipv4": [
+      {
+        "clid": "02:00:00:00:00:01",
+        "expire": "unlimited",
+        "hostname": "hostname-1",
+        "ifname": "lbr0",
+        "ip": "192.0.2.1"
+      },
+      {
+        "clid": "02:00:00:00:00:02",
+        "expire": "unlimited",
+        "hostname": "hostname-2",
+        "ifname": "lbr0",
+        "ip": "192.0.2.2"
+      },
+      {
+        "clid": "02:00:00:00:00:03",
+        "expire": "unlimited",
+        "hostname": "hostname-3",
+        "ifname": "lbr0",
+        "ip": "192.0.2.3"
+      },
+      {
+        "clid": "02:00:00:00:00:04",
+        "expire": "unlimited",
+        "hostname": "hostname-4",
+        "ifname": "lbr0",
+        "ip": "192.0.2.4"
+      },
+      {
+        "clid": "02:00:00:00:00:05",
+        "expire": "unlimited",
+        "hostname": "hostname-5",
+        "ifname": "lbr0",
+        "ip": "192.0.2.5"
+      },
+      {
+        "clid": "02:00:00:00:00:06",
+        "expire": "unlimited",
+        "hostname": "hostname-6",
+        "ifname": "lbr0",
+        "ip": "192.0.2.6"
+      },
+      {
+        "clid": "02:00:00:00:00:07",
+        "expire": "unlimited",
+        "hostname": "hostname-7",
+        "ifname": "lbr0",
+        "ip": "192.0.2.7"
+      },
+      {
+        "clid": "02:00:00:00:00:08",
+        "expire": "unlimited",
+        "hostname": "hostname-8",
+        "ifname": "lbr0",
+        "ip": "192.0.2.8"
+      },
+      {
+        "clid": "02:00:00:00:00:09",
+        "expire": "unlimited",
+        "hostname": "hostname-9",
+        "ifname": "lbr0",
+        "ip": "192.0.2.9"
+      },
+      {
+        "clid": "02:00:00:00:00:0a",
+        "expire": "unlimited",
+        "hostname": "hostname-10",
+        "ifname": "lbr0",
+        "ip": "192.0.2.10"
+      },
+      {
+        "clid": "02:00:00:00:00:0b",
+        "expire": "unlimited",
+        "hostname": "hostname-11",
+        "ifname": "lbr0",
+        "ip": "192.0.2.11"
+      },
+      {
+        "clid": "02:00:00:00:00:0c",
+        "expire": "0,22,37",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "192.0.2.12"
+      },
+      {
+        "clid": "02:00:00:00:00:0d",
+        "expire": "unlimited",
+        "hostname": "hostname-12",
+        "ifname": "lbr0",
+        "ip": "192.0.2.13"
+      },
+      {
+        "clid": "02:00:00:00:00:0e",
+        "expire": "0,22,42",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "192.0.2.14"
+      },
+      {
+        "clid": "02:00:00:00:00:0f",
+        "expire": "unlimited",
+        "hostname": "hostname-13",
+        "ifname": "lbr0",
+        "ip": "192.0.2.15"
+      },
+      {
+        "clid": "02:00:00:00:00:10",
+        "expire": "0,23,15",
+        "hostname": "hostname-14",
+        "ifname": "lbr0",
+        "ip": "192.0.2.16"
+      },
+      {
+        "clid": "02:00:00:00:00:11",
+        "expire": "unlimited",
+        "hostname": "hostname-15",
+        "ifname": "lbr0",
+        "ip": "192.0.2.17"
+      },
+      {
+        "clid": "02:00:00:00:00:12",
+        "expire": "unlimited",
+        "hostname": "hostname-16",
+        "ifname": "lbr0",
+        "ip": "192.0.2.18"
+      },
+      {
+        "clid": "02:00:00:00:00:13",
+        "expire": "0,22,22",
+        "hostname": "hostname-17",
+        "ifname": "lbr0",
+        "ip": "192.0.2.19"
+      },
+      {
+        "clid": "02:00:00:00:00:14",
+        "expire": "0,22,57",
+        "hostname": "hostname-18",
+        "ifname": "lbr0",
+        "ip": "192.0.2.20"
+      },
+      {
+        "clid": "02:00:00:00:00:15",
+        "expire": "unlimited",
+        "hostname": "hostname-19",
+        "ifname": "lbr0",
+        "ip": "192.0.2.21"
+      },
+      {
+        "clid": "02:00:00:00:00:16",
+        "expire": "unlimited",
+        "hostname": "hostname-20",
+        "ifname": "lbr0",
+        "ip": "192.0.2.22"
+      },
+      {
+        "clid": "02:00:00:00:00:17",
+        "expire": "unlimited",
+        "hostname": "hostname-21",
+        "ifname": "lbr0",
+        "ip": "192.0.2.23"
+      },
+      {
+        "clid": "02:00:00:00:00:18",
+        "expire": "0,9,0",
+        "hostname": "hostname-22",
+        "ifname": "lbr0",
+        "ip": "192.0.2.24"
+      },
+      {
+        "clid": "02:00:00:00:00:19",
+        "expire": "0,5,57",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "192.0.2.25"
+      },
+      {
+        "clid": "02:00:00:00:00:1a",
+        "expire": "unlimited",
+        "hostname": "hostname-23",
+        "ifname": "lbr0",
+        "ip": "192.0.2.26"
+      },
+      {
+        "clid": "02:00:00:00:00:1b",
+        "expire": "unlimited",
+        "hostname": "hostname-24",
+        "ifname": "lbr0",
+        "ip": "192.0.2.27"
+      },
+      {
+        "clid": "02:00:00:00:00:1c",
+        "expire": "0,23,54",
+        "hostname": "hostname-25",
+        "ifname": "lbr0",
+        "ip": "192.0.2.28"
+      },
+      {
+        "clid": "02:00:00:00:00:1d",
+        "expire": "unlimited",
+        "hostname": "hostname-26",
+        "ifname": "lbr0",
+        "ip": "192.0.2.29"
+      },
+      {
+        "clid": "02:00:00:00:00:1e",
+        "expire": "0,1,20",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "192.0.2.30"
+      },
+      {
+        "clid": "02:00:00:00:00:1f",
+        "expire": "unlimited",
+        "hostname": "hostname-27",
+        "ifname": "lbr0",
+        "ip": "192.0.2.31"
+      },
+      {
+        "clid": "02:00:00:00:00:20",
+        "expire": "unlimited",
+        "hostname": "hostname-28",
+        "ifname": "lbr0",
+        "ip": "192.0.2.32"
+      },
+      {
+        "clid": "02:00:00:00:00:21",
+        "expire": "unlimited",
+        "hostname": "hostname-29",
+        "ifname": "lbr0",
+        "ip": "192.0.2.33"
+      },
+      {
+        "clid": "02:00:00:00:00:22",
+        "expire": "unlimited",
+        "hostname": "hostname-30",
+        "ifname": "lbr0",
+        "ip": "192.0.2.34"
+      },
+      {
+        "clid": "02:00:00:00:00:23",
+        "expire": "unlimited",
+        "hostname": "hostname-31",
+        "ifname": "lbr0",
+        "ip": "192.0.2.35"
+      },
+      {
+        "clid": "02:00:00:00:00:24",
+        "expire": "unlimited",
+        "hostname": "hostname-32",
+        "ifname": "lbr0",
+        "ip": "192.0.2.36"
+      },
+      {
+        "clid": "02:00:00:00:00:25",
+        "expire": "unlimited",
+        "hostname": "hostname-33",
+        "ifname": "lbr0",
+        "ip": "192.0.2.37"
+      },
+      {
+        "clid": "02:00:00:00:00:26",
+        "expire": "unlimited",
+        "hostname": "hostname-34",
+        "ifname": "lbr0",
+        "ip": "192.0.2.38"
+      }
+    ],
+    "ipv6": [
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:01",
+        "expire": "0,0,51",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::100"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:00:00:00:00:02",
+        "expire": "unlimited",
+        "hostname": "hostname-12",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::101"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:03",
+        "expire": "unlimited",
+        "hostname": "hostname-31",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::102"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:04",
+        "expire": "0,0,51",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::103"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:05",
+        "expire": "0,0,51",
+        "hostname": "hostname-1",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::104"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:06",
+        "expire": "unlimited",
+        "hostname": "hostname-35",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::105"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:07",
+        "expire": "unlimited",
+        "hostname": "hostname-8",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::106"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:08",
+        "expire": "0,0,38",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::107"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:00:00:00:00:00:00:00:00:09",
+        "expire": "unlimited",
+        "hostname": "hostname-33",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::108"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:0a",
+        "expire": "unlimited",
+        "hostname": "hostname-36",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::109"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:0b",
+        "expire": "0,0,39",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::10a"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:00:00:00:00:0c",
+        "expire": "0,0,46",
+        "hostname": "hostname-10",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::10b"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:0d",
+        "expire": "unlimited",
+        "hostname": "hostname-37",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::10c"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:0e",
+        "expire": "0,0,34",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::10d"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:0f",
+        "expire": "0,0,49",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::10e"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:00:00:00:00:10",
+        "expire": "0,0,52",
+        "hostname": "hostname-38",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::10f"
+      },
+      {
+        "clid": "00:03:00:01:00:00:00:00:00:11",
+        "expire": "0,0,40",
+        "hostname": "",
+        "ifname": "lbr0",
+        "ip": "2001:db8:1::110"
+      }
+    ]
+  }
+}
