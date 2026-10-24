@@ -15,15 +15,22 @@ CONF_TRACK_ALL: Final = "track_all"
 CONF_FAST_INTERVAL: Final = "fast_interval"
 CONF_SLOW_INTERVAL: Final = "slow_interval"
 CONF_IS_ROUTER: Final = "is_router"
+CONF_CONSIDER_HOME: Final = "consider_home"
+CONF_SHOW_ALL: Final = "show_all"
 
 DEFAULT_HTTPS_PORT: Final = 8001
 DEFAULT_HTTP_PORT: Final = 8000
 DEFAULT_USERNAME: Final = "admin"
-# Clients, Wi-Fi, load and WAN change quickly; firmware and uptime rarely.
+# Clients, Wi-Fi, load and WAN change quickly; firmware, uptime and DHCP rarely.
 DEFAULT_FAST_INTERVAL: Final = timedelta(seconds=30)
 DEFAULT_SLOW_INTERVAL: Final = timedelta(minutes=5)
 MIN_FAST_INTERVAL: Final = 10
 MIN_SLOW_INTERVAL: Final = 60
+# A client counts as away only after it was missing this long. SRM marks idle wired clients offline
+# for a minute now and then; the value matches Home Assistant's default for router trackers.
+DEFAULT_CONSIDER_HOME: Final = timedelta(minutes=3)
+# Clients seen online this recently are offered for tracking even while they are away.
+RECENTLY_SEEN: Final = timedelta(days=30)
 # Every update must finish well before the next one, even when the router answers slowly.
 UPDATE_TIMEOUT: Final = 25
 # One read may take this long; several run per update, so it stays well below UPDATE_TIMEOUT.
@@ -33,6 +40,6 @@ BLOCKED_RETRY: Final = timedelta(minutes=15)
 # A tracker keeps its last trusted location this long while the device it was on cannot be read.
 LOCATION_GRACE: Final = timedelta(minutes=10)
 
-DOCS_URL: Final = "https://github.com/eizedev/ha-synology-srm-router"
+DOCS_URL: Final = "https://ha-synology-srm-router.eize.dev/"
 
 SESSION_NAME: Final = "HomeAssistant"

@@ -30,10 +30,12 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
 
+from .clients import Client, combine, dhcp_macs
 from .const import (
     BLOCKED_RETRY,
     CONF_FAST_INTERVAL,
@@ -47,6 +49,10 @@ from .const import (
 )
 
 SIGNAL_LOCATIONS = f"{DOMAIN}_locations"
+STORE_VERSION = 1
+# "Last seen" is written at most this often; it only needs to survive a restart roughly.
+# (Store.async_delay_save postpones on every call, so it is not called on every update.)
+SAVE_INTERVAL = timedelta(minutes=5)
 HUB_KEY: HassKey[LocationHub] = HassKey(DOMAIN)
 
 type SrmConfigEntry = ConfigEntry[SrmRuntimeData]
@@ -65,10 +71,12 @@ class FastData:
 
 @dataclass(kw_only=True)
 class SlowData:
-    """What changes rarely: system information (firmware, uptime)."""
+    """What changes rarely: system information (firmware, uptime) and DHCP on routers."""
 
     system: SystemInfo
     boot_time: datetime | None = None
+    dhcp: frozenset[str] = frozenset()
+    """MAC addresses with a DHCP lease or reservation."""
 
 
 @dataclass(kw_only=True)
@@ -222,7 +230,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
 
 
 class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
-    """Reads system information every 5 min by default."""
+    """Reads system information, and DHCP on routers, every 5 min by default."""
 
     config_entry: SrmConfigEntry
 
@@ -231,6 +239,9 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         hass: HomeAssistant,
         entry: SrmConfigEntry,
         client: SrmClient,
+        supported: frozenset[str],
+        *,
+        is_router: bool,
     ) -> None:
         """Prepare the coordinator; the interval comes from the entry's options."""
         seconds = entry.options.get(CONF_SLOW_INTERVAL, DEFAULT_SLOW_INTERVAL.seconds)
@@ -242,11 +253,14 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
             update_interval=timedelta(seconds=seconds),
         )
         self.client = client
+        self.supported = supported
+        self.is_router = is_router
 
     async def _async_update_data(self) -> SlowData:
         try:
             async with asyncio.timeout(UPDATE_TIMEOUT):
                 system = await self.client.get_system_info()
+                dhcp = await self._dhcp()
         except SrmError as err:
             raise map_error(err) from err
         uptime = helpers.up_time(system.up_time)
@@ -258,7 +272,24 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
             if previous is not None and abs((boot - previous).total_seconds()) < 120:  # noqa: PLR2004
                 boot = previous
         self._update_device(system)
-        return SlowData(system=system, boot_time=boot)
+        return SlowData(system=system, boot_time=boot, dhcp=dhcp)
+
+    async def _dhcp(self) -> frozenset[str]:
+        """Read leases and reservations; only a router hands out addresses.
+
+        Optional: a failed read keeps what is known.
+        """
+        calls: dict[str, Callable[[], Awaitable[Any]]] = {}
+        for getter in (self.client.get_dhcp_clients, self.client.get_dhcp_reservations):
+            if self.is_router and getter.__name__ in self.supported:
+                calls[getter.__name__] = getter
+        if not calls:
+            return frozenset()
+        try:
+            results = await gather_partial(calls)
+        except UpdateFailed:
+            return self.data.dhcp if self.data else frozenset()
+        return dhcp_macs(results.get("get_dhcp_clients"), results.get("get_dhcp_reservations"))
 
     def _update_device(self, system: SystemInfo) -> None:
         """Keep the device registry's firmware version current after an update."""
@@ -281,14 +312,29 @@ class LocationHub:
 
     hass: HomeAssistant
     loaded: dict[str, SrmConfigEntry] = field(default_factory=dict)
+    last_seen: dict[str, datetime] = field(default_factory=dict)
     _cache: dict[str, helpers.ClientLocation] | None = None
+    _clients: dict[str, Client] | None = None
     _missing: frozenset[str] = frozenset()
+    _store: Store[dict[str, str]] | None = None
+    _saved_at: datetime | None = None
+
+    async def async_load(self) -> None:
+        """Read when clients were last seen online; once per Home Assistant run."""
+        if self._store is not None:
+            return
+        self._store = Store(self.hass, STORE_VERSION, f"{DOMAIN}.last_seen")
+        stored = await self._store.async_load() or {}
+        for mac, text in stored.items():
+            if (seen := dt_util.parse_datetime(text)) is not None:
+                self.last_seen.setdefault(mac, seen)
 
     @callback
     def async_add(self, entry: SrmConfigEntry) -> None:
         """Start using an entry and recompute when its fast data changes."""
         self.loaded[entry.entry_id] = entry
         entry.async_on_unload(entry.runtime_data.fast.async_add_listener(self.async_invalidate))
+        entry.async_on_unload(entry.runtime_data.slow.async_add_listener(self.async_invalidate))
         self.async_invalidate()
 
     @callback
@@ -301,6 +347,7 @@ class LocationHub:
     def async_invalidate(self) -> None:
         """Drop the cached locations and tell the trackers."""
         self._cache = None
+        self._clients = None
         async_dispatcher_send(self.hass, SIGNAL_LOCATIONS)
 
     def configured(self) -> list[ConfigEntry]:
@@ -330,7 +377,43 @@ class LocationHub:
                 if v.devices is None or v.wifi is None or v.devices.exceed_dev_list_max is True
             )
             self._cache = helpers.locate_clients(views)
+            self._remember(self._cache)
         return self._cache
+
+    def _remember(self, locations: dict[str, helpers.ClientLocation]) -> None:
+        now = dt_util.utcnow()
+        for mac, location in locations.items():
+            if location.online:
+                self.last_seen[mac] = now
+        if self._store is not None and (
+            self._saved_at is None or now - self._saved_at >= SAVE_INTERVAL
+        ):
+            self._saved_at = now
+            self._store.async_delay_save(
+                lambda: {mac: seen.isoformat() for mac, seen in self.last_seen.items()}
+            )
+
+    @property
+    def clients(self) -> dict[str, Client]:
+        """Every client known to any loaded entry, with its best name."""
+        if self._clients is None:
+            self._refresh()  # updates last_seen first
+            entries = [self.loaded.get(e.entry_id) for e in self.configured()]
+            runtimes = [e.runtime_data for e in entries if e is not None]
+            dhcp = frozenset().union(*(r.slow.data.dhcp for r in runtimes if r.slow.data))
+            lists = [r.fast.data.devices if r.fast.data else None for r in runtimes]
+            self._clients = combine(lists, dhcp, self.last_seen)
+        return self._clients
+
+    def name(self, mac: str) -> str | None:
+        """Return the best name of a client: given in SRM, else reported by the client."""
+        client = self.clients.get(mac)
+        return client.name if client else None
+
+    def relevant(self, mac: str) -> bool:
+        """Whether "track all" covers the client (see clients.Client.relevant)."""
+        client = self.clients.get(mac)
+        return client is not None and client.relevant(dt_util.utcnow())
 
     @property
     def locations(self) -> dict[str, helpers.ClientLocation]:

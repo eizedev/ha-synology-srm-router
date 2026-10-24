@@ -395,3 +395,31 @@ def test_manifest_requirement_matches_the_lock() -> None:
     for requirement in manifest["requirements"]:
         name, version = requirement.split("==")
         assert locked[name] == version, requirement
+
+
+async def test_dhcp_read_failures_keep_what_is_known(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    await _setup(hass, entry)
+    slow = entry.runtime_data.slow
+    known = slow.data.dhcp
+    assert known
+    client = FakeClient.instances[-1]
+    client.errors["get_dhcp_clients"] = SrmConnectionError("x")
+    client.errors["get_dhcp_reservations"] = SrmConnectionError("x")
+    await slow.async_refresh()
+    assert slow.last_update_success
+    assert slow.data.dhcp == known
+
+
+async def test_last_seen_survives_a_restart(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    hass_storage["synology_srm_router.last_seen"] = {
+        "version": 1,
+        "key": "synology_srm_router.last_seen",
+        "data": {"02:00:00:00:00:77": "2026-10-20T10:00:00+00:00", "02:00:00:00:00:78": "nonsense"},
+    }
+    await _setup(hass, make_entry())
+    hub = get_hub(hass)
+    assert "02:00:00:00:00:77" in hub.last_seen
+    assert "02:00:00:00:00:78" not in hub.last_seen

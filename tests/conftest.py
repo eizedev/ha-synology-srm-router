@@ -11,6 +11,8 @@ from unittest.mock import patch
 
 from aiosynologysrm import (
     ConnectionStatus,
+    DhcpClients,
+    DhcpReservations,
     ExternalIp,
     NetworkDevices,
     SystemInfo,
@@ -96,6 +98,14 @@ class FakeClient:
     async def get_connection_status(self) -> ConnectionStatus:
         self._raise("get_connection_status")
         return ConnectionStatus.from_api(load(self.folder, "connection_status"))
+
+    async def get_dhcp_clients(self) -> DhcpClients:
+        self._raise("get_dhcp_clients")
+        return DhcpClients.from_api(load(self.folder, "dhcp_clients"))
+
+    async def get_dhcp_reservations(self) -> DhcpReservations:
+        self._raise("get_dhcp_reservations")
+        return DhcpReservations.from_api(load(self.folder, "dhcp_reservations"))
 
     async def get_external_ip(self) -> tuple[ExternalIp, ...]:
         self._raise("get_external_ip")

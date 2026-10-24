@@ -20,9 +20,11 @@ from homeassistant.config_entries import SOURCE_USER, ConfigFlowResult
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.synology_srm_router.const import (
     CONF_FINGERPRINT,
+    CONF_SHOW_ALL,
     CONF_TRACK_ALL,
     CONF_TRACKED,
     CONF_USE_HTTPS,
@@ -31,11 +33,13 @@ from custom_components.synology_srm_router.const import (
 )
 
 from .conftest import (
+    AP_HOST,
     ERRORS,
     FINGERPRINT,
     FINGERPRINTS,
     ROUTER_HOST,
     SERIALS,
+    UNSUPPORTED,
     FakeClient,
     make_entry,
 )
@@ -87,7 +91,7 @@ async def test_full_flow_pins_the_certificate(hass: HomeAssistant) -> None:
         result["flow_id"], {CONF_TRACK_ALL: False, CONF_TRACKED: [chosen]}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == f"RT2600ac ({ROUTER_HOST})"
+    assert result["title"] == "RT2600ac"
     assert result["result"].unique_id == SERIALS["router"]
     assert result["data"][CONF_FINGERPRINT] == FINGERPRINT
     assert CONF_VERIFY_CERTIFICATE not in result["data"]
@@ -319,3 +323,107 @@ async def test_reconfigure_with_the_same_certificate_needs_no_confirmation(
     )
     assert result["reason"] == "reconfigure_successful"
     assert entry.data["port"] == 8443
+
+
+async def _to_clients(
+    hass: HomeAssistant, connection: dict[str, object] | None = None
+) -> ConfigFlowResult:
+    result = await _start(hass, connection)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    return await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+
+
+def _offered(result: ConfigFlowResult) -> list[str]:
+    schema = result["data_schema"]
+    assert schema is not None
+    return [o["value"] for o in schema.schema[CONF_TRACKED].config["options"]]
+
+
+async def test_all_known_clients_on_request(hass: HomeAssistant) -> None:
+    result = await _to_clients(hass)
+    relevant = _offered(result)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: False, CONF_TRACKED: [relevant[0]], CONF_SHOW_ALL: True}
+    )
+    assert result["step_id"] == "clients"
+    assert len(_offered(result)) > len(relevant)
+    assert CONF_SHOW_ALL not in result["data_schema"].schema  # type: ignore[union-attr]
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: False, CONF_TRACKED: [relevant[0]]}
+    )
+    assert result["options"][CONF_TRACKED] == [relevant[0]]
+    assert result["options"]["consider_home"] == 180
+
+
+async def test_without_dhcp_fewer_clients_are_offered(hass: HomeAssistant) -> None:
+    first = await _to_clients(hass)
+    with_dhcp = _offered(first)
+    hass.config_entries.flow.async_abort(first["flow_id"])
+    UNSUPPORTED[ROUTER_HOST] = {"get_dhcp_clients", "get_dhcp_reservations"}
+    without = _offered(await _to_clients(hass))
+    assert len(without) < len(with_dhcp)
+
+
+async def test_an_access_point_next_to_a_router_has_no_tracker_step(hass: HomeAssistant) -> None:
+    make_entry().add_to_hass(hass)
+    result = await _to_clients(hass, {**CONNECTION, "host": AP_HOST})
+    assert result["step_id"] == "access_point"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["options"][CONF_TRACKED] == []
+    assert result["data"]["is_router"] is False
+
+
+async def test_a_second_device_of_the_same_model_gets_the_serial(hass: HomeAssistant) -> None:
+    MockConfigEntry(domain=DOMAIN, title="RT2600ac", unique_id="OTHER", data={}).add_to_hass(hass)
+    result = await _to_clients(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["title"] == f"RT2600ac …{SERIALS['router'][-3:]}"
+
+
+async def test_options_of_an_access_point_next_to_a_router(hass: HomeAssistant) -> None:
+    router, ap = make_entry(), make_entry("ap")
+    for entry in (router, ap):
+        entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(ap.entry_id)
+    assert result["step_id"] == "access_point"
+    assert CONF_TRACKED not in result["data_schema"].schema  # type: ignore[union-attr]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"consider_home": 60, "fast_interval": 30, "slow_interval": 300}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_options_show_all_known_clients_on_request(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    relevant = _offered(result)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_TRACK_ALL: False,
+            CONF_TRACKED: [],
+            CONF_SHOW_ALL: True,
+            "consider_home": 60,
+            "fast_interval": 30,
+            "slow_interval": 300,
+        },
+    )
+    assert result["step_id"] == "init"
+    assert len(_offered(result)) > len(relevant)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_TRACK_ALL: False,
+            CONF_TRACKED: [],
+            "consider_home": 60,
+            "fast_interval": 30,
+            "slow_interval": 300,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options["consider_home"] == 60

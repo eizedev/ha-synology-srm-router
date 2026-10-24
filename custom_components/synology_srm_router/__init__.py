@@ -35,13 +35,15 @@ from .coordinator import (
 )
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER, Platform.SENSOR]
-# The reads the fast coordinator uses; each is checked against the device's API catalog once.
+# The reads the coordinators use; each is checked against the device's API catalog once.
 GETTERS = (
     "get_utilization",
     "get_network_devices",
     "get_wifi_devices",
     "get_connection_status",
     "get_external_ip",
+    "get_dhcp_clients",
+    "get_dhcp_reservations",
 )
 
 
@@ -76,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         )
         is_router = topology.net_topology == "router"
         fast = SrmFastCoordinator(hass, entry, client, supported, is_router=is_router)
-        slow = SrmSlowCoordinator(hass, entry, client)
+        slow = SrmSlowCoordinator(hass, entry, client, supported, is_router=is_router)
         entry.runtime_data = SrmRuntimeData(
             client=client, topology=topology, supported=supported, fast=fast, slow=slow
         )
@@ -101,7 +103,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_IS_ROUTER: is_router}
         )
-    get_hub(hass).async_add(entry)
+    hub = get_hub(hass)
+    await hub.async_load()
+    hub.async_add(entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
