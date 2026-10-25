@@ -96,7 +96,7 @@ host name or address (a PlayStation, a printer, ...) offer themselves under *Dis
 | Clients to track | none | These clients get a tracker, whether or not they matter. |
 | Time until away | 180 s | How long a client must be missing before its tracker says away. |
 | Fast polling interval | 30 s | Clients, Wi-Fi, load and WAN. |
-| Slow polling interval | 300 s | System information (firmware, last boot) and DHCP. |
+| Slow polling interval | 300 s | System information (firmware, last boot) and USB storage; on routers also DHCP and the firewall. |
 
 Each update reads several values from the device; SRM devices answer slowly (about half a second
 per call on an RT2600ac), so intervals much below the defaults mostly add load. Trackers of

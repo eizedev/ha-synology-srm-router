@@ -36,6 +36,36 @@
       },
       "clients": {
         "default": "mdi:devices"
+      },
+      "dhcp_leases": {
+        "default": "mdi:lan-connect"
+      },
+      "dhcp_reservations": {
+        "default": "mdi:format-list-checks"
+      },
+      "firewall_rules": {
+        "default": "mdi:wall-fire"
+      },
+      "firewall_hits": {
+        "default": "mdi:wall-fire"
+      },
+      "dhcp_pool_lan": {
+        "default": "mdi:chart-donut"
+      },
+      "dhcp_pool_guest": {
+        "default": "mdi:chart-donut"
+      },
+      "dhcp_pool": {
+        "default": "mdi:chart-donut"
+      },
+      "usb_used": {
+        "default": "mdi:usb-flash-drive"
+      },
+      "usb_free": {
+        "default": "mdi:harddisk"
+      },
+      "usb_size": {
+        "default": "mdi:harddisk"
       }
     },
     "binary_sensor": {

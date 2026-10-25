@@ -10,7 +10,11 @@ from typing import Any
 
 from aiosynologysrm import (
     ConnectionStatus,
+    DhcpClients,
+    DhcpReservations,
+    DhcpServers,
     ExternalIp,
+    FirewallRules,
     NetworkDevices,
     SrmAuthenticationError,
     SrmBlockedError,
@@ -19,6 +23,7 @@ from aiosynologysrm import (
     SrmError,
     SrmPermissionError,
     SrmTwoFactorRequiredError,
+    StorageVolumes,
     SystemInfo,
     Topology,
     Utilization,
@@ -76,12 +81,33 @@ class FastData:
 
 @dataclass(kw_only=True)
 class SlowData:
-    """What changes rarely: system information (firmware, uptime) and DHCP on routers."""
+    """What changes rarely: system information and USB storage; DHCP and firewall on routers.
+
+    Everything but the system information is optional: a read that fails keeps what is known.
+    """
 
     system: SystemInfo
     boot_time: datetime | None = None
     dhcp: dict[str, DhcpAddress] = field(default_factory=dict)
     """Addresses by MAC from DHCP leases and reservations."""
+    leases: DhcpClients | None = None
+    reservations: DhcpReservations | None = None
+    dhcp_servers: DhcpServers | None = None
+    firewall: FirewallRules | None = None
+    hits: dict[int, int] | None = None
+    """Packets per firewall rule (``ui_id``), since SRM last built its firewall."""
+    usb: StorageVolumes | None = None
+
+
+# Optional reads of the slow coordinator: SlowData field, client getter, routers only.
+SLOW_READS: tuple[tuple[str, str, bool], ...] = (
+    ("leases", "get_dhcp_clients", True),
+    ("reservations", "get_dhcp_reservations", True),
+    ("dhcp_servers", "get_dhcp_servers", True),
+    ("firewall", "get_firewall_rules", True),
+    ("hits", "get_firewall_hit_counts", True),
+    ("usb", "get_usb_volumes", False),
+)
 
 
 @dataclass(kw_only=True)
@@ -276,7 +302,7 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         try:
             async with asyncio.timeout(UPDATE_TIMEOUT):
                 system = await self.client.get_system_info()
-                dhcp = await self._dhcp()
+                optional = await self._optional()
         except SrmError as err:
             raise map_error(err) from err
         uptime = helpers.up_time(system.up_time)
@@ -288,24 +314,26 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
             if previous is not None and abs((boot - previous).total_seconds()) < 120:  # noqa: PLR2004
                 boot = previous
         self._update_device(system)
-        return SlowData(system=system, boot_time=boot, dhcp=dhcp)
+        optional["dhcp"] = dhcp_addresses(optional["leases"], optional["reservations"])
+        return SlowData(system=system, boot_time=boot, **optional)
 
-    async def _dhcp(self) -> dict[str, DhcpAddress]:
-        """Read leases and reservations; only a router hands out addresses.
-
-        Optional: a failed read keeps what is known.
-        """
-        calls: dict[str, Callable[[], Awaitable[Any]]] = {}
-        for getter in (self.client.get_dhcp_clients, self.client.get_dhcp_reservations):
-            if self.is_router and getter.__name__ in self.supported:
-                calls[getter.__name__] = getter
-        if not calls:
-            return {}
+    async def _optional(self) -> dict[str, Any]:
+        """Run the optional reads this device offers; a failed one keeps its last value."""
+        calls: dict[str, Callable[[], Awaitable[Any]]] = {
+            field: getattr(self.client, getter)
+            for field, getter, router_only in SLOW_READS
+            if getter in self.supported and (self.is_router or not router_only)
+        }
         try:
-            results = await gather_partial(calls)
+            results = await gather_partial(calls) if calls else {}
         except UpdateFailed:
-            return self.data.dhcp if self.data else {}
-        return dhcp_addresses(results.get("get_dhcp_clients"), results.get("get_dhcp_reservations"))
+            results = {}
+        if "hits" in results:
+            results["hits"] = helpers.hits_by_rule(results["hits"])
+        return {
+            field: results[field] if field in results else getattr(self.data, field, None)
+            for field, _, _ in SLOW_READS
+        }
 
     def _update_device(self, system: SystemInfo) -> None:
         """Keep the device registry's firmware version current after an update."""
