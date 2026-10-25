@@ -495,7 +495,7 @@ class SrmFirewallHitsSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
     _attr_native_unit_of_measurement = "packets"
     # What the rule does stays out of the history: addresses, ports and lists of countries.
     _unrecorded_attributes = frozenset(
-        {"enabled", "action", "ip_version", "protocol", "source", "destination", "ports"}
+        {"enabled", "action", "ip_version", "protocol", "chain", "source", "destination", "ports"}
     )
 
     def __init__(self, entry: SrmConfigEntry, key: str, rule: FirewallRule) -> None:
@@ -541,6 +541,7 @@ class SrmFirewallHitsSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
             "action": rule.action,
             "ip_version": rule.ip_version,
             "protocol": rule.protocol,
+            "chain": rule.chain,
             "source": rule.src_ip_value,
             "destination": rule.dst_ip_value,
             "ports": rule.dst_port_value,

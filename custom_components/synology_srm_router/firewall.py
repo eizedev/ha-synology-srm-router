@@ -56,6 +56,10 @@ def rule_rows(
                 "action": rule.action,
                 "ip_version": rule.ip_version,
                 "protocol": rule.protocol,
+                # input: to the router itself; forward: through it; both_input_forward: both.
+                "chain": rule.chain,
+                "in_interfaces": _interfaces(rule.in_interface_type, rule.in_interface_value),
+                "out_interfaces": _interfaces(rule.out_interface_type, rule.out_interface_value),
                 "source": rule.src_ip_value,
                 "destination": rule.dst_ip_value,
                 "ports": rule.dst_port_value,
@@ -64,3 +68,8 @@ def rule_rows(
             }
         )
     return rows
+
+
+def _interfaces(kind: str | None, values: tuple[str, ...]) -> list[str] | None:
+    """Return the interfaces a rule is limited to (``lan``, ``wan``, ...), or None for any."""
+    return list(values) if kind == "specific" and values else None

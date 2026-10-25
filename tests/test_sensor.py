@@ -274,6 +274,11 @@ def test_helpers_without_data() -> None:
     rows = rule_rows(keyed, {1: 7})
     assert [(r["hits"], r["duplicate"]) for r in rows] == [(7, False), (None, True)]
     assert rows[0]["label"] == "y"
+    assert rows[0]["in_interfaces"] is None
+    lan = FirewallRules.from_api(
+        {"rules": [{"ui_id": 1, "in_interface_type": "specific", "in_interface_value": ["lan"]}]}
+    )
+    assert rule_rows(rule_keys(lan.rules), None)[0]["in_interfaces"] == ["lan"]
     assert all(r["hits"] is None for r in rule_rows(keyed, None))
     servers = DhcpServers.from_api(
         {
