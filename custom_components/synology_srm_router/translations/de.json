@@ -45,7 +45,7 @@
           "show_all": "Alle bekannten Clients zeigen"
         },
         "data_description": {
-          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine IPv4-DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
           "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
         },
@@ -108,7 +108,7 @@
           "show_all": "Alle bekannten Clients zeigen"
         },
         "data_description": {
-          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine IPv4-DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
           "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
         },
@@ -148,7 +148,7 @@
           "consider_home": "Wartezeit bis abwesend"
         },
         "data_description": {
-          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine IPv4-DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
           "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
           "slow_interval": "Systeminformationen und USB-Speicher; auf Routern auch DHCP und Firewall. Standard 300 s.",
@@ -189,7 +189,7 @@
           "show_all": "Alle bekannten Clients zeigen"
         },
         "data_description": {
-          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
+          "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine IPv4-DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
           "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
         }

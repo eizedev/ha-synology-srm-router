@@ -59,8 +59,8 @@ that wants it, routers first.
 ![An access point next to a router: finish, or choose trackers for it](assets/screenshots/setup-access-point.png){ width="560" }
 
 The list to choose from shows the clients that matter: those online now (●), those with a name
-given in SRM, those with a DHCP lease or reservation, and those Home Assistant saw online in the
-last 30 days (with the date, ○). SRM keeps every client it ever saw, so *Show all known clients*
+given in SRM, those with an IPv4 DHCP lease or reservation, and those Home Assistant saw online in
+the last 30 days (with the date, ○). SRM keeps every client it ever saw, so *Show all known clients*
 lists the rest as well. *Track all clients* covers exactly the clients that matter, and new ones as
 they appear; one gone for good does not get a tracker.
 

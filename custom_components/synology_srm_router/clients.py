@@ -1,8 +1,8 @@
 """Clients across all entries: their best name, whether they matter, and when they were last seen.
 
 SRM keeps every client it ever saw in its device list, without a "last seen" time. A client
-matters (is offered first and tracked by "all") when it is online, has a name given in SRM, has a
-DHCP lease or reservation, or was seen online by this integration within RECENTLY_SEEN.
+matters (is offered first and tracked by "all") when it is online, has a name given in SRM, has an
+IPv4 DHCP lease or reservation, or was seen online by this integration within RECENTLY_SEEN.
 """
 
 from __future__ import annotations
@@ -31,7 +31,11 @@ class Client:
     named: bool
     """The name was given in SRM (not reported by the client itself)."""
     dhcp: bool
-    """The router has a DHCP lease or reservation for it."""
+    """The router has an IPv4 DHCP lease or reservation for its MAC address.
+
+    DHCPv6 does not count: the MAC inside a DUID of type LLT is the one the client had when it
+    created the DUID, possibly of another interface, so it can name an old entry of the device.
+    """
     last_seen: datetime | None
 
     def relevant(self, now: datetime) -> bool:
@@ -56,7 +60,8 @@ DUID_LL_ETHERNET, DUID_LL_LENGTH = b"\x00\x03\x00\x01", 10
 def duid_mac(duid: str | None) -> str | None:
     """Return the MAC address inside a DHCPv6 DUID of type LLT or LL (Ethernet), else None.
 
-    LLT: 00:01, hardware type 00:01, 4 bytes of time, the MAC; LL: 00:03, 00:01, the MAC.
+    LLT: 00:01, hardware type 00:01, 4 bytes of time, the MAC; LL: 00:03, 00:01, the MAC. A DUID
+    is created once, so for LLT this can be the MAC of another or an earlier interface (RFC 8415).
     """
     try:
         raw = bytes.fromhex((duid or "").replace(":", "").replace("-", ""))
@@ -140,7 +145,7 @@ def combine(
             ip6=item["ip6"] or dhcp.get(mac, none).ip6,  # type: ignore[arg-type]
             online=bool(item["online"]),
             named=bool(item["named"]),
-            dhcp=mac in dhcp,
+            dhcp=dhcp.get(mac, none).ip is not None,
             last_seen=last_seen.get(mac),
         )
         for mac, item in found.items()
