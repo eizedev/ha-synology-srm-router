@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import dataclasses
+from datetime import timedelta
 import json
 from pathlib import Path
 import tomllib
 from typing import Any
 from unittest.mock import patch
 
+import aiohttp
 from aiosynologysrm import (
     ExternalIp,
     SrmAuthenticationError,
@@ -17,21 +19,33 @@ from aiosynologysrm import (
     SrmConnectionError,
     SrmPermissionError,
     SrmTwoFactorRequiredError,
+    helpers,
 )
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
     issue_registry as ir,
 )
+from homeassistant.util import dt as dt_util
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_restore_cache
 
-from custom_components.synology_srm_router import async_remove_config_entry_device
-from custom_components.synology_srm_router.const import BLOCKED_RETRY, DOMAIN
+from custom_components.synology_srm_router import (
+    async_remove_config_entry_device,
+    create_client,
+    session_name,
+)
+from custom_components.synology_srm_router.const import (
+    BLOCKED_RETRY,
+    DEFAULT_CONSIDER_HOME,
+    DOMAIN,
+    RECENTLY_SEEN,
+)
 from custom_components.synology_srm_router.coordinator import FastData, get_hub
+from custom_components.synology_srm_router.device_tracker import SrmTracker
 from custom_components.synology_srm_router.diagnostics import async_get_config_entry_diagnostics
 from custom_components.synology_srm_router.entity import url_host
 from custom_components.synology_srm_router.sensor import _public_ipv4
@@ -418,9 +432,83 @@ async def test_last_seen_survives_a_restart(
     hass_storage["synology_srm_router.last_seen"] = {
         "version": 1,
         "key": "synology_srm_router.last_seen",
-        "data": {"02:00:00:00:00:77": "2026-10-20T10:00:00+00:00", "02:00:00:00:00:78": "nonsense"},
+        "data": {
+            "02:00:00:00:00:77": (dt_util.utcnow() - timedelta(days=1)).isoformat(),
+            "02:00:00:00:00:78": "nonsense",
+            "02:00:00:00:00:79": (dt_util.utcnow() - RECENTLY_SEEN - timedelta(days=1)).isoformat(),
+        },
     }
     await _setup(hass, make_entry())
     hub = get_hub(hass)
     assert "02:00:00:00:00:77" in hub.last_seen
     assert "02:00:00:00:00:78" not in hub.last_seen
+    assert "02:00:00:00:00:79" not in hub.last_seen  # too old to matter, forgotten
+
+
+async def test_a_blocked_login_at_setup_reports_a_repair(hass: HomeAssistant) -> None:
+    ERRORS[ROUTER_HOST] = {"login": SrmBlockedError(407, "SYNO.API.Auth")}
+    entry = make_entry()
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is not None
+    ERRORS.clear()
+    await hass.config_entries.async_reload(entry.entry_id)
+    assert entry.state is ConfigEntryState.LOADED  # type: ignore[comparison-overlap]
+    assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is None
+
+
+async def test_unloading_removes_the_block_repair(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    await _setup(hass, entry)
+    FakeClient.instances[-1].errors["get_network_devices"] = SrmBlockedError(407, "a")
+    await _refresh(hass)
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is not None
+    await hass.config_entries.async_unload(entry.entry_id)
+    assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is None
+
+
+async def test_the_client_pins_the_certificate_and_names_the_session(
+    hass: HomeAssistant,
+) -> None:
+    entry = make_entry()
+    name = await session_name(hass)
+    assert name.startswith("HomeAssistant-")
+    assert len(name) == len("HomeAssistant-") + 8
+    assert await session_name(hass, "setup") == f"{name}-setup"
+    with patch("custom_components.synology_srm_router.SrmClient") as client:
+        create_client(hass, dict(entry.data), name)
+        kwargs = client.call_args.kwargs
+        assert kwargs["session_name"] == name
+        assert isinstance(kwargs["ssl"], aiohttp.Fingerprint)
+        assert kwargs["ssl"].fingerprint == bytes.fromhex(entry.data["fingerprint"])
+        create_client(hass, {**entry.data, "fingerprint": None}, name)
+        assert client.call_args.kwargs["ssl"] is False  # chosen: no certificate check
+        create_client(hass, {**entry.data, "use_https": False}, name)
+        assert client.call_args.kwargs["ssl"] is False
+
+
+async def test_a_client_that_was_home_waits_for_consider_home_after_a_restart(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    # A wired client SRM shows offline at the first update after the restart.
+    device = next(
+        d for d in load("router", "network_devices")["devices"] if d.get("is_online") is False
+    )
+    mac = helpers.normalize_mac(device["mac"])
+    assert mac is not None
+    entry = make_entry(tracked=[mac])
+    entry.add_to_hass(hass)
+    entity_id = "device_tracker.restored_client"
+    er.async_get(hass).async_get_or_create(
+        "device_tracker", DOMAIN, mac, config_entry=entry, suggested_object_id="restored_client"
+    )
+    mock_restore_cache(hass, [State(entity_id, "home")])
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _state(hass, entity_id) == "home"
+    assert "signal" in SrmTracker._unrecorded_attributes
+    freezer.tick(timedelta(seconds=DEFAULT_CONSIDER_HOME.seconds + 1))
+    await _refresh(hass)
+    assert _state(hass, entity_id) == "not_home"

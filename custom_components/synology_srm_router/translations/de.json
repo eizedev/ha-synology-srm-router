@@ -131,7 +131,8 @@
       "already_configured": "Dieses Gerät ist schon eingerichtet.",
       "reauth_successful": "Erneut angemeldet.",
       "reconfigure_successful": "Verbindung geändert.",
-      "wrong_device": "Das ist ein anderes Gerät als das eingerichtete."
+      "wrong_device": "Das ist ein anderes Gerät als das eingerichtete.",
+      "unknown": "Unerwarteter Fehler, siehe Log."
     }
   },
   "options": {
@@ -150,7 +151,7 @@
           "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
           "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
-          "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s.",
+          "slow_interval": "Systeminformationen (Firmware, letzter Start) und auf Routern DHCP. Standard 300 s.",
           "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene.",
           "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s."
         },
@@ -175,7 +176,7 @@
         "data_description": {
           "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s.",
           "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
-          "slow_interval": "Systeminformationen (Firmware, Laufzeit). Standard 300 s."
+          "slow_interval": "Systeminformationen (Firmware, letzter Start) und auf Routern DHCP. Standard 300 s."
         }
       },
       "trackers": {

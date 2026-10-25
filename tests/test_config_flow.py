@@ -161,6 +161,9 @@ async def test_reauth_with_a_new_password(hass: HomeAssistant) -> None:
     entry.add_to_hass(hass)
     result = await entry.start_reauth_flow(hass)
     assert result["step_id"] == "reauth_confirm"
+    # The stored account is suggested, so retyping only the password does not try "admin".
+    username = next(key for key in result["data_schema"].schema if key == "username")
+    assert username.description == {"suggested_value": "homeassistant"}
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"username": "homeassistant", "password": "new"}
     )

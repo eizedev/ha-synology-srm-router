@@ -35,7 +35,7 @@ shows the new fingerprint.
 
 ## Account
 
-Use an SRM **administrator** account (SRM's Web API answers nothing else) without two-factor
+Use an SRM **administrator** account (only those are tested) without two-factor
 authentication; Home Assistant cannot enter codes unattended. A dedicated account for Home
 Assistant is best: it shows up on its own in SRM's logs, and you can change its password without
 touching anything else.
@@ -43,7 +43,8 @@ touching anything else.
 SRM keeps one session per account and session name; a second login under the same name ends the
 first. Each Home Assistant installation therefore logs in under a name of its own
 (`HomeAssistant-` and the start of its instance ID), so a test and a production instance can share
-the account.
+the account. A copy of the same installation, such as a restored backup or a cloned configuration
+directory, has the same instance ID: running both at once needs a second account.
 
 ## Device trackers
 
@@ -113,8 +114,9 @@ device_tracker:
 ```
 
 and restart Home Assistant. Its entries in `known_devices.yaml` can go as well. If you keep both
-for a while, give this integration an SRM account of its own: the built-in tracker logs in every
-12 seconds and never logs out, and two programs with one account can end each other's sessions.
+for a while, give this integration an SRM account of its own: the built-in tracker polls every
+12 seconds (the default of YAML device trackers), and two programs that log in with one account
+under the same session name end each other's sessions.
 
 ## Changing the connection or signing in again
 
