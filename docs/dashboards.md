@@ -114,7 +114,7 @@ Statistics start with the first full hour after a sensor was added.
 
 ## A complete dashboard
 
-![The example dashboard: router, access point, by radio, who is where](assets/screenshots/dashboard.png)
+![The example dashboard's first view: router, access point, by radio, who is where](assets/screenshots/dashboard.png)
 
 Router and access point with gauges, tiles and a traffic graph, the client lists above, and views for DHCP and the firewall.
 [Download it](assets/example-dashboard.yaml) or copy it from here; the comment at the top says

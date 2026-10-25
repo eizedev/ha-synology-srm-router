@@ -9,9 +9,10 @@
   <img alt="Synology SRM Router for Home Assistant" src="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/assets/header-light.svg" height="72">
 </picture>
 
-Shows your **Synology routers and access points** (SRM) in Home Assistant: load, memory, traffic,
-WAN state and addresses, and device trackers that tell which router or access point, and which
-radio, a client is connected to. Read only: it never changes a setting.
+Shows your **Synology routers and access points** (SRM) in Home Assistant: load, traffic, WAN,
+clients per Wi-Fi band, DHCP, firewall rules with their hits, USB storage, and device trackers that
+tell which router or access point, and which radio, a client is connected to. Read only: it never
+changes a setting.
 
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=eizedev&repository=ha-synology-srm-router&category=integration)
 [![Open your Home Assistant instance and start setting up the integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=synology_srm_router)
@@ -22,11 +23,16 @@ radio, a client is connected to. Read only: it never changes a setting.
 
 ![A dashboard with router, access point, Wi-Fi clients by radio and who is where](docs/assets/screenshots/dashboard.png)
 
+![The firewall view: every rule with the devices it is about, its ports and hits](docs/assets/screenshots/dashboard-firewall.png)
+
 ## What you get
 
-- One device per router or access point: CPU load, memory, download and upload rate, clients,
-  last boot, USB storage; on routers WAN connection, public IPv4 and IPv6 address, whether the
-  router is behind NAT, DHCP leases and pool usage, and hits per firewall rule.
+- One device per router or access point: CPU load, memory, download and upload rate, clients
+  (all, per Wi-Fi band and wired), last boot, USB storage.
+- On routers: WAN connection, public IPv4 and IPv6 address, whether the router is behind NAT, DHCP
+  leases, reservations and pool usage, and the firewall rules with their hits. Lists behind the
+  counts show who holds an address, which devices are unknown, and what each firewall rule is
+  about, named after your devices; a hits sensor per rule on request.
 - Device trackers that know which router or access point, connection and radio each client
   uses, named as in SRM.
 - Certificate pinning, and nothing but reading: the integration never changes a setting.
@@ -47,7 +53,7 @@ Assistant 2026.10 or newer. Details: [Installation](https://ha-synology-srm-rout
 
 - [Configuration](https://ha-synology-srm-router.eize.dev/configuration/): certificate, account, device trackers, options
 - [Entities](https://ha-synology-srm-router.eize.dev/entities/)
-- [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by device and by radio
+- [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by radio, DHCP leases and unknown devices, firewall rules
 - [Ideas and automations](https://ha-synology-srm-router.eize.dev/ideas/): presence, internet down, offline devices, data per day
 - [Troubleshooting](https://ha-synology-srm-router.eize.dev/troubleshooting/): messages, repairs, diagnostics, removal
 
