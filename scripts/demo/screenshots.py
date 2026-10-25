@@ -166,6 +166,24 @@ async def tour(page: Page) -> None:
             }}""",
             HISTORY,
         )
+        # The sensors behind the DHCP and firewall views are disabled by default; the example
+        # dashboard says to enable them, so the tour does the same.
+        await page.evaluate(
+            f"""async (ids) => {{
+                let entry;
+                for (const entity_id of ids) {{
+                    const item = await {hass}.callWS({{type: 'config/entity_registry/update',
+                        entity_id, disabled_by: null}});
+                    entry = item.entity_entry.config_entry_id;
+                }}
+                await {hass}.callApi('POST', `config/config_entries/entry/${{entry}}/reload`);
+            }}""",
+            [
+                f"sensor.rt2600ac_{key}"
+                for key in ("dhcp_leases", "dhcp_reservations", "firewall_rules")
+            ],
+        )
+        await page.wait_for_timeout(5000)
         await page.evaluate(
             f"""async (config) => {{
                 await {hass}.callWS({{type: 'lovelace/dashboards/create', url_path: 'srm-network',
