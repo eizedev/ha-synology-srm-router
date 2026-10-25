@@ -1,4 +1,5 @@
-{% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+{% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+   | selectattr('attributes.leases', 'defined') | first %}
 {% set rows = (s.attributes.leases if s else []) | selectattr('unknown') | list %}
 {% if rows %}
 Devices with an address but neither a reservation nor a name given in SRM:

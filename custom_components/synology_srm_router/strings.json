@@ -127,7 +127,7 @@
       "not_admin": "The account is not an administrator. SRM's Web API only answers administrators.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",
       "unknown": "Unexpected error, see the log.",
-      "session_ended": "SRM ended the session right after the login, usually because the same account logged in elsewhere under the same name. Try again."
+      "session_ended": "SRM refused the session right after the login. This happens now and then; try again."
     },
     "abort": {
       "already_configured": "This device is already set up.",

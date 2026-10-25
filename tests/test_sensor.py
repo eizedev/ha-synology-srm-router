@@ -20,6 +20,7 @@ from aiosynologysrm import (
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_util
 from homeassistant.util.yaml import parse_yaml
 
@@ -363,3 +364,22 @@ async def test_clients_by_band_and_cable(hass: HomeAssistant) -> None:
             counts["wifi_clients_2_4ghz"] + counts["wifi_clients_5ghz"] + counts["wired_clients"]
         )
         assert parts == counts["clients"], kind
+
+
+async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -> None:
+    await _setup(hass, make_entry(), make_entry("ap"))
+    cards = Path(__file__).parents[1] / "docs" / "assets" / "cards"
+    expected = {
+        "leases.jinja": "addresses handed out",
+        "unknown.jinja": "in SRM",
+        "reservations.jinja": "reservations",
+        "firewall.jinja": "| Rule | From → to |",
+        "firewall-list.jinja": " hits",
+    }
+    assert {f.name for f in cards.glob("*.jinja")} == set(expected)
+    for name, text in expected.items():
+        rendered = Template((cards / name).read_text(encoding="utf-8"), hass).async_render(
+            parse_result=False
+        )
+        assert text in rendered, name
+        assert "None" not in rendered, name

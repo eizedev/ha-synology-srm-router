@@ -7,8 +7,27 @@ from typing import Any
 
 from aiosynologysrm import FirewallRule, helpers
 
-# A rule is identified by what it does, not by its position (``ui_id``) or switch.
-RULE_IDENTITY_IGNORE = frozenset({"ui_id", "enabled"})
+# A rule is identified by what it does, not by its position (``ui_id``) or switch, and only by
+# fields this integration knows: a field a firmware update adds must not give every rule a new key.
+RULE_IDENTITY = (
+    "name",
+    "action",
+    "chain",
+    "ip_version",
+    "protocol",
+    "src_ip_type",
+    "src_ip_value",
+    "src_port_type",
+    "src_port_value",
+    "dst_ip_type",
+    "dst_ip_value",
+    "dst_port_type",
+    "dst_port_value",
+    "in_interface_type",
+    "in_interface_value",
+    "out_interface_type",
+    "out_interface_value",
+)
 
 
 def rule_keys(rules: Iterable[FirewallRule]) -> dict[str, FirewallRule]:
@@ -18,7 +37,7 @@ def rule_keys(rules: Iterable[FirewallRule]) -> dict[str, FirewallRule]:
     """
     keyed: dict[str, FirewallRule] = {}
     for rule in rules:
-        digest = helpers.config_hash([rule.raw], ignore=RULE_IDENTITY_IGNORE)[:12]
+        digest = helpers.config_hash([{k: rule.raw.get(k) for k in RULE_IDENTITY}])[:12]
         key, number = digest, 1
         while key in keyed:
             number += 1

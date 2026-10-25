@@ -40,11 +40,10 @@ authentication; Home Assistant cannot enter codes unattended. A dedicated accoun
 Assistant is best: it shows up on its own in SRM's logs, and you can change its password without
 touching anything else.
 
-SRM keeps one session per account and session name; a second login under the same name ends the
-first. Each Home Assistant installation therefore logs in under a name of its own
-(`HomeAssistant-` and the start of its instance ID), so a test and a production instance can share
-the account. A copy of the same installation, such as a restored backup or a cloned configuration
-directory, has the same instance ID: running both at once needs a second account.
+Each Home Assistant installation logs in under a session name of its own (`HomeAssistant-` and the
+start of its instance ID), so its sessions can be told apart. Several programs or installations can
+use one account side by side. Now and then SRM refuses a session right after the login (error 119,
+measured on an MR2200ac); the integration then logs in again.
 
 ## Device trackers
 
@@ -101,8 +100,8 @@ host name or address (a PlayStation, a printer, ...) offer themselves under *Dis
 
 Each update reads several values from the device; SRM devices answer slowly (about half a second
 per call on an RT2600ac), so intervals much below the defaults mostly add load. Trackers of
-clients you no longer choose are removed (with *Track all clients*, none are removed); a client's
-device can also be deleted by hand.
+clients you no longer choose are removed. With *Track all clients* none are removed, so devices
+with private (rotating) MAC addresses collect trackers over time; delete those by hand.
 
 ## Coming from the built-in Synology SRM integration
 
@@ -115,9 +114,8 @@ device_tracker:
 ```
 
 and restart Home Assistant. Its entries in `known_devices.yaml` can go as well. If you keep both
-for a while, give this integration an SRM account of its own: the built-in tracker polls every
-12 seconds (the default of YAML device trackers), and two programs that log in with one account
-under the same session name end each other's sessions.
+for a while, both can use the same account; the built-in tracker asks the router every 12 seconds
+(the default of YAML device trackers), which is load you can save once this integration runs.
 
 ## Changing the connection or signing in again
 

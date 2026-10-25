@@ -1,5 +1,6 @@
 {% macro short(v) %}{% if v and ':' in v and v | length > 18 %}…{{ v.split('::')[-1] if '::' in v else v[-12:] }}{% else %}{{ (v or 'any') | truncate(28) }}{% endif %}{% endmacro %}
-{% set s = states.sensor | selectattr('attributes.rules', 'defined') | first %}
+{% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+   | selectattr('attributes.rules', 'defined') | first %}
 {% set rows = s.attributes.rules if s else [] %}
 {% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
 | Rule | From → to | Ports | Hits |

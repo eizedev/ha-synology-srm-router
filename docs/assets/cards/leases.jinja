@@ -1,9 +1,10 @@
-{% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+{% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+   | selectattr('attributes.leases', 'defined') | first %}
 {% set rows = s.attributes.leases if s else [] %}
 **{{ rows | count }} addresses handed out** · {{ rows | selectattr('online') | list | count }} online · {{ rows | selectattr('reserved') | list | count }} reserved
 
 | | Device | IP | |
 |:-:|---|---|---|
 {% for r in rows -%}
-| {{ '●' if r.online else '○' }} | {{ r.name or r.mac }} | {{ r.ip }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ (r.expires_in_min // 60) ~ ' h' if r.expires_in_min is not none else '') }} |
+| {{ '●' if r.online else '○' }} | {{ r.name or r.mac }} | {{ r.ip }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ ((r.expires_in_min // 60) ~ ' h' if r.expires_in_min >= 60 else r.expires_in_min ~ ' min') if r.expires_in_min is not none else '') }} |
 {% endfor %}
