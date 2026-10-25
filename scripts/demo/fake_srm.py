@@ -38,7 +38,34 @@ APIS: dict[tuple[str, str], tuple[str, int, int]] = {
     ("SYNO.Core.Network.DHCPServer.ClientList", "list"): ("dhcp_clients", 1, 2),
     ("SYNO.Core.Network.DHCPServer.Reservation", "get"): ("dhcp_reservations", 1, 2),
     ("SYNO.Wifi.Device", "get"): ("wifi_devices", 1, 1),
+    ("SYNO.Core.Network.DHCPServer", "get"): ("dhcp_servers", 1, 1),
+    ("SYNO.Core.Security.Firewall.Rules", "get"): ("firewall_rules", 1, 2),
+    ("SYNO.Core.Security.Firewall.Rules.HitCount", "get"): ("firewall_hit_counts", 1, 1),
+    ("SYNO.Core.Storage.Volume", "list"): ("usb_volumes", 1, 1),
 }
+
+# Readable firewall rule names, in the order of the router's recorded rules.
+RULE_NAMES = [
+    "LAN to LAN",
+    "LAN to LAN",
+    "Ping from home country",
+    "Web server",
+    "Game server",
+    "Router services",
+    "SRM web",
+    "SRM web (HTTPS)",
+    "Media server",
+    "NAS",
+    "NAS",
+    "Game console",
+    "Game console",
+    "Smart home",
+    "Block TV telemetry",
+    "Block TV telemetry",
+    "Block TV telemetry",
+    "Block TV telemetry",
+]
+STARTED = time.time()
 
 # Readable names by SRM's device type; numbered when a type repeats.
 NAMES: dict[str, list[str]] = {
@@ -175,6 +202,11 @@ def liven(key: tuple[str, str], data: Any, travellers: frozenset[str]) -> Any:
             for d in data["device_list"]
             if not (away and d["mac_address"] in travellers)
         ]
+    if key == ("SYNO.Core.Security.Firewall.Rules.HitCount", "get"):
+        minutes = (time.time() - STARTED) / 60
+        for item in data:  # counters that matched before keep matching
+            if item["hit_count"]:
+                item["hit_count"] += int(minutes * (1 + item["ui_id"] % 7) * 3)
     if key == ("SYNO.Core.Network.NSM.Device", "get") and away:
         for device in data["devices"]:
             if device["mac"] in travellers:
@@ -189,6 +221,9 @@ def device_app(folder: Path, names: dict[str, str]) -> web.Application:
         for key, (name, _, _) in APIS.items()
     }
     answers[("SYNO.Core.System", "info")]["serial"] = SERIALS[folder.name]
+    rules = answers[("SYNO.Core.Security.Firewall.Rules", "get")]["rules"]
+    for rule, name in zip(rules, RULE_NAMES, strict=False):
+        rule["name"] = name
     wifi = answers[("SYNO.Wifi.Device", "get")]["device_list"]
     travellers = frozenset(d["mac_address"] for d in wifi[:TRAVELLERS])
     catalog = {

@@ -45,6 +45,8 @@ The radio names are SRM's: `2.4G`, `5G`, and `5G-2` for a second 5 GHz radio.
 
 ## Who has an address
 
+![The DHCP view of the example dashboard: every lease, online first, reserved or unknown](assets/screenshots/dashboard-dhcp.png)
+
 Every IPv4 lease of the router, online devices first: reserved, unknown (neither reserved nor
 named in SRM), or when the lease runs out. The template finds the router's *DHCP leases* sensor
 by itself.
@@ -72,6 +74,8 @@ the integration that is every reservation of a device that is offline; give it a
 ```
 
 ## Firewall rules
+
+![The firewall view of the example dashboard: rules in SRM's order with direction, ports and hits](assets/screenshots/dashboard-firewall.png)
 
 The rule table in SRM's order: what a rule allows or blocks, from where to where, and how often
 it matched. *never hit* and *duplicate* point to rules that do nothing.
