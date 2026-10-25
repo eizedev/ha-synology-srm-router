@@ -105,8 +105,12 @@ entities:
 days_to_show: 1
 period: hour
 stat_types: [change]
-chart_type: bar
+chart_type: line
 ```
+
+*change* is the number of hits per hour. Prefer lines to bars here: with several rules, bars of one
+hour stand side by side and spread over the time axis, which reads like hits at other times.
+Statistics start with the first full hour after a sensor was added.
 
 ## A complete dashboard
 
