@@ -119,6 +119,7 @@ async def tour(page: Page) -> None:
         await shoot(page, "setup-client-list")
         await page.keyboard.press("Escape")
         await page.locator("dialog-data-entry-flow ha-form ha-switch").first.click()  # track all
+        await page.locator("dialog-data-entry-flow ha-form ha-switch").last.click()  # rule sensors
         await dialog_button(page, "Finish")
         await dialog_button(page, "Skip and finish")  # name and area
 
@@ -178,6 +179,9 @@ async def tour(page: Page) -> None:
         await page.set_viewport_size({"width": 1700, "height": 1100})  # all three columns
         await page.goto(f"{BASE}/srm-network/0")
         await shoot(page, "dashboard")
+        for view in ("dhcp", "firewall"):
+            await page.goto(f"{BASE}/srm-network/{view}")
+            await shoot(page, f"dashboard-{view}")
 
 
 if __name__ == "__main__":

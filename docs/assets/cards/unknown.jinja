@@ -1,0 +1,12 @@
+{% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+{% set rows = (s.attributes.leases if s else []) | selectattr('unknown') | list %}
+{% if rows %}
+Devices with an address but neither a reservation nor a name given in SRM:
+
+{% for r in rows -%}
+- {{ '●' if r.online else '○' }} **{{ r.name or 'no name' }}** · {{ r.ip }} · `{{ r.mac }}`
+{% endfor %}
+Give the ones you know a name in SRM; the rest are worth a look.
+{% else %}
+Every device with an address is reserved or named in SRM.
+{% endif %}

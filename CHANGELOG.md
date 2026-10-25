@@ -17,16 +17,19 @@ All notable changes to this project are documented here. The format follows
   when the device a client was on cannot be read.
 - A repair when SRM's auto block locks out Home Assistant, also during setup, with a new login
   attempt every 15 minutes; it goes away with the entry.
-- On routers: DHCP leases and reservations, the usage of each network's DHCP pool, the number of
-  firewall rules with a hash that changes with every rule change, and a hits sensor per firewall
-  rule; on every device: used and free space per USB volume.
+- On routers: DHCP leases and reservations, the usage of each network's DHCP pool, and the number
+  of firewall rules with a hash that changes with every rule change; the lists behind them as
+  attributes (who holds an address and whether it is unknown, reservations not seen for 30 days,
+  the rule table with hits and duplicates), with Markdown card templates and dashboard views. A
+  hits sensor per firewall rule on request (option *Sensor per firewall rule*). On every device:
+  used and free space per USB volume.
 - Diagnostics without addresses, names or secrets.
 - English and German.
 - Documentation website at https://ha-synology-srm-router.eize.dev/, with one page per repair
   (linked from the repair) and Markdown card templates for dashboards; screenshots and an example
   dashboard to download; a page of ideas and tested example automations.
-- The tracker choice offers the clients that matter first (online, named in SRM, with a DHCP lease
-  or reservation, or seen in the last 30 days); all known clients on request. "Track all" covers
+- The tracker choice offers the clients that matter first (online, named in SRM, with an IPv4 DHCP
+  lease or reservation, or seen in the last 30 days); all known clients on request. "Track all" covers
   exactly those, and new clients as they appear.
 - Trackers carry the name given in SRM, also for clients on an access point, and count a client
   as away only after a configurable time (3 minutes by default), also right after a restart of

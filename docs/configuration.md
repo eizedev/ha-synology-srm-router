@@ -59,8 +59,8 @@ that wants it, routers first.
 ![An access point next to a router: finish, or choose trackers for it](assets/screenshots/setup-access-point.png){ width="560" }
 
 The list to choose from shows the clients that matter: those online now (●), those with a name
-given in SRM, those with a DHCP lease or reservation, and those Home Assistant saw online in the
-last 30 days (with the date, ○). SRM keeps every client it ever saw, so *Show all known clients*
+given in SRM, those with an IPv4 DHCP lease or reservation, and those Home Assistant saw online in
+the last 30 days (with the date, ○). SRM keeps every client it ever saw, so *Show all known clients*
 lists the rest as well. *Track all clients* covers exactly the clients that matter, and new ones as
 they appear; one gone for good does not get a tracker.
 
@@ -95,6 +95,7 @@ host name or address (a PlayStation, a printer, ...) offer themselves under *Dis
 | Track all clients | off | Trackers for the clients that matter, and new ones as they appear. |
 | Clients to track | none | These clients get a tracker, whether or not they matter. |
 | Time until away | 180 s | How long a client must be missing before its tracker says away. |
+| Sensor per firewall rule | off | Routers only: a sensor per rule that counts its hits, for graphs and automations. Also offered when you add a router. The rule table (see [Dashboards](dashboards.md#firewall-rules)) shows the hits without it. Switching it off removes these sensors. |
 | Fast polling interval | 30 s | Clients, Wi-Fi, load and WAN. |
 | Slow polling interval | 300 s | System information (firmware, last boot) and USB storage; on routers also DHCP and the firewall. |
 

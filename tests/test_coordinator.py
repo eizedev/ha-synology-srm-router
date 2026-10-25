@@ -254,6 +254,9 @@ def test_client_names_relevance_and_choice() -> None:
     clients = combine([router, None, access_point], dhcp, seen)
     assert clients["aa:bb:cc:dd:ee:03"].ip == "192.0.2.3"  # filled in from the DHCP server
     assert clients["aa:bb:cc:dd:ee:04"].ip6 == "2001:db8::4"
+    assert clients["aa:bb:cc:dd:ee:03"].dhcp
+    # Only a DHCPv6 lease, found through the MAC in its DUID: that MAC can be an old one.
+    assert not clients["aa:bb:cc:dd:ee:04"].dhcp
     assert clients["aa:bb:cc:dd:ee:01"].name == "Living room"  # the name given in SRM wins
     assert clients["aa:bb:cc:dd:ee:01"].ip == "192.0.2.9"
     assert clients["aa:bb:cc:dd:ee:01"].ip6 == "2001:db8::9"

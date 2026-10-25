@@ -14,6 +14,7 @@ from aiosynologysrm import (
     DhcpReservations,
     DhcpServers,
     ExternalIp,
+    FirewallRule,
     FirewallRules,
     NetworkDevices,
     SrmAuthenticationError,
@@ -57,6 +58,7 @@ from .const import (
     RECENTLY_SEEN,
     UPDATE_TIMEOUT,
 )
+from .firewall import rule_keys
 
 SIGNAL_LOCATIONS = f"{DOMAIN}_locations"
 STORE_VERSION = 1
@@ -95,8 +97,13 @@ class SlowData:
     dhcp_servers: DhcpServers | None = None
     firewall: FirewallRules | None = None
     hits: dict[int, int] | None = None
-    """Packets per firewall rule (``ui_id``), since SRM last built its firewall."""
+    """Packets per firewall rule (``ui_id``), since SRM last built its firewall.
+
+    Not kept when its read fails: a counter must not be matched against a newer rule list.
+    """
     usb: StorageVolumes | None = None
+    rules: dict[str, FirewallRule] = field(default_factory=dict)
+    """Firewall rules by a key from their content (see firewall.rule_keys), computed once."""
 
 
 # Optional reads of the slow coordinator: SlowData field, client getter, routers only.
@@ -315,6 +322,7 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
                 boot = previous
         self._update_device(system)
         optional["dhcp"] = dhcp_addresses(optional["leases"], optional["reservations"])
+        optional["rules"] = rule_keys(optional["firewall"].rules if optional["firewall"] else ())
         return SlowData(system=system, boot_time=boot, **optional)
 
     async def _optional(self) -> dict[str, Any]:
@@ -331,7 +339,9 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         if "hits" in results:
             results["hits"] = helpers.hits_by_rule(results["hits"])
         return {
-            field: results[field] if field in results else getattr(self.data, field, None)
+            field: results.get(field)
+            if field in results or field == "hits"
+            else getattr(self.data, field, None)
             for field, _, _ in SLOW_READS
         }
 

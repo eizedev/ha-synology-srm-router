@@ -1,0 +1,16 @@
+{% set s = states.sensor | selectattr('attributes.reservations', 'defined') | first %}
+{% set rows = s.attributes.reservations if s else [] %}
+{% set stale = rows | selectattr('stale') | list %}
+**{{ rows | count }} reservations** · {{ rows | selectattr('online') | list | count }} of their devices online
+
+{% if stale -%}
+Not online, and not seen by Home Assistant in the last 30 days: candidates to remove.
+
+| Device | IP | Last seen |
+|---|---|---|
+{% for r in stale -%}
+| {{ r.name or r.mac }} | {{ r.ip }} | {{ r.last_seen or 'not since Home Assistant tracks' }} |
+{% endfor %}
+{%- else -%}
+Every reserved device was seen in the last 30 days.
+{%- endif %}
