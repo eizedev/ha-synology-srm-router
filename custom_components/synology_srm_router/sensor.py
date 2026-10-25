@@ -34,7 +34,7 @@ from .coordinator import (
     get_hub,
 )
 from .entity import SrmEntity
-from .firewall import rule_label, rule_rows
+from .firewall import address_key, rule_label, rule_rows
 
 # Coordinators poll; entities never call the router themselves.
 PARALLEL_UPDATES = 0
@@ -181,8 +181,24 @@ def _firewall_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, Any]:
     return {
         # Changes whenever a rule is added, removed, edited, switched or moved.
         "config_hash": helpers.config_hash(rule.raw for rule in data.firewall.rules),
-        "rules": rule_rows(data.rules, data.hits),
+        "rules": rule_rows(data.rules, data.hits, _address_names(hass, data)),
     }
+
+
+def _address_names(hass: HomeAssistant, data: SlowData) -> dict[str, str]:
+    """Client names by address, from the client lists and the router's DHCP data."""
+    hub = get_hub(hass)
+    names: dict[str, str] = {}
+    for mac, address in data.dhcp.items():
+        if name := hub.name(mac):
+            for value in (address.ip, address.ip6):
+                if value:
+                    names[address_key(value)] = name
+    for client in hub.clients.values():  # the client lists win over DHCP
+        for value in (client.ip, client.ip6):
+            if value and client.name:
+                names[address_key(value)] = client.name
+    return names
 
 
 def _reserved_macs(data: SlowData) -> set[str]:

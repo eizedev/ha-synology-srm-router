@@ -26,7 +26,12 @@ from homeassistant.util.yaml import parse_yaml
 
 from custom_components.synology_srm_router.const import RECENTLY_SEEN
 from custom_components.synology_srm_router.coordinator import SlowData, get_hub
-from custom_components.synology_srm_router.firewall import rule_keys, rule_label, rule_rows
+from custom_components.synology_srm_router.firewall import (
+    address_key,
+    rule_keys,
+    rule_label,
+    rule_rows,
+)
 from custom_components.synology_srm_router.sensor import (
     USB_SENSORS,
     SrmDhcpPoolSensor,
@@ -383,3 +388,24 @@ async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -
         )
         assert text in rendered, name
         assert "None" not in rendered, name
+
+
+def test_rule_addresses_get_client_names() -> None:
+    rules = FirewallRules.from_api(
+        {
+            "rules": [
+                {
+                    "ui_id": 1,
+                    "src_ip_value": "192.0.2.5, 192.0.2.6",
+                    "dst_ip_value": "2001:DB8:0:0::AB6C",
+                },
+                {"ui_id": 2, "src_ip_value": "DE"},
+            ]
+        }
+    )
+    names = {address_key("192.0.2.5"): "TV", address_key("2001:db8::ab6c"): "NAS"}
+    first, second = rule_rows(rule_keys(rules.rules), None, names)
+    assert first["source_label"] == "TV (192.0.2.5), 192.0.2.6"
+    assert first["source_name"] == "TV, 192.0.2.6"
+    assert first["destination_name"] == "NAS"  # the same address, spelled differently
+    assert (second["source_label"], second["destination_label"]) == ("DE", None)
