@@ -1,3 +1,5 @@
+{#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+{%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
 {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
    | selectattr('attributes.leases', 'defined') | first %}
 {% set rows = s.attributes.leases if s else [] %}
@@ -6,5 +8,5 @@
 | | Device | IP | |
 |:-:|---|---|---|
 {% for r in rows -%}
-| {{ '●' if r.online else '○' }} | {{ r.name or r.mac }} | {{ r.ip }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ ((r.expires_in_min // 60) ~ ' h' if r.expires_in_min >= 60 else r.expires_in_min ~ ' min') if r.expires_in_min is not none else '') }} |
+| {{ '●' if r.online else '○' }} | {{ md(r.name or r.mac) }} | {{ md(r.ip) }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ ((r.expires_in_min // 60) ~ ' h' if r.expires_in_min >= 60 else r.expires_in_min ~ ' min') if r.expires_in_min is not none else '') }} |
 {% endfor %}

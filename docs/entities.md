@@ -28,15 +28,18 @@ Entities whose value the device's firmware does not offer are not created.
 | WAN IPv4 address | the WAN interface's own address; diagnostic, disabled by default |
 | WAN address type | public, private (another router in front) or carrier-grade NAT; diagnostic |
 | Behind NAT | on when nothing on the internet can reach the router over IPv4 directly (port forwards will not work over IPv4); diagnostic |
-| DHCP leases | IPv4 leases SRM lists; attribute `leases`: one row per lease (see below) |
-| DHCP reservations | fixed IPv4 addresses set up in SRM; diagnostic; attribute `reservations` (see below) |
+| DHCP leases | IPv4 leases SRM lists; attribute `leases`: one row per lease (see below); disabled by default |
+| DHCP reservations | fixed IPv4 addresses set up in SRM; diagnostic; attribute `reservations` (see below); disabled by default |
 | DHCP pool usage LAN, guest network | share of the pool's IPv4 addresses that are leased or reserved, per network; attributes `begin`, `end`. The names LAN and guest network are those of SRM's usual interfaces (`lbr0`, `gbr0`, seen on an RT2600ac and an MR2200ac); other pools are named after their interface. A switched-off DHCP server gets no pool sensor; one that is switched off later leaves its sensor unavailable |
-| Firewall rules | how many rules SRM has; diagnostic. `config_hash` changes whenever a rule is added, removed, edited, switched on or off, or moved; `rules`: the rule table (see below) |
+| Firewall rules | how many rules SRM has; diagnostic. `config_hash` changes whenever a rule is added, removed, edited, switched on or off, or moved; `rules`: the rule table (see below); disabled by default |
 | Firewall hits *rule* | only with the option *Sensor per firewall rule*: packets a rule matched since SRM last built its firewall (after a change or a restart the counter starts again; statistics handle that). Unknown while the counters cannot be read. Switched-off rules start disabled |
 
 The lists behind the counts are kept out of the recorder (history and statistics keep the
 numbers only) and change every slow update (5 minutes by default). Like every state, they are
-visible to all users of your Home Assistant, not only to administrators:
+visible to all users of your Home Assistant, not only to administrators, and to anything that
+reads states (the API, exports to other systems). That is why *DHCP leases*, *DHCP reservations*
+and *Firewall rules* are disabled by default: enable them in the entity settings to use the
+lists.
 
 | Attribute | One row per | Fields |
 | --- | --- | --- |

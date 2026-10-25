@@ -49,7 +49,10 @@ The radio names are SRM's: `2.4G`, `5G`, and `5G-2` for a second 5 GHz radio.
 
 Every IPv4 lease of the router, online devices first: reserved, unknown (neither reserved nor
 named in SRM), or when the lease runs out. The template finds the router's *DHCP leases* sensor
-by itself.
+by itself; enable that sensor first (it is disabled by default, see [Entities](entities.md)). The
+DHCP and firewall templates work the same way with *DHCP reservations* and *Firewall rules*.
+Names come from the devices themselves, so the templates escape what Markdown would read as a
+table, a link or an image.
 
 ```jinja
 --8<-- "docs/assets/cards/leases.jinja"

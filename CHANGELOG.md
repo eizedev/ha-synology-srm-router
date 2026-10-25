@@ -9,7 +9,8 @@ All notable changes to this project are documented here. The format follows
 ### Added
 
 - First version: one device per Synology router or access point (SRM), configured in the UI with
-  certificate pinning, reauthentication and reconfiguration.
+  certificate pinning, reauthentication and reconfiguration. Without a checked certificate the
+  account step warns before the password is entered; adding a pinned device again keeps its pin.
 - Sensors for CPU load, memory, download and upload rate, clients (all, per Wi-Fi band and wired)
   and last boot; on routers WAN connection, public IPv4 and IPv6 address, WAN address type and
   whether the router is behind NAT.
@@ -21,10 +22,12 @@ All notable changes to this project are documented here. The format follows
 - On routers: DHCP leases and reservations, the usage of each network's DHCP pool, and the number
   of firewall rules with a hash that changes with every rule change; the lists behind them as
   attributes (who holds an address and whether it is unknown, reservations not seen for 30 days,
-  the rule table with hits and duplicates), with Markdown card templates and dashboard views. A
+  the rule table with hits and duplicates) on sensors that are disabled by default, with Markdown
+  card templates that escape names from the devices, and dashboard views. A
   hits sensor per firewall rule on request (option *Sensor per firewall rule*). On every device:
   used and free space per USB volume.
-- Diagnostics without addresses, names or secrets.
+- Diagnostics without addresses, names or secrets; the docs list what is stored and who can see
+  it.
 - English and German.
 - Documentation website at https://ha-synology-srm-router.eize.dev/, with one page per repair
   (linked from the repair) and Markdown card templates for dashboards; screenshots and an example

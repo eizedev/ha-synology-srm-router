@@ -101,7 +101,7 @@ async def test_full_flow_pins_the_certificate(hass: HomeAssistant) -> None:
 
 async def test_plain_http_skips_the_certificate(hass: HomeAssistant) -> None:
     result = await _start(hass, {**CONNECTION, CONF_USE_HTTPS: False, "port": 8000})
-    assert result["step_id"] == "credentials"
+    assert result["step_id"] == "credentials_unprotected"  # the same form, with a warning
     result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_TRACK_ALL: True}
@@ -284,6 +284,18 @@ async def test_a_device_without_serial_is_refused(hass: HomeAssistant) -> None:
     with patch.object(FakeClient, "get_system_info", no_serial):
         result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
     assert result["errors"] == {"base": "no_serial"}
+
+
+async def test_adding_a_pinned_device_again_unprotected_keeps_its_pin(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    pin = entry.data[CONF_FINGERPRINT]
+    result = await _start(hass, {**CONNECTION, CONF_USE_HTTPS: False, "port": 8000})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert entry.data[CONF_FINGERPRINT] == pin  # not replaced by "no check"
+    assert entry.data[CONF_USE_HTTPS] is True
 
 
 async def test_the_same_device_at_a_new_address_updates_the_entry(hass: HomeAssistant) -> None:

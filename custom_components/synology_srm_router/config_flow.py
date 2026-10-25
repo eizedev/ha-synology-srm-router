@@ -263,6 +263,17 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = _error_key(err)
             else:
                 await self.async_set_unique_id(self._probe.serial)
+                existing = self.hass.config_entries.async_entry_for_domain_unique_id(
+                    DOMAIN, self._probe.serial
+                )
+                if (
+                    existing is not None
+                    and existing.data.get(CONF_FINGERPRINT)
+                    and not data.get(CONF_FINGERPRINT)
+                ):
+                    # Adding it again without a checked certificate must not remove the pin of
+                    # the existing entry; changing that is what "Reconfigure" is for.
+                    return self.async_abort(reason="already_configured")
                 # The same device at a new address: take the address that was just verified.
                 self._abort_if_unique_id_configured(
                     updates={k: data[k] for k in (CONF_HOST, CONF_PORT, CONF_USE_HTTPS)}
@@ -277,12 +288,20 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                     return await self.async_step_access_point()
                 return await self.async_step_clients()
         keep = {CONF_USERNAME: user_input[CONF_USERNAME]} if user_input else {}
+        # Without a pinned certificate the same form says what that means for the password.
+        protected = bool(self._data.get(CONF_FINGERPRINT))
         return self.async_show_form(
-            step_id="credentials",
+            step_id="credentials" if protected else "credentials_unprotected",
             data_schema=self.add_suggested_values_to_schema(probatio.Schema(CREDENTIALS), keep),
             errors=errors,
             description_placeholders={"docs": DOCS_ACCOUNT},
         )
+
+    async def async_step_credentials_unprotected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for the account when the connection is not protected; the same as credentials."""
+        return await self.async_step_credentials(user_input)
 
     async def async_step_clients(
         self, user_input: dict[str, Any] | None = None

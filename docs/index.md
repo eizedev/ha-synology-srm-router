@@ -37,7 +37,7 @@ hide:
   another router or the provider's carrier-grade NAT; DHCP leases, reservations and how full
   each network's pool is; the firewall's rules with their hits. The lists behind these counts
   show who holds an address, which devices are unknown, and what each rule is about, named after
-  your devices; a sensor per rule that counts its hits is an option.
+  your devices, on sensors you switch on; a sensor per rule that counts its hits is an option.
 - Device trackers for the clients you choose (or all that matter). Each says whether the client is
   home and which device, connection and radio it uses. Clients on a standalone access point are
   found there, even though the router itself reports them as wired; names are the ones given in

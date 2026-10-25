@@ -7,7 +7,7 @@ import dataclasses
 import json
 from pathlib import Path
 from typing import Any, ClassVar
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from aiosynologysrm import (
     ConnectionStatus,
@@ -192,3 +192,14 @@ def make_entry(kind: str = "router", **options: Any) -> MockConfigEntry:
             **options,
         },
     )
+
+
+@pytest.fixture
+def entity_registry_enabled_by_default() -> Generator[None]:
+    """Create entities that are disabled by default as enabled, to test what they show."""
+    with patch(
+        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
+        new_callable=PropertyMock,
+        return_value=True,
+    ):
+        yield

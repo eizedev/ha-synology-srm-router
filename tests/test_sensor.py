@@ -23,6 +23,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_util
 from homeassistant.util.yaml import parse_yaml
+import pytest
 
 from custom_components.synology_srm_router.const import RECENTLY_SEEN
 from custom_components.synology_srm_router.coordinator import SlowData, get_hub
@@ -91,6 +92,7 @@ def _serve_rules(raw: dict[str, Any]) -> None:
     _client().get_firewall_rules = _returning(FirewallRules.from_api(raw))  # type: ignore[method-assign]
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_router_counts_dhcp_and_firewall(hass: HomeAssistant) -> None:
     await _setup(hass, make_entry())
     leases = load("router", "dhcp_clients")["clientList"]["ipv4"]
@@ -193,6 +195,7 @@ async def test_dhcp_pools(hass: HomeAssistant) -> None:
     assert _state(hass, f"{ROUTER}_dhcp_pool_gbr0").state == "unavailable"
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_lists_behind_the_dhcp_counts(hass: HomeAssistant) -> None:
     entry = make_entry()
     await _setup(hass, entry)
@@ -371,6 +374,7 @@ async def test_clients_by_band_and_cable(hass: HomeAssistant) -> None:
         assert parts == counts["clients"], kind
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -> None:
     await _setup(hass, make_entry(), make_entry("ap"))
     cards = Path(__file__).parents[1] / "docs" / "assets" / "cards"
@@ -409,3 +413,16 @@ def test_rule_addresses_get_client_names() -> None:
     assert first["source_name"] == "TV, 192.0.2.6"
     assert first["destination_name"] == "NAS"  # the same address, spelled differently
     assert (second["source_label"], second["destination_label"]) == ("DE", None)
+
+
+async def test_card_templates_escape_names_from_devices(hass: HomeAssistant) -> None:
+    # A device can call itself anything; in a card its name must stay text, not a link or image.
+    cards = Path(__file__).parents[1] / "docs" / "assets" / "cards"
+    for template in sorted(cards.glob("*.jinja")):
+        macro = template.read_text(encoding="utf-8").split("{%- endmacro -%}")[0]
+        rendered = Template(macro + "{%- endmacro -%}{{ md(v) }}", hass).async_render(
+            {"v": "![x](http://a/b.png) | [y](http://c) <b>_*`\\"}, parse_result=False
+        )
+        assert rendered == (r"\!\[x\](http://a/b.png) \| \[y\](http://c) &lt;b&gt;\_\*\`\\"), (
+            template.name
+        )

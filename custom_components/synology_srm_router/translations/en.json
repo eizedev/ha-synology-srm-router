@@ -25,7 +25,7 @@
       },
       "credentials": {
         "title": "Administrator account",
-        "description": "SRM's Web API only answers administrators. Help: [documentation]({docs})",
+        "description": "Use an SRM administrator account (only those are tested). Help: [documentation]({docs})",
         "data": {
           "username": "Username",
           "password": "Password"
@@ -115,6 +115,19 @@
           "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago."
         },
         "submit": "Finish"
+      },
+      "credentials_unprotected": {
+        "title": "Account (connection not protected)",
+        "description": "The certificate is not checked, or the connection is plain HTTP: anyone who can read traffic in your network could read this password. Continue only if you accept that; otherwise go back and choose HTTPS with a checked certificate. Use an SRM administrator account (only those are tested). Help: [documentation]({docs})",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "An SRM administrator account without two-factor authentication; a dedicated account is best.",
+          "password": "The account's password."
+        },
+        "submit": "Next"
       }
     },
     "error": {
@@ -124,7 +137,7 @@
       "blocked": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires.",
       "certificate": "The certificate does not match. Check the address, then confirm the new fingerprint.",
       "invalid_host": "Enter a host name or an IP address, without port or path.",
-      "not_admin": "The account is not an administrator. SRM's Web API only answers administrators.",
+      "not_admin": "SRM refused the account the rights for this; use an administrator account.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",
       "unknown": "Unexpected error, see the log.",
       "session_ended": "SRM refused the session right after the login. This happens now and then; try again."
@@ -308,7 +321,7 @@
       "message": "The certificate does not match. Check the address, then confirm the new fingerprint."
     },
     "not_admin": {
-      "message": "The account is not an administrator. SRM's Web API only answers administrators."
+      "message": "SRM refused the account the rights for this; use an administrator account."
     },
     "blocked": {
       "message": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires."
