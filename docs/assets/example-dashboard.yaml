@@ -92,3 +92,86 @@ views:
               - [{{ s.name }}](/history?entity_id={{ s.entity_id }}) · {{ s.attributes.connection }}{% if s.attributes.radio %} {{ s.attributes.radio }}, signal {{ s.attributes.signal }}{% endif %}
               {% endfor %}
               {% endfor %}
+      - type: grid
+        cards:
+          - type: heading
+            heading: DHCP
+            icon: mdi:lan-connect
+          - type: gauge
+            entity: sensor.rt2600ac_dhcp_pool_usage_lan
+            name: Pool LAN
+            severity: {green: 0, yellow: 70, red: 90}
+            grid_options: {columns: 6}
+          - type: tile
+            entity: sensor.rt2600ac_dhcp_leases
+            name: Leases
+            grid_options: {columns: 6}
+          - type: markdown
+            title: Unknown devices
+            content: |
+              {% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+              {% set rows = (s.attributes.leases if s else []) | selectattr('unknown') | list %}
+              {% if rows %}
+              Devices with an address but neither a reservation nor a name given in SRM:
+
+              {% for r in rows -%}
+              - {{ '●' if r.online else '○' }} **{{ r.name or 'no name' }}** · {{ r.ip }} · `{{ r.mac }}`
+              {% endfor %}
+              Give the ones you know a name in SRM; the rest are worth a look.
+              {% else %}
+              Every device with an address is reserved or named in SRM.
+              {% endif %}
+          - type: markdown
+            title: Reservations
+            content: |
+              {% set s = states.sensor | selectattr('attributes.reservations', 'defined') | first %}
+              {% set rows = s.attributes.reservations if s else [] %}
+              {% set stale = rows | selectattr('stale') | list %}
+              **{{ rows | count }} reservations** · {{ rows | selectattr('online') | list | count }} of their devices online
+
+              {% if stale -%}
+              Not online, and not seen by Home Assistant in the last 30 days: candidates to remove.
+
+              | Device | IP | Last seen |
+              |---|---|---|
+              {% for r in stale -%}
+              | {{ r.name or r.mac }} | {{ r.ip }} | {{ r.last_seen or 'not since Home Assistant tracks' }} |
+              {% endfor %}
+              {%- else -%}
+              Every reserved device was seen in the last 30 days.
+              {%- endif %}
+  - title: DHCP
+    path: dhcp
+    icon: mdi:lan-connect
+    type: panel
+    cards:
+      - type: markdown
+        title: Who has an address
+        content: |
+          {% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+          {% set rows = s.attributes.leases if s else [] %}
+          **{{ rows | count }} addresses handed out** · {{ rows | selectattr('online') | list | count }} online · {{ rows | selectattr('reserved') | list | count }} reserved
+
+          | | Device | IP | |
+          |:-:|---|---|---|
+          {% for r in rows -%}
+          | {{ '●' if r.online else '○' }} | {{ r.name or r.mac }} | {{ r.ip }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ (r.expires_in_min // 60) ~ ' h' if r.expires_in_min is not none else '') }} |
+          {% endfor %}
+  - title: Firewall
+    path: firewall
+    icon: mdi:wall-fire
+    type: panel
+    cards:
+      - type: markdown
+        title: Firewall rules
+        content: |
+          {% set s = states.sensor | selectattr('attributes.rules', 'defined') | first %}
+          {% set rows = s.attributes.rules if s else [] %}
+          {% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
+          | # | Rule | | From | To | Ports | Hits |
+          |--:|---|:-:|---|---|---|--:|
+          {% for r in rows -%}
+          | {{ loop.index }} | {{ ('~~' ~ r.label ~ '~~') if r.enabled == false else r.label }} | {{ '✅' if r.action == 'allow' else '⛔' }} | {{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ (r.source or 'any') | truncate(24) }} | {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ r.destination | truncate(24)) if r.destination }} | {{ (r.ports or 'all') | truncate(20) }} | {{ r.hits if r.hits is not none else '–' }}{{ ' ⚠ duplicate' if r.duplicate }}{{ ' · never hit' if r.enabled and r.hits == 0 and not r.duplicate }} |
+          {% endfor %}
+
+          ✅ allow · ⛔ deny · ~~struck through~~: switched off · ⚠ duplicate: the same rule earlier in the list matches first. *To*: the router itself, or through it to another network. Hits count since SRM last built its firewall (after a change or a restart).

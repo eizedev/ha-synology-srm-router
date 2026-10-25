@@ -17,9 +17,12 @@ All notable changes to this project are documented here. The format follows
   when the device a client was on cannot be read.
 - A repair when SRM's auto block locks out Home Assistant, also during setup, with a new login
   attempt every 15 minutes; it goes away with the entry.
-- On routers: DHCP leases and reservations, the usage of each network's DHCP pool, the number of
-  firewall rules with a hash that changes with every rule change, and a hits sensor per firewall
-  rule; on every device: used and free space per USB volume.
+- On routers: DHCP leases and reservations, the usage of each network's DHCP pool, and the number
+  of firewall rules with a hash that changes with every rule change; the lists behind them as
+  attributes (who holds an address and whether it is unknown, reservations not seen for 30 days,
+  the rule table with hits and duplicates), with Markdown card templates and dashboard views. A
+  hits sensor per firewall rule on request (option *Sensor per firewall rule*). On every device:
+  used and free space per USB volume.
 - Diagnostics without addresses, names or secrets.
 - English and German.
 - Documentation website at https://ha-synology-srm-router.eize.dev/, with one page per repair

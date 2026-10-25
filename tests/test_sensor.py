@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 from aiosynologysrm import (
@@ -20,6 +21,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
+from homeassistant.util.yaml import parse_yaml
 
 from custom_components.synology_srm_router.const import RECENTLY_SEEN
 from custom_components.synology_srm_router.coordinator import SlowData, get_hub
@@ -325,3 +327,20 @@ async def test_hits_option_without_any_rule_list(hass: HomeAssistant) -> None:
     assert entry.state is ConfigEntryState.LOADED
     assert entry.runtime_data.slow.data.rules == {}
     assert _entity(hass, f"{ROUTER}_firewall_rules") is not None
+
+
+def test_example_dashboard_uses_the_card_templates() -> None:
+    # The templates live once in docs/assets/cards; the example dashboard must carry them as is.
+    docs = Path(__file__).parents[1] / "docs" / "assets"
+    dashboard: Any = parse_yaml((docs / "example-dashboard.yaml").read_text(encoding="utf-8"))
+    contents = [
+        card["content"]
+        for view in dashboard["views"]
+        for card in [
+            *view.get("cards", []),
+            *[c for s in view.get("sections", []) for c in s["cards"]],
+        ]
+        if card.get("type") == "markdown"
+    ]
+    for template in sorted((docs / "cards").glob("*.jinja")):
+        assert template.read_text(encoding="utf-8") in contents, template.name

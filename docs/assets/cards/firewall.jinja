@@ -1,0 +1,10 @@
+{% set s = states.sensor | selectattr('attributes.rules', 'defined') | first %}
+{% set rows = s.attributes.rules if s else [] %}
+{% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
+| # | Rule | | From | To | Ports | Hits |
+|--:|---|:-:|---|---|---|--:|
+{% for r in rows -%}
+| {{ loop.index }} | {{ ('~~' ~ r.label ~ '~~') if r.enabled == false else r.label }} | {{ '✅' if r.action == 'allow' else '⛔' }} | {{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ (r.source or 'any') | truncate(24) }} | {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ r.destination | truncate(24)) if r.destination }} | {{ (r.ports or 'all') | truncate(20) }} | {{ r.hits if r.hits is not none else '–' }}{{ ' ⚠ duplicate' if r.duplicate }}{{ ' · never hit' if r.enabled and r.hits == 0 and not r.duplicate }} |
+{% endfor %}
+
+✅ allow · ⛔ deny · ~~struck through~~: switched off · ⚠ duplicate: the same rule earlier in the list matches first. *To*: the router itself, or through it to another network. Hits count since SRM last built its firewall (after a change or a restart).
