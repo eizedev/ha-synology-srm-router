@@ -305,7 +305,7 @@ async def async_setup_entry(
         if (description.requires is None or description.requires in runtime.supported)
         and (runtime.is_router or not description.router_only)
     ]
-    entities.append(SrmClientsSensor(entry))
+    entities += [SrmClientsSensor(entry, key, match) for key, match in CLIENT_COUNTS.items()]
     async_add_entities(entities)
     _add_dynamic(hass, entry, async_add_entities)
 
@@ -340,19 +340,37 @@ class SrmSlowSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
         return attributes_fn(self.hass, self.coordinator.data) if attributes_fn else None
 
 
+# Clients attached to a device, all of them or by band and cable. SRM names radios 2.4G, 5G and
+# 5G-2 (a second 5 GHz radio).
+CLIENT_COUNTS: dict[str, Callable[[helpers.ClientLocation], bool]] = {
+    "clients": lambda loc: True,
+    "wifi_clients_2_4ghz": lambda loc: loc.connection == "wifi" and loc.radio_type == "2.4G",
+    "wifi_clients_5ghz": lambda loc: (
+        loc.connection == "wifi" and (loc.radio_type or "").startswith("5G")
+    ),
+    "wired_clients": lambda loc: loc.connection == "ethernet",
+}
+
+
 class SrmClientsSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
-    """How many clients are attached to this device, by Wi-Fi or cable, across all entries."""
+    """How many clients are attached to this device, across all entries: all, or by band."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(self, entry: SrmConfigEntry) -> None:
+    def __init__(
+        self,
+        entry: SrmConfigEntry,
+        key: str,
+        match: Callable[[helpers.ClientLocation], bool],
+    ) -> None:
         """Count from the shared client locations."""
         super().__init__(
             entry,
             entry.runtime_data.fast,
-            SensorEntityDescription(key="clients", translation_key="clients"),
+            SensorEntityDescription(key=key, translation_key=key),
         )
         self._entry_id = entry.entry_id
+        self._match = match
 
     async def async_added_to_hass(self) -> None:
         """Also update when another device's data changes the locations."""
@@ -367,9 +385,13 @@ class SrmClientsSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> int:
-        """Online clients whose location is this device."""
+        """Online clients whose location is this device and that match."""
         locations = get_hub(self.hass).locations.values()
-        return sum(1 for loc in locations if loc.online and loc.source == self._entry_id)
+        return sum(
+            1
+            for loc in locations
+            if loc.online and loc.source == self._entry_id and self._match(loc)
+        )
 
 
 # Names of SRM's local networks (measured on an RT2600ac and an MR2200ac); any other interface

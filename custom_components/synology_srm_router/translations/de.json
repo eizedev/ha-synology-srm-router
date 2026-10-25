@@ -277,6 +277,15 @@
       },
       "usb_size": {
         "name": "{volume} Größe"
+      },
+      "wifi_clients_2_4ghz": {
+        "name": "WLAN-Clients 2,4 GHz"
+      },
+      "wifi_clients_5ghz": {
+        "name": "WLAN-Clients 5 GHz"
+      },
+      "wired_clients": {
+        "name": "Kabel-Clients"
       }
     },
     "binary_sensor": {

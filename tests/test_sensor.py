@@ -333,14 +333,33 @@ def test_example_dashboard_uses_the_card_templates() -> None:
     # The templates live once in docs/assets/cards; the example dashboard must carry them as is.
     docs = Path(__file__).parents[1] / "docs" / "assets"
     dashboard: Any = parse_yaml((docs / "example-dashboard.yaml").read_text(encoding="utf-8"))
-    contents = [
-        card["content"]
-        for view in dashboard["views"]
-        for card in [
-            *view.get("cards", []),
-            *[c for s in view.get("sections", []) for c in s["cards"]],
-        ]
-        if card.get("type") == "markdown"
-    ]
+
+    def cards(node: Any) -> Any:
+        if isinstance(node, dict):
+            if node.get("type") == "markdown":
+                yield node["content"]
+            for value in node.values():
+                yield from cards(value)
+        elif isinstance(node, list):
+            for item in node:
+                yield from cards(item)
+
+    contents = list(cards(dashboard))
     for template in sorted((docs / "cards").glob("*.jinja")):
         assert template.read_text(encoding="utf-8") in contents, template.name
+
+
+async def test_clients_by_band_and_cable(hass: HomeAssistant) -> None:
+    await _setup(hass, make_entry(), make_entry("ap"))
+    for kind in ("router", "ap"):
+        serial = SERIALS[kind]
+        counts = {
+            key: int(_state(hass, f"{serial}_{key}").state)
+            for key in ("clients", "wifi_clients_2_4ghz", "wifi_clients_5ghz", "wired_clients")
+        }
+        assert counts["wifi_clients_2_4ghz"] + counts["wifi_clients_5ghz"] > 0, kind
+        # Every online client is on one band or on a cable.
+        parts = (
+            counts["wifi_clients_2_4ghz"] + counts["wifi_clients_5ghz"] + counts["wired_clients"]
+        )
+        assert parts == counts["clients"], kind

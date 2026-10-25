@@ -10,8 +10,9 @@ All notable changes to this project are documented here. The format follows
 
 - First version: one device per Synology router or access point (SRM), configured in the UI with
   certificate pinning, reauthentication and reconfiguration.
-- Sensors for CPU load, memory, download and upload rate, clients and last boot; on routers WAN
-  connection, public IPv4 and IPv6 address, WAN address type and whether the router is behind NAT.
+- Sensors for CPU load, memory, download and upload rate, clients (all, per Wi-Fi band and wired)
+  and last boot; on routers WAN connection, public IPv4 and IPv6 address, WAN address type and
+  whether the router is behind NAT.
 - Device trackers that combine the client lists of all routers and access points, with the
   device, connection and radio a client uses; they keep their last reliable location for a while
   when the device a client was on cannot be read.

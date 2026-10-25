@@ -2,5 +2,5 @@
 # Home Assistant: the oldest version CI tests; the frontend is the one that version pins.
 homeassistant==2026.10.3
 home-assistant-frontend==20260930.5
-aiosynologysrm==0.6.0
+aiosynologysrm==0.7.0
 playwright==1.64.0

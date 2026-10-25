@@ -63,11 +63,21 @@ appear offline in SRM's client list although it works. For such devices, Home As
 
 ## Clients per band
 
-Three sensors that count the clients at home by band and cable; with their history you see how
-many still use 2.4 GHz.
+Every router and access point has sensors for its Wi-Fi clients on 2.4 GHz and 5 GHz and its
+wired clients. A *Statistics graph* card shows how many still use 2.4 GHz in the evening:
 
 ```yaml
---8<-- "docs/assets/ideas/clients_by_band.yaml"
+type: statistics-graph
+title: Clients per band
+entities:
+  - sensor.rt2600ac_wi_fi_clients_2_4_ghz
+  - sensor.rt2600ac_wi_fi_clients_5_ghz
+  - sensor.mr2200ac_wi_fi_clients_2_4_ghz
+  - sensor.mr2200ac_wi_fi_clients_5_ghz
+days_to_show: 1
+period: 5minute
+stat_types: [mean]
+chart_type: line
 ```
 
 ## Data per day and month

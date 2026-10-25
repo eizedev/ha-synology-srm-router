@@ -10,6 +10,7 @@
 | Memory usage | % | |
 | Download rate, Upload rate | Mbit/s (changeable per sensor) | the device's total traffic; measured against the kernel's counters |
 | Clients | | online clients attached to this device, by Wi-Fi or cable |
+| Wi-Fi clients 2.4 GHz, Wi-Fi clients 5 GHz, Wired clients | | the same, by band and cable (all clients, also those without a tracker) |
 | Last boot | timestamp | diagnostic |
 | Load average (1, 5, 15 min) | | diagnostic, disabled by default |
 | *volume* used, *volume* free space | %, GB | per USB volume, by its name in SRM (else its folder); unavailable while the drive is not attached, and kept until you delete them |
