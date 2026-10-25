@@ -169,10 +169,10 @@ def test_sensor_helpers_without_data() -> None:
 
 
 def test_mac_in_a_duid() -> None:
-    assert duid_mac("00:03:00:01:7c:a8:ec:50:56:ee") == "7c:a8:ec:50:56:ee"  # LL
-    assert duid_mac("00:01:00:01:1a:56:17:12:f8:0d:ac:7a:9f:ca") == "f8:0d:ac:7a:9f:ca"  # LLT
-    assert duid_mac("00:02:00:00:ab:11:55:f4:ed:03:03:1c:d2:1d") is None  # vendor based
-    assert duid_mac("00:04:f3:33:9d:4b") is None  # UUID based
+    assert duid_mac("00:03:00:01:02:00:00:00:00:a1") == "02:00:00:00:00:a1"  # LL
+    assert duid_mac("00:01:00:01:00:00:00:01:02:00:00:00:00:a2") == "02:00:00:00:00:a2"  # LLT
+    assert duid_mac("00:02:00:00:00:00:00:00:00:00:00:00:00:a3") is None  # vendor based
+    assert duid_mac("00:04:00:00:00:00:00:a4") is None  # UUID based
     assert duid_mac("not hex") is None
     assert duid_mac(None) is None
 
