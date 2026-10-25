@@ -42,7 +42,7 @@ from homeassistant.util.ssl import get_default_no_verify_context
 import probatio
 
 from . import create_client, session_name
-from .clients import Client, combine, dhcp_macs, options as client_options
+from .clients import Client, combine, dhcp_addresses, options as client_options
 from .const import (
     CONF_CONSIDER_HOME,
     CONF_FAST_INTERVAL,
@@ -175,7 +175,7 @@ async def _probe(hass: HomeAssistant, data: Mapping[str, Any]) -> Probe:
         serial=system.serial,
         model=system.model or "SRM",
         is_router=is_router,
-        clients=combine([devices], dhcp_macs(leases, reservations), get_hub(hass).last_seen),
+        clients=combine([devices], dhcp_addresses(leases, reservations), get_hub(hass).last_seen),
     )
 
 

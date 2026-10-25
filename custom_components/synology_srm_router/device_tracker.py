@@ -155,7 +155,7 @@ class SrmTracker(ScannerEntity):
         entry = location.entry if location else None
         if entry is not None:
             self._attr_hostname = entry.hostname
-            self._attr_ip_address = entry.ip_addr
+        self._attr_ip_address = (entry.ip_addr if entry else None) or self._hub.ip(mac)
         self._attr_name = self._hub.name(mac) or (entry.hostname if entry else None) or mac
 
     @property

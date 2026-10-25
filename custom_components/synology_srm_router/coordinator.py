@@ -35,7 +35,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
 
-from .clients import Client, combine, dhcp_macs
+from .clients import Client, DhcpAddress, combine, dhcp_addresses
 from .const import (
     BLOCKED_RETRY,
     CONF_FAST_INTERVAL,
@@ -79,8 +79,8 @@ class SlowData:
 
     system: SystemInfo
     boot_time: datetime | None = None
-    dhcp: frozenset[str] = frozenset()
-    """MAC addresses with a DHCP lease or reservation."""
+    dhcp: dict[str, DhcpAddress] = field(default_factory=dict)
+    """Addresses by MAC from DHCP leases and reservations."""
 
 
 @dataclass(kw_only=True)
@@ -279,7 +279,7 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         self._update_device(system)
         return SlowData(system=system, boot_time=boot, dhcp=dhcp)
 
-    async def _dhcp(self) -> frozenset[str]:
+    async def _dhcp(self) -> dict[str, DhcpAddress]:
         """Read leases and reservations; only a router hands out addresses.
 
         Optional: a failed read keeps what is known.
@@ -289,12 +289,12 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
             if self.is_router and getter.__name__ in self.supported:
                 calls[getter.__name__] = getter
         if not calls:
-            return frozenset()
+            return {}
         try:
             results = await gather_partial(calls)
         except UpdateFailed:
-            return self.data.dhcp if self.data else frozenset()
-        return dhcp_macs(results.get("get_dhcp_clients"), results.get("get_dhcp_reservations"))
+            return self.data.dhcp if self.data else {}
+        return dhcp_addresses(results.get("get_dhcp_clients"), results.get("get_dhcp_reservations"))
 
     def _update_device(self, system: SystemInfo) -> None:
         """Keep the device registry's firmware version current after an update."""
@@ -405,7 +405,9 @@ class LocationHub:
             self._refresh()  # updates last_seen first
             entries = [self.loaded.get(e.entry_id) for e in self.configured()]
             runtimes = [e.runtime_data for e in entries if e is not None]
-            dhcp = frozenset().union(*(r.slow.data.dhcp for r in runtimes if r.slow.data))
+            dhcp: dict[str, DhcpAddress] = {}
+            for runtime in reversed(runtimes):  # routers come first and win
+                dhcp.update(runtime.slow.data.dhcp if runtime.slow.data else {})
             lists = [r.fast.data.devices if r.fast.data else None for r in runtimes]
             self._clients = combine(lists, dhcp, self.last_seen)
         return self._clients
@@ -415,8 +417,13 @@ class LocationHub:
         client = self.clients.get(mac)
         return client.name if client else None
 
+    def ip(self, mac: str) -> str | None:
+        """Return a client's IPv4 address, from any device's list or the DHCP server."""
+        client = self.clients.get(mac)
+        return client.ip if client else None
+
     def ip6(self, mac: str) -> str | None:
-        """Return a client's IPv6 address other than link-local, from any device's list."""
+        """Return a client's IPv6 address other than link-local, from the lists or DHCPv6."""
         client = self.clients.get(mac)
         return client.ip6 if client else None
 

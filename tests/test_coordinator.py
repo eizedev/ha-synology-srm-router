@@ -7,6 +7,8 @@ from typing import Any
 from unittest.mock import patch
 
 from aiosynologysrm import (
+    DhcpClients,
+    DhcpReservations,
     NetworkDevices,
     SrmAuthenticationError,
     SrmBlockedError,
@@ -25,7 +27,14 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 import pytest
 
-from custom_components.synology_srm_router.clients import combine, options, usable_ipv6
+from custom_components.synology_srm_router.clients import (
+    DhcpAddress,
+    combine,
+    dhcp_addresses,
+    duid_mac,
+    options,
+    usable_ipv6,
+)
 from custom_components.synology_srm_router.const import DEFAULT_CONSIDER_HOME, LOCATION_GRACE
 from custom_components.synology_srm_router.coordinator import (
     FastData,
@@ -159,6 +168,48 @@ def test_sensor_helpers_without_data() -> None:
     assert _load(FastData(utilization=util), "load_1min") == 0.57
 
 
+def test_mac_in_a_duid() -> None:
+    assert duid_mac("00:03:00:01:7c:a8:ec:50:56:ee") == "7c:a8:ec:50:56:ee"  # LL
+    assert duid_mac("00:01:00:01:1a:56:17:12:f8:0d:ac:7a:9f:ca") == "f8:0d:ac:7a:9f:ca"  # LLT
+    assert duid_mac("00:02:00:00:ab:11:55:f4:ed:03:03:1c:d2:1d") is None  # vendor based
+    assert duid_mac("00:04:f3:33:9d:4b") is None  # UUID based
+    assert duid_mac("not hex") is None
+    assert duid_mac(None) is None
+
+
+def test_addresses_from_leases_and_reservations() -> None:
+    leases = DhcpClients.from_api(
+        {
+            "clientList": {
+                "ipv4": [
+                    {"clid": "02:00:00:00:00:01", "ip": "192.0.2.10"},
+                    {"clid": "not a mac", "ip": "192.0.2.11"},
+                ],
+                "ipv6": [
+                    {"clid": "00:03:00:01:02:00:00:00:00:01", "ip": "2001:db8::10"},
+                    {"clid": "00:03:00:01:02:00:00:00:00:02", "ip": "fe80::2"},
+                ],
+            }
+        }
+    )
+    reservations = DhcpReservations.from_api(
+        {
+            "reservationList": {
+                "ipv4": [
+                    {"clid": "02:00:00:00:00:01", "ip": "192.0.2.99"},
+                    {"clid": "02:00:00:00:00:03", "ip": "192.0.2.30"},
+                ],
+                "ipv6": [{"clid": "00:03:00:01:02:00:00:00:00:03", "ip": "2001:db8::30"}],
+            }
+        }
+    )
+    found = dhcp_addresses(leases, reservations)
+    assert found["02:00:00:00:00:01"] == DhcpAddress(ip="192.0.2.10", ip6="2001:db8::10")
+    assert found["02:00:00:00:00:03"] == DhcpAddress(ip="192.0.2.30", ip6="2001:db8::30")
+    assert "02:00:00:00:00:02" not in found  # a link-local address is no use
+    assert dhcp_addresses(None, None) == {}
+
+
 def test_usable_ipv6() -> None:
     assert usable_ipv6("2001:db8::5") == "2001:db8::5"
     assert usable_ipv6("2001:db8::5/64") == "2001:db8::5"
@@ -196,7 +247,13 @@ def test_client_names_relevance_and_choice() -> None:
         }
     )
     seen = {"aa:bb:cc:dd:ee:04": now - timedelta(days=3)}
-    clients = combine([router, None, access_point], frozenset({"aa:bb:cc:dd:ee:03"}), seen)
+    dhcp = {
+        "aa:bb:cc:dd:ee:03": DhcpAddress(ip="192.0.2.3"),
+        "aa:bb:cc:dd:ee:04": DhcpAddress(ip6="2001:db8::4"),
+    }
+    clients = combine([router, None, access_point], dhcp, seen)
+    assert clients["aa:bb:cc:dd:ee:03"].ip == "192.0.2.3"  # filled in from the DHCP server
+    assert clients["aa:bb:cc:dd:ee:04"].ip6 == "2001:db8::4"
     assert clients["aa:bb:cc:dd:ee:01"].name == "Living room"  # the name given in SRM wins
     assert clients["aa:bb:cc:dd:ee:01"].ip == "192.0.2.9"
     assert clients["aa:bb:cc:dd:ee:01"].ip6 == "2001:db8::9"
@@ -212,7 +269,7 @@ def test_client_names_relevance_and_choice() -> None:
     assert relevant[0]["label"].startswith("● phone")
     assert relevant[-1]["label"].endswith((now - timedelta(days=3)).date().isoformat())
     old = {**seen, "aa:bb:cc:dd:ee:04": now - timedelta(days=90)}
-    clients = combine([router], frozenset(), old)
+    clients = combine([router], {}, old)
     assert "aa:bb:cc:dd:ee:04" not in [o["value"] for o in options(clients, now, show_all=False)]
     assert "aa:bb:cc:dd:ee:04" in [o["value"] for o in options(clients, now, show_all=True)]
     kept = options(clients, now, show_all=False, keep=["aa:bb:cc:dd:ee:04", "02:00:00:00:00:99"])
@@ -240,6 +297,9 @@ class _Hub:
 
     def ip6(self, mac: str) -> str | None:
         return None
+
+    def ip(self, mac: str) -> str | None:
+        return "192.0.2.77"
 
     def wants(self, entry: object, mac: str) -> bool:
         return True

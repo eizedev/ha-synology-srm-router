@@ -74,7 +74,7 @@ client reports. Its attributes:
 | connection | `wifi` or `ethernet` |
 | radio, signal | for Wi-Fi clients |
 | located_by | `wifi_list` (the device's own Wi-Fi list, reliable) or `device_list` (a client list, which can lag behind) |
-| ip6_address | an IPv6 address of the client other than link-local, when SRM knows one (often not: SRM lists IPv6 for some clients only) |
+| ip6_address | the client's IPv6 address (not link-local): from the client lists, else from the router's DHCPv6 lease or reservation |
 
 A client counts as away only after it was missing for the *time until away* (3 minutes by
 default): SRM marks idle wired clients offline for a minute now and then. When the router or
