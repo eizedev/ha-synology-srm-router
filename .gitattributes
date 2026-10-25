@@ -1,0 +1,7 @@
+# Text files are stored with LF and checked out with LF on every OS
+* text=auto eol=lf
+# Windows batch files need CRLF to run
+*.bat text eol=crlf
+*.cmd text eol=crlf
+# Images are not merged or diffed as text
+*.png binary
