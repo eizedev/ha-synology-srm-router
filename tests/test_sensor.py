@@ -273,6 +273,7 @@ def test_helpers_without_data() -> None:
     assert list(keyed)[1].endswith("_2")  # identical rules each get a key of their own
     rows = rule_rows(keyed, {1: 7})
     assert [(r["hits"], r["duplicate"]) for r in rows] == [(7, False), (None, True)]
+    assert rows[0]["label"] == "y"
     assert all(r["hits"] is None for r in rule_rows(keyed, None))
     servers = DhcpServers.from_api(
         {

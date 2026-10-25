@@ -51,6 +51,7 @@ def rule_rows(
         rows.append(
             {
                 "name": rule.name,
+                "label": rule_label(rule, keyed.values()),
                 "enabled": rule.enabled,
                 "action": rule.action,
                 "ip_version": rule.ip_version,

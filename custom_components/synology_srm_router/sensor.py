@@ -241,6 +241,8 @@ def _reservation_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, An
                 "last_seen": seen.date().isoformat() if seen else None,
                 # Not seen online by Home Assistant within RECENTLY_SEEN (since installing).
                 "stale": not online and (seen is None or now - seen > RECENTLY_SEEN),
+                # Inside a dynamic pool; dnsmasq on SRM does not hand a reserved address to
+                # another device, so this is information, not a conflict.
                 "in_pool": any(_in(item.ip, r) for r in pools if r is not None),
             }
         )
