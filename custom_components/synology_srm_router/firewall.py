@@ -3,12 +3,32 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+import ipaddress
 from typing import Any
 
 from aiosynologysrm import FirewallRule, helpers
 
-# A rule is identified by what it does, not by its position (``ui_id``) or switch.
-RULE_IDENTITY_IGNORE = frozenset({"ui_id", "enabled"})
+# A rule is identified by what it does, not by its position (``ui_id``) or switch, and only by
+# fields this integration knows: a field a firmware update adds must not give every rule a new key.
+RULE_IDENTITY = (
+    "name",
+    "action",
+    "chain",
+    "ip_version",
+    "protocol",
+    "src_ip_type",
+    "src_ip_value",
+    "src_port_type",
+    "src_port_value",
+    "dst_ip_type",
+    "dst_ip_value",
+    "dst_port_type",
+    "dst_port_value",
+    "in_interface_type",
+    "in_interface_value",
+    "out_interface_type",
+    "out_interface_value",
+)
 
 
 def rule_keys(rules: Iterable[FirewallRule]) -> dict[str, FirewallRule]:
@@ -18,7 +38,7 @@ def rule_keys(rules: Iterable[FirewallRule]) -> dict[str, FirewallRule]:
     """
     keyed: dict[str, FirewallRule] = {}
     for rule in rules:
-        digest = helpers.config_hash([rule.raw], ignore=RULE_IDENTITY_IGNORE)[:12]
+        digest = helpers.config_hash([{k: rule.raw.get(k) for k in RULE_IDENTITY}])[:12]
         key, number = digest, 1
         while key in keyed:
             number += 1
@@ -37,17 +57,49 @@ def rule_label(rule: FirewallRule, rules: Iterable[FirewallRule]) -> str:
     return name
 
 
+def address_key(value: str) -> str:
+    """Return an address in one spelling, so SRM's and the clients' addresses compare equal."""
+    try:
+        return ipaddress.ip_address(value.strip()).compressed
+    except ValueError:
+        return value.strip()
+
+
+def _named(value: str | None, names: Mapping[str, str]) -> tuple[str | None, str | None]:
+    """Return a rule's addresses as "name (address)" and as names only, where a client matches.
+
+    SRM lists several addresses comma-separated; anything that is not an address (a country, a
+    range, a group) stays as it is.
+    """
+    if not value:
+        return None, None
+    parts = [p.strip() for p in value.split(",") if p.strip()]
+    labels, short = [], []
+    for part in parts:
+        name = names.get(address_key(part))
+        labels.append(f"{name} ({part})" if name else part)
+        short.append(name or part)
+    return ", ".join(labels), ", ".join(short)
+
+
 def rule_rows(
-    keyed: Mapping[str, FirewallRule], hits: Mapping[int, int] | None
+    keyed: Mapping[str, FirewallRule],
+    hits: Mapping[int, int] | None,
+    names: Mapping[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     """One row per rule for tables, in SRM's order.
 
     ``duplicate`` marks a rule with the same content as an earlier one: the earlier one matches
-    first, so the duplicate never does.
+    first, so the duplicate never does. ``names`` maps addresses (see :func:`address_key`) to
+    client names for ``source_label``/``destination_label`` ("name (address)") and
+    ``source_name``/``destination_name`` (the name alone).
     """
+    names = names or {}
     rows = []
     for key, rule in keyed.items():
         count = hits.get(rule.ui_id) if hits is not None and rule.ui_id is not None else None
+        source = _named(rule.src_ip_value, names)
+        destination = _named(rule.dst_ip_value, names)
         rows.append(
             {
                 "name": rule.name,
@@ -62,6 +114,10 @@ def rule_rows(
                 "out_interfaces": _interfaces(rule.out_interface_type, rule.out_interface_value),
                 "source": rule.src_ip_value,
                 "destination": rule.dst_ip_value,
+                "source_label": source[0],
+                "source_name": source[1],
+                "destination_label": destination[0],
+                "destination_name": destination[1],
                 "ports": rule.dst_port_value,
                 "hits": count,
                 "duplicate": "_" in key,

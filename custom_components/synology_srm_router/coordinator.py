@@ -202,6 +202,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
             config_entry=entry,
             name=f"{DOMAIN} fast {entry.title}",
             update_interval=timedelta(seconds=seconds),
+            # Trackers count down "consider home" on every update, also when nothing changed.
             always_update=True,
         )
         self.client = client
@@ -391,6 +392,13 @@ class LocationHub:
         """
         for mac in [m for m, seen in self.last_seen.items() if now - seen > RECENTLY_SEEN]:
             del self.last_seen[mac]
+
+    async def async_forget(self) -> None:
+        """Delete what was remembered about clients; done when the last entry is removed."""
+        store = self._store or Store(self.hass, STORE_VERSION, f"{DOMAIN}.last_seen")
+        await store.async_remove()
+        self._store = None
+        self.last_seen.clear()
 
     @callback
     def async_add(self, entry: SrmConfigEntry) -> None:

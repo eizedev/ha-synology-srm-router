@@ -1,4 +1,5 @@
-{% set s = states.sensor | selectattr('attributes.reservations', 'defined') | first %}
+{% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+   | selectattr('attributes.reservations', 'defined') | first %}
 {% set rows = s.attributes.reservations if s else [] %}
 {% set stale = rows | selectattr('stale') | list %}
 **{{ rows | count }} reservations** · {{ rows | selectattr('online') | list | count }} of their devices online

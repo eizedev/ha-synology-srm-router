@@ -109,7 +109,8 @@ views:
           - type: markdown
             title: Unknown devices
             content: |
-              {% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+              {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+                 | selectattr('attributes.leases', 'defined') | first %}
               {% set rows = (s.attributes.leases if s else []) | selectattr('unknown') | list %}
               {% if rows %}
               Devices with an address but neither a reservation nor a name given in SRM:
@@ -124,7 +125,8 @@ views:
           - type: markdown
             title: Reservations
             content: |
-              {% set s = states.sensor | selectattr('attributes.reservations', 'defined') | first %}
+              {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+                 | selectattr('attributes.reservations', 'defined') | first %}
               {% set rows = s.attributes.reservations if s else [] %}
               {% set stale = rows | selectattr('stale') | list %}
               **{{ rows | count }} reservations** · {{ rows | selectattr('online') | list | count }} of their devices online
@@ -148,30 +150,57 @@ views:
       - type: markdown
         title: Who has an address
         content: |
-          {% set s = states.sensor | selectattr('attributes.leases', 'defined') | first %}
+          {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+             | selectattr('attributes.leases', 'defined') | first %}
           {% set rows = s.attributes.leases if s else [] %}
           **{{ rows | count }} addresses handed out** · {{ rows | selectattr('online') | list | count }} online · {{ rows | selectattr('reserved') | list | count }} reserved
 
           | | Device | IP | |
           |:-:|---|---|---|
           {% for r in rows -%}
-          | {{ '●' if r.online else '○' }} | {{ r.name or r.mac }} | {{ r.ip }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ (r.expires_in_min // 60) ~ ' h' if r.expires_in_min is not none else '') }} |
+          | {{ '●' if r.online else '○' }} | {{ r.name or r.mac }} | {{ r.ip }} | {{ 'reserved' if r.reserved else ('**unknown**' if r.unknown else 'expires in ' ~ ((r.expires_in_min // 60) ~ ' h' if r.expires_in_min >= 60 else r.expires_in_min ~ ' min') if r.expires_in_min is not none else '') }} |
           {% endfor %}
   - title: Firewall
     path: firewall
     icon: mdi:wall-fire
     type: panel
     cards:
-      - type: markdown
-        title: Firewall rules
-        content: |
-          {% set s = states.sensor | selectattr('attributes.rules', 'defined') | first %}
-          {% set rows = s.attributes.rules if s else [] %}
-          {% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
-          | # | Rule | | From | To | Ports | Hits |
-          |--:|---|:-:|---|---|---|--:|
-          {% for r in rows -%}
-          | {{ loop.index }} | {{ ('~~' ~ r.label ~ '~~') if r.enabled == false else r.label }} | {{ '✅' if r.action == 'allow' else '⛔' }} | {{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ (r.source or 'any') | truncate(24) }} | {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ r.destination | truncate(24)) if r.destination }} | {{ (r.ports or 'all') | truncate(20) }} | {{ r.hits if r.hits is not none else '–' }}{{ ' ⚠ duplicate' if r.duplicate }}{{ ' · never hit' if r.enabled and r.hits == 0 and not r.duplicate }} |
-          {% endfor %}
+      - type: vertical-stack
+        cards:
+          - type: conditional
+            conditions:
+              - condition: screen
+                media_query: "(min-width: 900px)"
+            card:
+              type: markdown
+              title: Firewall rules
+              content: |
+                {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+                   | selectattr('attributes.rules', 'defined') | first %}
+                {% set rows = s.attributes.rules if s else [] %}
+                {% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
+                | Rule | From → to | Ports | Hits |
+                |---|---|---|--:|
+                {% for r in rows -%}
+                | {{ '✅' if r.action == 'allow' else '⛔' }} {{ ('~~' ~ r.label ~ '~~') if r.enabled == false else r.label }} | {{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ r.source_label or 'any' }} → {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ r.destination_label) if r.destination_label }} | {{ (r.ports or 'all') | replace(',', ', ') | truncate(32) }} | {{ r.hits if r.hits is not none else '–' }}{{ '<br>⚠ duplicate' if r.duplicate }}{{ '<br>never hit' if r.enabled and r.hits == 0 and not r.duplicate }} |
+                {% endfor %}
 
-          ✅ allow · ⛔ deny · ~~struck through~~: switched off · ⚠ duplicate: the same rule earlier in the list matches first. *To*: the router itself, or through it to another network. Hits count since SRM last built its firewall (after a change or a restart).
+                ✅ allow · ⛔ deny · ~~struck through~~: switched off · ⚠ duplicate: the same rule earlier in the list matches first · *router*: to the router itself, *through*: through it to another network. Hits count since SRM last built its firewall (after a change or a restart).
+          - type: conditional
+            conditions:
+              - condition: screen
+                media_query: "(max-width: 899px)"
+            card:
+              type: markdown
+              title: Firewall rules
+              content: |
+                {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
+                   | selectattr('attributes.rules', 'defined') | first %}
+                {% set rows = s.attributes.rules if s else [] %}
+                {% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
+                {% for r in rows -%}
+                {{ '✅' if r.action == 'allow' else '⛔' }} **{{ ('~~' ~ r.label ~ '~~') if r.enabled == false else r.label }}** · {{ r.hits if r.hits is not none else '–' }} hits{{ ' · ⚠ duplicate' if r.duplicate }}{{ ' · never hit' if r.enabled and r.hits == 0 and not r.duplicate }}<br>
+                {{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ r.source_name or 'any' }} → {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ r.destination_name) if r.destination_name }}{{ (' · ports ' ~ (r.ports | replace(',', ', ') | truncate(32))) if r.ports }}
+
+                {% endfor %}
+                ✅ allow · ⛔ deny · *router*: to the router itself, *through*: through it to another network.

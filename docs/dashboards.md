@@ -84,6 +84,15 @@ it matched. *never hit* and *duplicate* point to rules that do nothing.
 --8<-- "docs/assets/cards/firewall.jinja"
 ```
 
+On a phone a table this wide does not fit. This one lists the same, two lines per rule:
+
+```jinja
+--8<-- "docs/assets/cards/firewall-list.jinja"
+```
+
+The example dashboard shows the table on wide screens and the list on narrow ones, with two
+*Conditional* cards and a *Screen* condition (`(min-width: 900px)` and `(max-width: 899px)`).
+
 Hits count since SRM last built its firewall, so they start again after a rule change or a
 restart. For hits over time, switch on *Sensor per firewall rule* in the router's options and add
 a *Statistics graph* card with the rules you care about, for example the blocking ones:
@@ -96,8 +105,12 @@ entities:
 days_to_show: 1
 period: hour
 stat_types: [change]
-chart_type: bar
+chart_type: line
 ```
+
+*change* is the number of hits per hour. Prefer lines to bars here: with several rules, bars of one
+hour stand side by side and spread over the time axis, which reads like hits at other times.
+Statistics start with the first full hour after a sensor was added.
 
 ## A complete dashboard
 

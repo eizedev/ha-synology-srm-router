@@ -221,6 +221,13 @@ def device_app(folder: Path, names: dict[str, str]) -> web.Application:
         for key, (name, _, _) in APIS.items()
     }
     answers[("SYNO.Core.System", "info")]["serial"] = SERIALS[folder.name]
+    # Readable stand-ins for anonymized values that show in screenshots: the USB volume's name,
+    # and DHCP pools wide enough to hold the recorded leases.
+    for volume in answers[("SYNO.Core.Storage.Volume", "list")]["volumes"]:
+        volume["display_name"] = "USB drive"
+    for server in answers[("SYNO.Core.Network.DHCPServer", "get")]["data"]:
+        if server.get("ifname") == "lbr0" and server.get("ipv4"):
+            server["ipv4"].update(begin="192.0.2.1", end="192.0.2.200")
     rules = answers[("SYNO.Core.Security.Firewall.Rules", "get")]["rules"]
     for rule, name in zip(rules, RULE_NAMES, strict=False):
         rule["name"] = name

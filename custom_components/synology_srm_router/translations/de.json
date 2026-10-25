@@ -127,7 +127,7 @@
       "not_admin": "Das Konto ist kein Administrator. Die Web-API von SRM antwortet nur Administratoren.",
       "no_serial": "Das Gerät meldet keine Seriennummer und kann deshalb nicht eingerichtet werden.",
       "unknown": "Unerwarteter Fehler, siehe Log.",
-      "session_ended": "SRM hat die Sitzung direkt nach der Anmeldung beendet, meist weil sich dasselbe Konto anderswo unter demselben Namen angemeldet hat. Versuche es noch einmal."
+      "session_ended": "SRM hat die Sitzung direkt nach der Anmeldung abgelehnt. Das kommt gelegentlich vor; versuche es noch einmal."
     },
     "abort": {
       "already_configured": "Dieses Gerät ist schon eingerichtet.",
@@ -277,6 +277,15 @@
       },
       "usb_size": {
         "name": "{volume} Größe"
+      },
+      "wifi_clients_2_4ghz": {
+        "name": "WLAN-Clients 2,4 GHz"
+      },
+      "wifi_clients_5ghz": {
+        "name": "WLAN-Clients 5 GHz"
+      },
+      "wired_clients": {
+        "name": "Kabel-Clients"
       }
     },
     "binary_sensor": {

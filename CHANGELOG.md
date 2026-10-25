@@ -10,8 +10,9 @@ All notable changes to this project are documented here. The format follows
 
 - First version: one device per Synology router or access point (SRM), configured in the UI with
   certificate pinning, reauthentication and reconfiguration.
-- Sensors for CPU load, memory, download and upload rate, clients and last boot; on routers WAN
-  connection, public IPv4 and IPv6 address, WAN address type and whether the router is behind NAT.
+- Sensors for CPU load, memory, download and upload rate, clients (all, per Wi-Fi band and wired)
+  and last boot; on routers WAN connection, public IPv4 and IPv6 address, WAN address type and
+  whether the router is behind NAT.
 - Device trackers that combine the client lists of all routers and access points, with the
   device, connection and radio a client uses; they keep their last reliable location for a while
   when the device a client was on cannot be read.
@@ -35,13 +36,13 @@ All notable changes to this project are documented here. The format follows
   as away only after a configurable time (3 minutes by default), also right after a restart of
   Home Assistant. The Wi-Fi signal is left out of the recorded history, so the database does not
   grow with every change of a few dB.
-- "Last seen" keeps clients for 30 days, so rotating private MAC addresses do not pile up.
+- "Last seen" keeps clients for 30 days and is deleted with the last router or access point.
 - Routers of separate networks each keep the trackers of their own clients; an access point keeps
   trackers when no configured router knows its clients, or when chosen in its menu.
 - Trackers carry the client's IPv6 address (`ip6_address`, not link-local), and both addresses
   fall back to the router's DHCP leases and reservations: SRM's client list leaves out many
   addresses its own DHCP server handed out.
-- Each Home Assistant installation logs in under its own session name, because SRM ends a session
-  when the same account logs in again under the same name.
+- Each Home Assistant installation logs in under its own session name, so its sessions can be told
+  apart in SRM.
 
 [Unreleased]: https://github.com/eizedev/ha-synology-srm-router/commits/main

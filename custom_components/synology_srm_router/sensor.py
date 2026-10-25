@@ -34,7 +34,7 @@ from .coordinator import (
     get_hub,
 )
 from .entity import SrmEntity
-from .firewall import rule_label, rule_rows
+from .firewall import address_key, rule_label, rule_rows
 
 # Coordinators poll; entities never call the router themselves.
 PARALLEL_UPDATES = 0
@@ -181,8 +181,24 @@ def _firewall_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, Any]:
     return {
         # Changes whenever a rule is added, removed, edited, switched or moved.
         "config_hash": helpers.config_hash(rule.raw for rule in data.firewall.rules),
-        "rules": rule_rows(data.rules, data.hits),
+        "rules": rule_rows(data.rules, data.hits, _address_names(hass, data)),
     }
+
+
+def _address_names(hass: HomeAssistant, data: SlowData) -> dict[str, str]:
+    """Client names by address, from the client lists and the router's DHCP data."""
+    hub = get_hub(hass)
+    names: dict[str, str] = {}
+    for mac, address in data.dhcp.items():
+        if name := hub.name(mac):
+            for value in (address.ip, address.ip6):
+                if value:
+                    names[address_key(value)] = name
+    for client in hub.clients.values():  # the client lists win over DHCP
+        for value in (client.ip, client.ip6):
+            if value and client.name:
+                names[address_key(value)] = client.name
+    return names
 
 
 def _reserved_macs(data: SlowData) -> set[str]:
@@ -305,7 +321,7 @@ async def async_setup_entry(
         if (description.requires is None or description.requires in runtime.supported)
         and (runtime.is_router or not description.router_only)
     ]
-    entities.append(SrmClientsSensor(entry))
+    entities += [SrmClientsSensor(entry, key, match) for key, match in CLIENT_COUNTS.items()]
     async_add_entities(entities)
     _add_dynamic(hass, entry, async_add_entities)
 
@@ -340,19 +356,37 @@ class SrmSlowSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
         return attributes_fn(self.hass, self.coordinator.data) if attributes_fn else None
 
 
+# Clients attached to a device, all of them or by band and cable. SRM names radios 2.4G, 5G and
+# 5G-2 (a second 5 GHz radio).
+CLIENT_COUNTS: dict[str, Callable[[helpers.ClientLocation], bool]] = {
+    "clients": lambda loc: True,
+    "wifi_clients_2_4ghz": lambda loc: loc.connection == "wifi" and loc.radio_type == "2.4G",
+    "wifi_clients_5ghz": lambda loc: (
+        loc.connection == "wifi" and (loc.radio_type or "").startswith("5G")
+    ),
+    "wired_clients": lambda loc: loc.connection == "ethernet",
+}
+
+
 class SrmClientsSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
-    """How many clients are attached to this device, by Wi-Fi or cable, across all entries."""
+    """How many clients are attached to this device, across all entries: all, or by band."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(self, entry: SrmConfigEntry) -> None:
+    def __init__(
+        self,
+        entry: SrmConfigEntry,
+        key: str,
+        match: Callable[[helpers.ClientLocation], bool],
+    ) -> None:
         """Count from the shared client locations."""
         super().__init__(
             entry,
             entry.runtime_data.fast,
-            SensorEntityDescription(key="clients", translation_key="clients"),
+            SensorEntityDescription(key=key, translation_key=key),
         )
         self._entry_id = entry.entry_id
+        self._match = match
 
     async def async_added_to_hass(self) -> None:
         """Also update when another device's data changes the locations."""
@@ -367,9 +401,13 @@ class SrmClientsSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> int:
-        """Online clients whose location is this device."""
+        """Online clients whose location is this device and that match."""
         locations = get_hub(self.hass).locations.values()
-        return sum(1 for loc in locations if loc.online and loc.source == self._entry_id)
+        return sum(
+            1
+            for loc in locations
+            if loc.online and loc.source == self._entry_id and self._match(loc)
+        )
 
 
 # Names of SRM's local networks (measured on an RT2600ac and an MR2200ac); any other interface

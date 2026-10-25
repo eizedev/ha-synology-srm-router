@@ -20,12 +20,18 @@ from aiosynologysrm import (
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_util
 from homeassistant.util.yaml import parse_yaml
 
 from custom_components.synology_srm_router.const import RECENTLY_SEEN
 from custom_components.synology_srm_router.coordinator import SlowData, get_hub
-from custom_components.synology_srm_router.firewall import rule_keys, rule_label, rule_rows
+from custom_components.synology_srm_router.firewall import (
+    address_key,
+    rule_keys,
+    rule_label,
+    rule_rows,
+)
 from custom_components.synology_srm_router.sensor import (
     USB_SENSORS,
     SrmDhcpPoolSensor,
@@ -333,14 +339,73 @@ def test_example_dashboard_uses_the_card_templates() -> None:
     # The templates live once in docs/assets/cards; the example dashboard must carry them as is.
     docs = Path(__file__).parents[1] / "docs" / "assets"
     dashboard: Any = parse_yaml((docs / "example-dashboard.yaml").read_text(encoding="utf-8"))
-    contents = [
-        card["content"]
-        for view in dashboard["views"]
-        for card in [
-            *view.get("cards", []),
-            *[c for s in view.get("sections", []) for c in s["cards"]],
-        ]
-        if card.get("type") == "markdown"
-    ]
+
+    def cards(node: Any) -> Any:
+        if isinstance(node, dict):
+            if node.get("type") == "markdown":
+                yield node["content"]
+            for value in node.values():
+                yield from cards(value)
+        elif isinstance(node, list):
+            for item in node:
+                yield from cards(item)
+
+    contents = list(cards(dashboard))
     for template in sorted((docs / "cards").glob("*.jinja")):
         assert template.read_text(encoding="utf-8") in contents, template.name
+
+
+async def test_clients_by_band_and_cable(hass: HomeAssistant) -> None:
+    await _setup(hass, make_entry(), make_entry("ap"))
+    for kind in ("router", "ap"):
+        serial = SERIALS[kind]
+        counts = {
+            key: int(_state(hass, f"{serial}_{key}").state)
+            for key in ("clients", "wifi_clients_2_4ghz", "wifi_clients_5ghz", "wired_clients")
+        }
+        assert counts["wifi_clients_2_4ghz"] + counts["wifi_clients_5ghz"] > 0, kind
+        # Every online client is on one band or on a cable.
+        parts = (
+            counts["wifi_clients_2_4ghz"] + counts["wifi_clients_5ghz"] + counts["wired_clients"]
+        )
+        assert parts == counts["clients"], kind
+
+
+async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -> None:
+    await _setup(hass, make_entry(), make_entry("ap"))
+    cards = Path(__file__).parents[1] / "docs" / "assets" / "cards"
+    expected = {
+        "leases.jinja": "addresses handed out",
+        "unknown.jinja": "in SRM",
+        "reservations.jinja": "reservations",
+        "firewall.jinja": "| Rule | From → to |",
+        "firewall-list.jinja": " hits",
+    }
+    assert {f.name for f in cards.glob("*.jinja")} == set(expected)
+    for name, text in expected.items():
+        rendered = Template((cards / name).read_text(encoding="utf-8"), hass).async_render(
+            parse_result=False
+        )
+        assert text in rendered, name
+        assert "None" not in rendered, name
+
+
+def test_rule_addresses_get_client_names() -> None:
+    rules = FirewallRules.from_api(
+        {
+            "rules": [
+                {
+                    "ui_id": 1,
+                    "src_ip_value": "192.0.2.5, 192.0.2.6",
+                    "dst_ip_value": "2001:DB8:0:0::AB6C",
+                },
+                {"ui_id": 2, "src_ip_value": "DE"},
+            ]
+        }
+    )
+    names = {address_key("192.0.2.5"): "TV", address_key("2001:db8::ab6c"): "NAS"}
+    first, second = rule_rows(rule_keys(rules.rules), None, names)
+    assert first["source_label"] == "TV (192.0.2.5), 192.0.2.6"
+    assert first["source_name"] == "TV, 192.0.2.6"
+    assert first["destination_name"] == "NAS"  # the same address, spelled differently
+    assert (second["source_label"], second["destination_label"]) == ("DE", None)

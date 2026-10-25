@@ -512,3 +512,21 @@ async def test_a_client_that_was_home_waits_for_consider_home_after_a_restart(
     freezer.tick(timedelta(seconds=DEFAULT_CONSIDER_HOME.seconds + 1))
     await _refresh(hass)
     assert _state(hass, entity_id) == "not_home"
+
+
+async def test_last_seen_is_deleted_with_the_last_entry(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    router, ap = make_entry(), make_entry("ap")
+    await _setup(hass, router, ap)
+    hub = get_hub(hass)
+    hub.last_seen["02:00:00:00:00:77"] = dt_util.utcnow()
+    store = hub._store
+    assert store is not None
+    store.async_delay_save(lambda: {"02:00:00:00:00:77": "x"})
+    await hass.config_entries.async_remove(ap.entry_id)
+    assert hub.last_seen  # the router is still there
+    await hass.config_entries.async_remove(router.entry_id)
+    await hass.async_block_till_done()
+    assert hub.last_seen == {}
+    assert "synology_srm_router.last_seen" not in hass_storage

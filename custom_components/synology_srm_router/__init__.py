@@ -135,6 +135,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool
     return unloaded
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
+    """Forget the clients' "last seen" times once no router or access point is left."""
+    if not any(e.entry_id != entry.entry_id for e in hass.config_entries.async_entries(DOMAIN)):
+        await get_hub(hass).async_forget()
+
+
 async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: SrmConfigEntry, device: dr.DeviceEntry
 ) -> bool:
