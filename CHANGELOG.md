@@ -15,8 +15,8 @@ All notable changes to this project are documented here. The format follows
 - Device trackers that combine the client lists of all routers and access points, with the
   device, connection and radio a client uses; they keep their last reliable location for a while
   when the device a client was on cannot be read.
-- A repair when SRM's auto block locks out Home Assistant, with a new login attempt every 15
-  minutes.
+- A repair when SRM's auto block locks out Home Assistant, also during setup, with a new login
+  attempt every 15 minutes; it goes away with the entry.
 - Diagnostics without addresses, names or secrets.
 - English and German.
 - Documentation website at https://ha-synology-srm-router.eize.dev/, with one page per repair
@@ -26,7 +26,10 @@ All notable changes to this project are documented here. The format follows
   or reservation, or seen in the last 30 days); all known clients on request. "Track all" covers
   exactly those, and new clients as they appear.
 - Trackers carry the name given in SRM, also for clients on an access point, and count a client
-  as away only after a configurable time (3 minutes by default).
+  as away only after a configurable time (3 minutes by default), also right after a restart of
+  Home Assistant. The Wi-Fi signal is left out of the recorded history, so the database does not
+  grow with every change of a few dB.
+- "Last seen" keeps clients for 30 days, so rotating private MAC addresses do not pile up.
 - Routers of separate networks each keep the trackers of their own clients; an access point keeps
   trackers when no configured router knows its clients, or when chosen in its menu.
 - Trackers carry the client's IPv6 address (`ip6_address`, not link-local), and both addresses

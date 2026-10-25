@@ -49,6 +49,7 @@ from .const import (
     DOCS_URL,
     DOMAIN,
     LOGGER,
+    RECENTLY_SEEN,
     UPDATE_TIMEOUT,
 )
 
@@ -175,10 +176,6 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
         self.is_router = is_router
         self.blocked_since: datetime | None = None
 
-    @property
-    def _issue_id(self) -> str:
-        return f"blocked_{self.config_entry.entry_id}"
-
     async def _async_update_data(self) -> FastData:
         await self._retry_after_block()
         calls: dict[str, Callable[[], Awaitable[Any]]] = {}
@@ -217,21 +214,35 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
     def _blocked(self) -> None:
         if self.blocked_since is None:
             self.blocked_since = dt_util.utcnow()
-        ir.async_create_issue(
-            self.hass,
-            DOMAIN,
-            self._issue_id,
-            is_fixable=False,
-            severity=ir.IssueSeverity.ERROR,
-            translation_key="blocked",
-            translation_placeholders={"name": self.config_entry.title},
-            learn_more_url=f"{DOCS_URL}repairs/blocked/",
-        )
+        create_blocked_issue(self.hass, self.config_entry)
 
     def _unblocked(self) -> None:
         if self.blocked_since is not None:
             self.blocked_since = None
-            ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
+            delete_blocked_issue(self.hass, self.config_entry)
+
+
+def _blocked_issue_id(entry: ConfigEntry) -> str:
+    return f"blocked_{entry.entry_id}"
+
+
+def create_blocked_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Tell the user that SRM's auto block refuses this installation's logins."""
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        _blocked_issue_id(entry),
+        is_fixable=False,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key="blocked",
+        translation_placeholders={"name": entry.title},
+        learn_more_url=f"{DOCS_URL}repairs/blocked/",
+    )
+
+
+def delete_blocked_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove the auto block repair, once logins work again or the entry is gone."""
+    ir.async_delete_issue(hass, DOMAIN, _blocked_issue_id(entry))
 
 
 class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
@@ -333,6 +344,15 @@ class LocationHub:
         for mac, text in stored.items():
             if (seen := dt_util.parse_datetime(text)) is not None:
                 self.last_seen.setdefault(mac, seen)
+        self._prune(dt_util.utcnow())
+
+    def _prune(self, now: datetime) -> None:
+        """Forget clients not seen for RECENTLY_SEEN; only recent ones matter for "track all".
+
+        Without this, rotating private MAC addresses would make the file grow forever.
+        """
+        for mac in [m for m, seen in self.last_seen.items() if now - seen > RECENTLY_SEEN]:
+            del self.last_seen[mac]
 
     @callback
     def async_add(self, entry: SrmConfigEntry) -> None:
@@ -394,6 +414,7 @@ class LocationHub:
             self._saved_at is None or now - self._saved_at >= SAVE_INTERVAL
         ):
             self._saved_at = now
+            self._prune(now)
             self._store.async_delay_save(
                 lambda: {mac: seen.isoformat() for mac, seen in self.last_seen.items()}
             )

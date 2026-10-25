@@ -384,7 +384,9 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self._finish(self._get_reauth_entry(), data, probe)
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=probatio.Schema(CREDENTIALS),
+            data_schema=self.add_suggested_values_to_schema(
+                probatio.Schema(CREDENTIALS), {CONF_USERNAME: self._data.get(CONF_USERNAME)}
+            ),
             errors=errors,
             description_placeholders={"host": str(self._data.get(CONF_HOST))},
         )

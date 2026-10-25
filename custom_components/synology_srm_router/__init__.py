@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import aiohttp
-from aiosynologysrm import SrmClient, SrmError
+from aiosynologysrm import SrmBlockedError, SrmClient, SrmError
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -30,6 +30,8 @@ from .coordinator import (
     SrmFastCoordinator,
     SrmRuntimeData,
     SrmSlowCoordinator,
+    create_blocked_issue,
+    delete_blocked_issue,
     get_hub,
     map_error,
 )
@@ -92,6 +94,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         await fast.async_config_entry_first_refresh()
     except SrmError as err:
         await client.logout()
+        if isinstance(err, SrmBlockedError):
+            create_blocked_issue(hass, entry)
         mapped = map_error(err)
         if isinstance(mapped, ConfigEntryAuthFailed):
             raise mapped from err
@@ -109,6 +113,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_IS_ROUTER: is_router}
         )
+    delete_blocked_issue(hass, entry)
     hub = get_hub(hass)
     await hub.async_load()
     hub.async_add(entry)
@@ -121,6 +126,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         get_hub(hass).async_remove(entry)
+        delete_blocked_issue(hass, entry)
         await entry.runtime_data.client.logout()
     return unloaded
 

@@ -131,7 +131,8 @@
       "already_configured": "This device is already set up.",
       "reauth_successful": "Signed in again.",
       "reconfigure_successful": "Connection changed.",
-      "wrong_device": "This is a different device than the one set up."
+      "wrong_device": "This is a different device than the one set up.",
+      "unknown": "Unexpected error, see the log."
     }
   },
   "options": {
@@ -150,7 +151,7 @@
           "track_all": "A tracker for every client that is online, has a name given in SRM, a DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
           "tracked": "Only these clients get a tracker. Leave empty for none.",
           "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
-          "slow_interval": "System information (firmware, uptime). Default 300 s.",
+          "slow_interval": "System information (firmware, last boot) and, on routers, DHCP. Default 300 s.",
           "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
           "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s."
         },
@@ -175,7 +176,7 @@
         "data_description": {
           "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
           "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
-          "slow_interval": "System information (firmware, uptime). Default 300 s."
+          "slow_interval": "System information (firmware, last boot) and, on routers, DHCP. Default 300 s."
         }
       },
       "trackers": {

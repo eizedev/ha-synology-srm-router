@@ -7,11 +7,12 @@ from typing import Any
 
 from aiosynologysrm import helpers
 from homeassistant.components.device_tracker import ScannerEntity
-from homeassistant.const import Platform
+from homeassistant.const import STATE_HOME, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -80,7 +81,7 @@ async def async_setup_entry(
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_LOCATIONS, _add_new))
 
 
-class SrmTracker(ScannerEntity):
+class SrmTracker(ScannerEntity, RestoreEntity):
     """One client, located across every router and access point of this integration.
 
     A location from a device's own Wi-Fi list is always taken. Any other location is taken too,
@@ -88,9 +89,13 @@ class SrmTracker(ScannerEntity):
     last location for LOCATION_GRACE, so a client of an unreachable access point does not jump
     to the router or appear away. A client counts as away only after it was missing for the
     entry's "consider home" time, because SRM marks idle wired clients offline now and then.
+    A client that was home before Home Assistant restarted gets the same time to show up again.
     """
 
     _attr_should_poll = False
+    # The signal changes on almost every update; recording it would add a row to the database
+    # for each tracker every few seconds.
+    _unrecorded_attributes = frozenset({"signal"})
 
     def __init__(self, hub: LocationHub, entry: SrmConfigEntry, mac: str) -> None:
         """Track one MAC address."""
@@ -120,6 +125,11 @@ class SrmTracker(ScannerEntity):
     async def async_added_to_hass(self) -> None:
         """Follow the shared locations."""
         await super().async_added_to_hass()
+        last = await self.async_get_last_state()
+        if not self._connected and last is not None and last.state == STATE_HOME:
+            # Missing from the first client list after a restart: away only after "consider home".
+            self._connected, self._missing_since = True, dt_util.utcnow()
+            self._update_from_hub()
         self.async_on_remove(
             async_dispatcher_connect(self.hass, SIGNAL_LOCATIONS, self._locations_changed)
         )
