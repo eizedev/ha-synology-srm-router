@@ -13,7 +13,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).parents[1]
-SKIP = {"uv.lock"}
+SKIP = {"uv.lock", "tests/test_privacy.py"}  # this file holds the patterns themselves
 # Addresses that are defaults or examples on every network, not anyone's own.
 ALLOWED_IPV4 = {"127.0.0.1", "192.168.1.1", "255.255.255.0"}
 DOC_NETWORKS = [
