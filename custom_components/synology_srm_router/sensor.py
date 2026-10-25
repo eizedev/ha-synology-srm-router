@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 import dataclasses
 from dataclasses import dataclass
 from functools import partial
@@ -21,7 +21,9 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
+from .const import CONF_FIREWALL_HITS, RECENTLY_SEEN
 from .coordinator import (
     SIGNAL_LOCATIONS,
     FastData,
@@ -32,6 +34,7 @@ from .coordinator import (
     get_hub,
 )
 from .entity import SrmEntity
+from .firewall import rule_label, rule_rows
 
 # Coordinators poll; entities never call the router themselves.
 PARALLEL_UPDATES = 0
@@ -74,7 +77,7 @@ class SrmSlowSensorDescription(SensorEntityDescription):
     requires: str | None = None
     """The client read the value comes from; without it, the sensor is not created."""
     router_only: bool = False
-    attributes_fn: Callable[[SlowData], dict[str, Any]] | None = None
+    attributes_fn: Callable[[HomeAssistant, SlowData], dict[str, Any]] | None = None
 
 
 FAST_SENSORS: tuple[SrmFastSensorDescription, ...] = (
@@ -172,11 +175,77 @@ def _ipv4_count(entries: Any) -> int | None:
     return None if entries is None else len(lists.ipv4) if lists else 0
 
 
-def _firewall_attributes(data: SlowData) -> dict[str, Any]:
+def _firewall_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, Any]:
     if data.firewall is None:
         return {}
-    # Changes whenever a rule is added, removed, edited, switched or moved.
-    return {"config_hash": helpers.config_hash(rule.raw for rule in data.firewall.rules)}
+    return {
+        # Changes whenever a rule is added, removed, edited, switched or moved.
+        "config_hash": helpers.config_hash(rule.raw for rule in data.firewall.rules),
+        "rules": rule_rows(data.rules, data.hits),
+    }
+
+
+def _reserved_macs(data: SlowData) -> set[str]:
+    lists = data.reservations.reservation_list if data.reservations else None
+    return {m for r in (lists.ipv4 if lists else ()) if (m := helpers.normalize_mac(r.clid))}
+
+
+def _lease_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, Any]:
+    """Every IPv4 lease: who holds it, whether it is online, reserved, or unknown."""
+    lists = data.leases.client_list if data.leases else None
+    if lists is None:
+        return {}
+    hub, reserved = get_hub(hass), _reserved_macs(data)
+    rows: list[dict[str, Any]] = []
+    for lease in lists.ipv4:
+        mac = helpers.normalize_mac(lease.clid) or ""
+        client = hub.clients.get(mac)
+        location = hub.locations.get(mac)
+        remaining = helpers.lease_remaining(lease.expire)
+        rows.append(
+            {
+                "name": (client.name if client else None) or lease.hostname,
+                "ip": lease.ip,
+                "mac": mac,
+                "online": bool(location and location.online),
+                "reserved": mac in reserved,
+                # Neither reserved nor named in SRM: a device nobody has looked at yet.
+                "unknown": mac not in reserved and not (client and client.named),
+                "expires_in_min": int(remaining.total_seconds() // 60) if remaining else None,
+            }
+        )
+    rows.sort(key=lambda r: (not r["online"], (r["name"] or "~").lower()))
+    return {"leases": rows}
+
+
+def _reservation_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, Any]:
+    """Every IPv4 reservation: whether its device is around, and whether it sits in a pool."""
+    lists = data.reservations.reservation_list if data.reservations else None
+    if lists is None:
+        return {}
+    hub, now = get_hub(hass), dt_util.utcnow()
+    pools = [pool_range(s) for s in dhcp_pools(data).values()]
+    rows: list[dict[str, Any]] = []
+    for item in lists.ipv4:
+        mac = helpers.normalize_mac(item.clid) or ""
+        client = hub.clients.get(mac)
+        location = hub.locations.get(mac)
+        online = bool(location and location.online)
+        seen = hub.last_seen.get(mac)
+        rows.append(
+            {
+                "name": (client.name if client else None) or item.hostname,
+                "ip": item.ip,
+                "mac": mac,
+                "online": online,
+                "last_seen": seen.date().isoformat() if seen else None,
+                # Not seen online by Home Assistant within RECENTLY_SEEN (since installing).
+                "stale": not online and (seen is None or now - seen > RECENTLY_SEEN),
+                "in_pool": any(_in(item.ip, r) for r in pools if r is not None),
+            }
+        )
+    rows.sort(key=lambda r: (not r["stale"], (r["name"] or "~").lower()))
+    return {"reservations": rows}
 
 
 SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
@@ -194,6 +263,7 @@ SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
         router_only=True,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _ipv4_count(d.leases),
+        attributes_fn=_lease_attributes,
     ),
     SrmSlowSensorDescription(
         key="dhcp_reservations",
@@ -202,6 +272,7 @@ SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
         router_only=True,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: _ipv4_count(d.reservations),
+        attributes_fn=_reservation_attributes,
     ),
     SrmSlowSensorDescription(
         key="firewall_rules",
@@ -254,6 +325,8 @@ class SrmSlowSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
     """A sensor computed from the slow coordinator's data."""
 
     entity_description: SrmSlowSensorDescription
+    # Lists for dashboards and templates; history keeps only the counts.
+    _unrecorded_attributes = frozenset({"leases", "reservations", "rules"})
 
     @property
     def native_value(self) -> Any:
@@ -262,9 +335,9 @@ class SrmSlowSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Extra values some sensors carry, such as the firewall's configuration hash."""
+        """Lists behind the counts, and the firewall's configuration hash."""
         attributes_fn = self.entity_description.attributes_fn
-        return attributes_fn(self.coordinator.data) if attributes_fn else None
+        return attributes_fn(self.hass, self.coordinator.data) if attributes_fn else None
 
 
 class SrmClientsSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
@@ -299,65 +372,57 @@ class SrmClientsSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
         return sum(1 for loc in locations if loc.online and loc.source == self._entry_id)
 
 
-# Names of SRM's local networks; any other interface keeps its own name.
+# Names of SRM's local networks (measured on an RT2600ac and an MR2200ac); any other interface
+# keeps its own name.
 NETWORK_KEYS = {"lbr0": "dhcp_pool_lan", "gbr0": "dhcp_pool_guest"}
-# A firewall rule is identified by what it does, not by its position (``ui_id``) or switch.
-RULE_IDENTITY_IGNORE = frozenset({"ui_id", "enabled"})
 
-
-def firewall_rules(data: SlowData) -> dict[str, FirewallRule]:
-    """Rules by a key from their content; identical rules get a running number."""
-    rules: dict[str, FirewallRule] = {}
-    for rule in data.firewall.rules if data.firewall else ():
-        digest = helpers.config_hash([rule.raw], ignore=RULE_IDENTITY_IGNORE)[:12]
-        key, number = digest, 1
-        while key in rules:
-            number += 1
-            key = f"{digest}_{number}"
-        rules[key] = rule
-    return rules
-
-
-def rule_label(rule: FirewallRule, rules: Iterable[FirewallRule]) -> str:
-    """Return the rule's name, with its IP version when another rule has the same name."""
-    name = rule.name or f"#{rule.ui_id}"
-    if sum(1 for other in rules if other.name == rule.name) > 1:
-        version = {"v4": "IPv4", "v6": "IPv6"}.get(rule.ip_version or "")
-        if version:
-            return f"{name} ({version})"
-    return name
+type AddressRange = tuple[ipaddress.IPv4Address, ipaddress.IPv4Address]
 
 
 def dhcp_pools(data: SlowData) -> dict[str, DhcpServer]:
-    """DHCP servers with an IPv4 pool, by interface."""
+    """DHCP servers that hand out IPv4 addresses, by interface."""
     servers = data.dhcp_servers.data if data.dhcp_servers else ()
-    return {s.ifname: s for s in servers if s.ifname and s.ipv4 and s.ipv4.begin and s.ipv4.end}
+    return {
+        s.ifname: s
+        for s in servers
+        if s.ifname and s.ipv4 and s.ipv4.enable is not False and s.ipv4.begin and s.ipv4.end
+    }
 
 
-def pool_usage(data: SlowData, server: DhcpServer) -> float | None:
-    """Share of the pool's addresses that are leased or reserved, in percent."""
+def pool_range(server: DhcpServer) -> AddressRange | None:
+    """First and last address of a pool, or None if SRM's values are not usable."""
     try:
         begin = ipaddress.IPv4Address(server.ipv4.begin if server.ipv4 else "")
         end = ipaddress.IPv4Address(server.ipv4.end if server.ipv4 else "")
     except ValueError:
         return None
-    size = int(end) - int(begin) + 1
-    if size <= 0:
-        return None
+    return (begin, end) if begin <= end else None
+
+
+def _in(ip: str | None, pool: AddressRange) -> bool:
+    try:
+        address = ipaddress.IPv4Address(ip or "")
+    except ValueError:
+        return False
+    return pool[0] <= address <= pool[1]
+
+
+def pool_usage(data: SlowData, server: DhcpServer) -> float | None:
+    """Share of the pool's addresses that are leased or reserved, in percent."""
+    pool = pool_range(server)
+    if pool is None or data.leases is None:
+        return None  # nothing known about the leases is not an empty pool
     lists = [
-        data.leases.client_list if data.leases else None,
+        data.leases.client_list,
         data.reservations.reservation_list if data.reservations else None,
     ]
-    used: set[ipaddress.IPv4Address] = set()
-    for entries in lists:
-        for item in entries.ipv4 if entries else ():
-            try:
-                address = ipaddress.IPv4Address(item.ip or "")
-            except ValueError:
-                continue
-            if begin <= address <= end:
-                used.add(address)
-    return round(100 * len(used) / size, 1)
+    used = {
+        item.ip
+        for entries in lists
+        for item in (entries.ipv4 if entries else ())
+        if _in(item.ip, pool)
+    }
+    return round(100 * len(used) / (int(pool[1]) - int(pool[0]) + 1), 1)
 
 
 def usb_volumes(data: SlowData) -> dict[str, StorageVolume]:
@@ -372,22 +437,30 @@ def _add_dynamic(
 ) -> None:
     """Add sensors for firewall rules, DHCP pools and USB volumes as they appear.
 
-    A firewall rule that is gone (deleted or edited, which gives it a new key) loses its sensor;
-    a DHCP pool or a USB volume that is gone leaves its sensor unavailable, since it may return.
+    Hits sensors exist only with the option "firewall_hits". A rule that is gone (deleted, or
+    edited, which gives it a new key) loses its sensor, and gets one again if it returns; a DHCP
+    pool or USB volume that is gone leaves its sensor unavailable, since it may come back.
     """
     runtime = entry.runtime_data
     slow = runtime.slow
+    with_hits = runtime.is_router and bool(entry.options.get(CONF_FIREWALL_HITS, False))
+    rules_added: set[str] = set()
     added: set[str] = set()
 
     @callback
     def _update() -> None:
         data = slow.data
         new: list[SensorEntity] = []
-        rules = firewall_rules(data) if runtime.is_router else {}
-        for key, rule in rules.items():
-            if f"rule_{key}" not in added:
-                added.add(f"rule_{key}")
-                new.append(SrmFirewallHitsSensor(entry, key, rule))
+        if data.firewall is not None or not with_hits:
+            current = set(data.rules) if with_hits else set()
+            # Remove first, so an edited rule's new sensor does not get a "_2" entity ID.
+            _remove_rules(hass, entry, {f"{entry.unique_id}_firewall_rule_{k}" for k in current})
+            rules_added.intersection_update(current)
+        if with_hits:
+            for key, rule in data.rules.items():
+                if key not in rules_added:
+                    rules_added.add(key)
+                    new.append(SrmFirewallHitsSensor(entry, key, rule))
         if runtime.is_router:
             for ifname in dhcp_pools(data):
                 if f"pool_{ifname}" not in added:
@@ -399,8 +472,6 @@ def _add_dynamic(
                 new += [SrmUsbSensor(entry, path, volume, kind) for kind in USB_SENSORS]
         if new:
             async_add_entities(new)
-        if data.firewall is not None:
-            _remove_rules(hass, entry, {f"{entry.unique_id}_firewall_rule_{key}" for key in rules})
 
     _update()
     entry.async_on_unload(slow.async_add_listener(_update))
@@ -420,6 +491,10 @@ class SrmFirewallHitsSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
 
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_native_unit_of_measurement = "packets"
+    # What the rule does stays out of the history: addresses, ports and lists of countries.
+    _unrecorded_attributes = frozenset(
+        {"enabled", "action", "ip_version", "protocol", "source", "destination", "ports"}
+    )
 
     def __init__(self, entry: SrmConfigEntry, key: str, rule: FirewallRule) -> None:
         """Bind the sensor to one rule; switched-off rules start disabled."""
@@ -433,14 +508,12 @@ class SrmFirewallHitsSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
             ),
         )
         self._key = key
-        rules = entry.runtime_data.slow.data.firewall
-        self._attr_translation_placeholders = {
-            "rule": rule_label(rule, rules.rules if rules else ())
-        }
+        rules = entry.runtime_data.slow.data.rules.values()
+        self._attr_translation_placeholders = {"rule": rule_label(rule, rules)}
 
     @property
     def _rule(self) -> FirewallRule | None:
-        return firewall_rules(self.coordinator.data).get(self._key)
+        return self.coordinator.data.rules.get(self._key)
 
     @property
     def available(self) -> bool:
@@ -449,7 +522,7 @@ class SrmFirewallHitsSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> int | None:
-        """The rule's packet counter."""
+        """The rule's packet counter; unknown when the counters could not be read."""
         rule, hits = self._rule, self.coordinator.data.hits
         if rule is None or hits is None or rule.ui_id is None:
             return None
@@ -477,6 +550,7 @@ class SrmDhcpPoolSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
 
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"begin", "end"})
 
     def __init__(self, entry: SrmConfigEntry, ifname: str) -> None:
         """Bind the sensor to the DHCP server of one interface."""
@@ -510,7 +584,7 @@ class SrmDhcpPoolSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
         server = self._server
         if server is None or server.ipv4 is None:
             return {}
-        return {"begin": server.ipv4.begin, "end": server.ipv4.end, "enabled": server.ipv4.enable}
+        return {"begin": server.ipv4.begin, "end": server.ipv4.end}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -526,12 +600,7 @@ USB_SENSORS: tuple[SrmUsbSensorDescription, ...] = (
         translation_key="usb_used",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda v: (
-            100 * (v.size_total_byte - v.size_free_byte) / v.size_total_byte
-            if v.size_total_byte and v.size_free_byte is not None
-            else None
-        ),
+        value_fn=helpers.used_percent,
     ),
     SrmUsbSensorDescription(
         key="usb_free",
@@ -567,14 +636,15 @@ class SrmUsbSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
         volume: StorageVolume,
         description: SrmUsbSensorDescription,
     ) -> None:
-        """Bind the sensor to one volume, by its path."""
+        """Bind the sensor to one volume, by its path; named as in SRM, else by its folder."""
         super().__init__(
             entry,
             entry.runtime_data.slow,
             dataclasses.replace(description, key=f"{description.key}_{path}"),
         )
         self._path = path
-        self._attr_translation_placeholders = {"volume": volume.display_name or path}
+        name = volume.display_name or path.rstrip("/").rsplit("/", 1)[-1] or path
+        self._attr_translation_placeholders = {"volume": name}
 
     @property
     def _volume(self) -> StorageVolume | None:

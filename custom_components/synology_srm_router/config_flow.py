@@ -47,6 +47,7 @@ from .const import (
     CONF_CONSIDER_HOME,
     CONF_FAST_INTERVAL,
     CONF_FINGERPRINT,
+    CONF_FIREWALL_HITS,
     CONF_IS_ROUTER,
     CONF_OWN_TRACKERS,
     CONF_SHOW_ALL,
@@ -301,7 +302,12 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             show_all=self._show_all,
             keep=(user_input or {}).get(CONF_TRACKED, []),
         )
-        schema = _clients_schema(choice, user_input or {}, show_all=self._show_all)
+        schema = _clients_schema(
+            choice,
+            user_input or {},
+            show_all=self._show_all,
+            firewall=probe.is_router and not self._from_menu,
+        )
         # Coming from the access point's menu: flows have no "back", so the page says how to get
         # the router's choice anyway (pick nothing).
         return self.async_show_form(
@@ -352,6 +358,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.seconds,
             CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.seconds,
             CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.seconds,
+            CONF_FIREWALL_HITS: bool(choice.get(CONF_FIREWALL_HITS, False)),
         }
         data = {k: v for k, v in self._data.items() if k != CONF_VERIFY_CERTIFICATE}
         data[CONF_IS_ROUTER] = probe.is_router
@@ -491,7 +498,11 @@ def _certificate_placeholders(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 def _clients_schema(
-    choice: list[SelectOptionDict], current: Mapping[str, Any], *, show_all: bool
+    choice: list[SelectOptionDict],
+    current: Mapping[str, Any],
+    *,
+    show_all: bool,
+    firewall: bool = False,
 ) -> probatio.Schema:
     fields: dict[Any, Any] = {
         probatio.Required(
@@ -503,6 +514,10 @@ def _clients_schema(
     }
     if not show_all:
         fields[probatio.Optional(CONF_SHOW_ALL, default=False)] = BooleanSelector()
+    if firewall:  # routers only: a sensor per firewall rule is opt-in
+        fields[
+            probatio.Optional(CONF_FIREWALL_HITS, default=current.get(CONF_FIREWALL_HITS, False))
+        ] = BooleanSelector()
     return probatio.Schema(fields)
 
 
@@ -579,7 +594,10 @@ class SrmOptionsFlow(OptionsFlowWithReload):
                 show_all=self._show_all,
                 keep=current.get(CONF_TRACKED, []),
             )
-            fields.update(_clients_schema(choice, current, show_all=self._show_all).schema)
+            firewall = step_id == "init" and bool(entry.data.get(CONF_IS_ROUTER))
+            fields.update(
+                _clients_schema(choice, current, show_all=self._show_all, firewall=firewall).schema
+            )
         if timings:
             defaults = {
                 CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.seconds,

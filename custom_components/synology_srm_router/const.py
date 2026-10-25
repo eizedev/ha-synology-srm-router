@@ -19,6 +19,7 @@ CONF_CONSIDER_HOME: Final = "consider_home"
 CONF_SHOW_ALL: Final = "show_all"
 # An access point next to a router keeps its own trackers (by default the router keeps all).
 CONF_OWN_TRACKERS: Final = "own_trackers"
+CONF_FIREWALL_HITS: Final = "firewall_hits"
 
 DEFAULT_HTTPS_PORT: Final = 8001
 DEFAULT_HTTP_PORT: Final = 8000

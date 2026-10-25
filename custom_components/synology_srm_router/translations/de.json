@@ -42,12 +42,14 @@
         "data": {
           "track_all": "Alle Clients verfolgen",
           "tracked": "Zu verfolgende Clients",
-          "show_all": "Alle bekannten Clients zeigen"
+          "show_all": "Alle bekannten Clients zeigen",
+          "firewall_hits": "Sensor pro Firewall-Regel"
         },
         "data_description": {
           "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine IPv4-DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
           "tracked": "Nur diese Clients bekommen einen Tracker. Leer lassen für keine.",
-          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
+          "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene.",
+          "firewall_hits": "Ein Sensor, der die Treffer jeder Regel zählt, für Graphen und Automationen. Die Regeltabelle am Sensor Firewall-Regeln zeigt die Treffer in jedem Fall."
         },
         "submit": "Fertig"
       },
@@ -145,7 +147,8 @@
           "fast_interval": "Schnelles Abfrageintervall",
           "slow_interval": "Langsames Abfrageintervall",
           "show_all": "Alle bekannten Clients zeigen",
-          "consider_home": "Wartezeit bis abwesend"
+          "consider_home": "Wartezeit bis abwesend",
+          "firewall_hits": "Sensor pro Firewall-Regel"
         },
         "data_description": {
           "track_all": "Ein Tracker für jeden Client, der online ist, in SRM einen Namen hat, eine IPv4-DHCP-Lease oder -Reservierung hat oder in den letzten 30 Tagen gesehen wurde; neue Clients kommen dazu, sobald sie auftauchen.",
@@ -153,7 +156,8 @@
           "fast_interval": "Clients, WLAN, Auslastung und WAN. Standard 30 s.",
           "slow_interval": "Systeminformationen und USB-Speicher; auf Routern auch DHCP und Firewall. Standard 300 s.",
           "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene.",
-          "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s."
+          "consider_home": "Ein Client gilt erst als abwesend, wenn er so lange fehlt. SRM meldet ruhige Kabelgeräte ab und zu für eine Minute als offline. Standard 180 s.",
+          "firewall_hits": "Ein Sensor, der die Treffer jeder Regel zählt, für Graphen und Automationen. Die Regeltabelle am Sensor Firewall-Regeln zeigt die Treffer in jedem Fall."
         },
         "submit": "Speichern"
       },

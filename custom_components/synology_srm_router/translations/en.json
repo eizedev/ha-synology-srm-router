@@ -42,12 +42,14 @@
         "data": {
           "track_all": "Track all clients",
           "tracked": "Clients to track",
-          "show_all": "Show all known clients"
+          "show_all": "Show all known clients",
+          "firewall_hits": "Sensor per firewall rule"
         },
         "data_description": {
           "track_all": "A tracker for every client that is online, has a name given in SRM, an IPv4 DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
           "tracked": "Only these clients get a tracker. Leave empty for none.",
-          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago."
+          "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
+          "firewall_hits": "A sensor that counts each rule's hits, for graphs and automations. The rule table on the Firewall rules sensor shows the hits either way."
         },
         "submit": "Finish"
       },
@@ -145,7 +147,8 @@
           "fast_interval": "Fast polling interval",
           "slow_interval": "Slow polling interval",
           "show_all": "Show all known clients",
-          "consider_home": "Time until away"
+          "consider_home": "Time until away",
+          "firewall_hits": "Sensor per firewall rule"
         },
         "data_description": {
           "track_all": "A tracker for every client that is online, has a name given in SRM, an IPv4 DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
@@ -153,7 +156,8 @@
           "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
           "slow_interval": "System information and USB storage; on routers also DHCP and the firewall. Default 300 s.",
           "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
-          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s."
+          "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
+          "firewall_hits": "A sensor that counts each rule's hits, for graphs and automations. The rule table on the Firewall rules sensor shows the hits either way."
         },
         "submit": "Save"
       },
