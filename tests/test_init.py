@@ -445,7 +445,9 @@ async def test_last_seen_survives_a_restart(
     assert "02:00:00:00:00:79" not in hub.last_seen  # too old to matter, forgotten
 
 
-async def test_a_blocked_login_at_setup_reports_a_repair(hass: HomeAssistant) -> None:
+async def test_a_blocked_login_at_setup_reports_a_repair(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
     ERRORS[ROUTER_HOST] = {"login": SrmBlockedError(407, "SYNO.API.Auth")}
     entry = make_entry()
     await _setup(hass, entry)
@@ -453,6 +455,12 @@ async def test_a_blocked_login_at_setup_reports_a_repair(hass: HomeAssistant) ->
     issues = ir.async_get(hass)
     assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is not None
     ERRORS.clear()
+    # Home Assistant retries within seconds; no login before BLOCKED_RETRY has passed.
+    clients = len(FakeClient.instances)
+    await hass.config_entries.async_reload(entry.entry_id)
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    assert len(FakeClient.instances) == clients
+    freezer.tick(BLOCKED_RETRY)
     await hass.config_entries.async_reload(entry.entry_id)
     assert entry.state is ConfigEntryState.LOADED  # type: ignore[comparison-overlap]
     assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is None

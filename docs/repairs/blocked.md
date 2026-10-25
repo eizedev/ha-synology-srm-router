@@ -10,5 +10,5 @@ attempts. The device is not read while the block lasts.
 2. Check that the password Home Assistant uses is still right; a wrong one is what usually causes
    the block. If it changed, Home Assistant asks you to sign in again.
 
-Home Assistant tries to log in again every 15 minutes; each attempt counts towards the block, so a
-wrong password keeps the block alive. The repair disappears after the next successful update.
+Home Assistant tries to log in again every 15 minutes, also when the block hit while it was
+starting; each attempt counts towards the block, so a wrong password keeps the block alive. The repair disappears after the next successful update.

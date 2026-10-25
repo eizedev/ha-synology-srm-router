@@ -1,10 +1,12 @@
+{#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+{%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
 {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
    | selectattr('attributes.rules', 'defined') | first %}
 {% set rows = s.attributes.rules if s else [] %}
 {% set to = {'input': 'router', 'forward': 'through', 'both_input_forward': 'router + through'} %}
 {% for r in rows -%}
-{{ '✅' if r.action == 'allow' else '⛔' }} **{{ ('~~' ~ r.label ~ '~~') if r.enabled == false else r.label }}** · {{ r.hits if r.hits is not none else '–' }} hits{{ ' · ⚠ duplicate' if r.duplicate }}{{ ' · never hit' if r.enabled and r.hits == 0 and not r.duplicate }}<br>
-{{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ r.source_name or 'any' }} → {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ r.destination_name) if r.destination_name }}{{ (' · ports ' ~ (r.ports | replace(',', ', ') | truncate(32))) if r.ports }}
+{{ '✅' if r.action == 'allow' else '⛔' }} **{{ ('~~' ~ md(r.label) ~ '~~') if r.enabled == false else md(r.label) }}** · {{ r.hits if r.hits is not none else '–' }} hits{{ ' · ⚠ duplicate' if r.duplicate }}{{ ' · never hit' if r.enabled and r.hits == 0 and not r.duplicate }}<br>
+{{ (r.in_interfaces | join(', ') ~ ': ') if r.in_interfaces }}{{ md(r.source_name or 'any') }} → {{ to.get(r.chain, r.chain) }}{{ (' ' ~ r.out_interfaces | join(', ')) if r.out_interfaces }}{{ (': ' ~ md(r.destination_name)) if r.destination_name }}{{ (' · ports ' ~ md(r.ports | replace(',', ', ') | truncate(32))) if r.ports }}
 
 {% endfor %}
 ✅ allow · ⛔ deny · *router*: to the router itself, *through*: through it to another network.

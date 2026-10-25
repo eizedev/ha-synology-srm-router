@@ -25,7 +25,7 @@
       },
       "credentials": {
         "title": "Administratorkonto",
-        "description": "Die Web-API von SRM antwortet nur Administratoren. Hilfe: [Dokumentation]({docs})",
+        "description": "Nutze ein SRM-Administratorkonto (nur solche sind getestet). Hilfe: [Dokumentation]({docs})",
         "data": {
           "username": "Benutzername",
           "password": "Passwort"
@@ -115,6 +115,19 @@
           "show_all": "SRM behält jeden Client, den es je gesehen hat. Einschalten und weiter, um alle zu sehen, auch längst verschwundene."
         },
         "submit": "Fertig"
+      },
+      "credentials_unprotected": {
+        "title": "Konto (Verbindung nicht geschützt)",
+        "description": "Das Zertifikat wird nicht geprüft oder die Verbindung ist reines HTTP: Wer den Verkehr in deinem Netz mitlesen kann, kann dieses Passwort lesen. Mach nur weiter, wenn du das in Kauf nimmst; sonst wähle HTTPS mit geprüftem Zertifikat. Nutze ein SRM-Administratorkonto (nur solche sind getestet). Hilfe: [Dokumentation]({docs})",
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort"
+        },
+        "data_description": {
+          "username": "Ein SRM-Administratorkonto ohne Zwei-Faktor-Anmeldung; am besten ein eigenes Konto.",
+          "password": "Das Passwort des Kontos."
+        },
+        "submit": "Weiter"
       }
     },
     "error": {
@@ -124,7 +137,7 @@
       "blocked": "Das Gerät sperrt Anmeldungen von Home Assistant nach Fehlversuchen. Gib die Adresse in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft.",
       "certificate": "Das Zertifikat passt nicht. Prüfe die Adresse und bestätige dann den neuen Fingerabdruck.",
       "invalid_host": "Gib einen Hostnamen oder eine IP-Adresse an, ohne Port oder Pfad.",
-      "not_admin": "Das Konto ist kein Administrator. Die Web-API von SRM antwortet nur Administratoren.",
+      "not_admin": "SRM hat dem Konto die Rechte dafür verweigert; nutze ein Administratorkonto.",
       "no_serial": "Das Gerät meldet keine Seriennummer und kann deshalb nicht eingerichtet werden.",
       "unknown": "Unerwarteter Fehler, siehe Log.",
       "session_ended": "SRM hat die Sitzung direkt nach der Anmeldung abgelehnt. Das kommt gelegentlich vor; versuche es noch einmal."
@@ -308,7 +321,7 @@
       "message": "Das Zertifikat passt nicht. Prüfe die Adresse und bestätige dann den neuen Fingerabdruck."
     },
     "not_admin": {
-      "message": "Das Konto ist kein Administrator. Die Web-API von SRM antwortet nur Administratoren."
+      "message": "SRM hat dem Konto die Rechte dafür verweigert; nutze ein Administratorkonto."
     },
     "blocked": {
       "message": "Das Gerät sperrt Anmeldungen von Home Assistant nach Fehlversuchen. Gib die Adresse in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft."

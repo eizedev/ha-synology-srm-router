@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import aiohttp
 from aiosynologysrm import SrmBlockedError, SrmClient, SrmError
 from homeassistant.const import (
@@ -16,8 +18,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr, instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from homeassistant.util import dt as dt_util
+from homeassistant.util.hass_dict import HassKey
 
 from .const import (
+    BLOCKED_RETRY,
     CONF_FINGERPRINT,
     CONF_IS_ROUTER,
     CONF_USE_HTTPS,
@@ -36,6 +41,7 @@ from .coordinator import (
     map_error,
 )
 
+BLOCKED_AT: HassKey[dict[str, datetime]] = HassKey(f"{DOMAIN}_blocked_at")
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER, Platform.SENSOR]
 # The reads the coordinators use; each is checked against the device's API catalog once.
 GETTERS = (
@@ -81,6 +87,12 @@ def create_client(hass: HomeAssistant, data: dict[str, object], session: str) ->
 
 async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
     """Connect to one SRM device and start polling it."""
+    # After SRM's auto block, Home Assistant retries the setup on its own schedule; every retry
+    # would be one more login while blocked. Wait as long as a running entry would.
+    blocked = hass.data.setdefault(BLOCKED_AT, {})
+    since = blocked.get(entry.entry_id)
+    if since is not None and dt_util.utcnow() - since < BLOCKED_RETRY:
+        raise ConfigEntryNotReady(translation_domain=DOMAIN, translation_key="blocked")
     client = create_client(hass, dict(entry.data), await session_name(hass))
     try:
         await client.login()
@@ -99,6 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
     except SrmError as err:
         await client.logout()
         if isinstance(err, SrmBlockedError):
+            blocked[entry.entry_id] = dt_util.utcnow()
             create_blocked_issue(hass, entry)
         mapped = map_error(err)
         if isinstance(mapped, ConfigEntryAuthFailed):
@@ -117,6 +130,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_IS_ROUTER: is_router}
         )
+    blocked.pop(entry.entry_id, None)
     delete_blocked_issue(hass, entry)
     hub = get_hub(hass)
     await hub.async_load()

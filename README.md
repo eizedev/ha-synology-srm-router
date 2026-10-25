@@ -32,7 +32,7 @@ changes a setting.
 - On routers: WAN connection, public IPv4 and IPv6 address, whether the router is behind NAT, DHCP
   leases, reservations and pool usage, and the firewall rules with their hits. Lists behind the
   counts show who holds an address, which devices are unknown, and what each firewall rule is
-  about, named after your devices; a hits sensor per rule on request.
+  about, named after your devices (sensors you switch on); a hits sensor per rule on request.
 - Device trackers that know which router or access point, connection and radio each client
   uses, named as in SRM.
 - Certificate pinning, and nothing but reading: the integration never changes a setting.

@@ -1,3 +1,5 @@
+{#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+{%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
 {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
    | selectattr('attributes.reservations', 'defined') | first %}
 {% set rows = s.attributes.reservations if s else [] %}
@@ -10,7 +12,7 @@ Not online, and not seen by Home Assistant in the last 30 days: candidates to re
 | Device | IP | Last seen |
 |---|---|---|
 {% for r in stale -%}
-| {{ r.name or r.mac }} | {{ r.ip }} | {{ r.last_seen or 'not since Home Assistant tracks' }} |
+| {{ md(r.name or r.mac) }} | {{ md(r.ip) }} | {{ r.last_seen or 'not since Home Assistant tracks' }} |
 {% endfor %}
 {%- else -%}
 Every reserved device was seen in the last 30 days.

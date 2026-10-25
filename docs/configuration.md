@@ -29,7 +29,9 @@ device and not to something in between:
    characters; continue only if they match.
 
 When the certificate changes later, for example after a renewal, Home Assistant asks again and
-shows the new fingerprint.
+shows the new fingerprint. Without a checked certificate, or over HTTP, the account step says so
+before you enter the password. Adding a device again that is already set up with a pinned
+certificate keeps the pin; to change how it is checked, use *Reconfigure*.
 
 ![The certificate step with the fingerprint and how to compare it](assets/screenshots/setup-certificate.png){ width="560" }
 

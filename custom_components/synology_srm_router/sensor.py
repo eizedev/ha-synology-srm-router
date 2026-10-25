@@ -275,6 +275,8 @@ SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
     SrmSlowSensorDescription(
         key="dhcp_leases",
         translation_key="dhcp_leases",
+        # Its list names every device or rule, visible to every user: switched on by choice.
+        entity_registry_enabled_default=False,
         requires="get_dhcp_clients",
         router_only=True,
         state_class=SensorStateClass.MEASUREMENT,
@@ -284,6 +286,8 @@ SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
     SrmSlowSensorDescription(
         key="dhcp_reservations",
         translation_key="dhcp_reservations",
+        # Its list names every device or rule, visible to every user: switched on by choice.
+        entity_registry_enabled_default=False,
         requires="get_dhcp_reservations",
         router_only=True,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -293,6 +297,8 @@ SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
     SrmSlowSensorDescription(
         key="firewall_rules",
         translation_key="firewall_rules",
+        # Its list names every device or rule, visible to every user: switched on by choice.
+        entity_registry_enabled_default=False,
         requires="get_firewall_rules",
         router_only=True,
         entity_category=EntityCategory.DIAGNOSTIC,
