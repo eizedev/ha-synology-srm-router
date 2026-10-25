@@ -25,8 +25,8 @@ radio, a client is connected to. Read only: it never changes a setting.
 ## What you get
 
 - One device per router or access point: CPU load, memory, download and upload rate, clients,
-  last boot; on routers WAN connection, public IPv4 and IPv6 address, and whether the router is
-  behind NAT.
+  last boot, USB storage; on routers WAN connection, public IPv4 and IPv6 address, whether the
+  router is behind NAT, DHCP leases and pool usage, and hits per firewall rule.
 - Device trackers that know which router or access point, connection and radio each client
   uses, named as in SRM.
 - Certificate pinning, and nothing but reading: the integration never changes a setting.

@@ -46,6 +46,10 @@ GETTERS = (
     "get_external_ip",
     "get_dhcp_clients",
     "get_dhcp_reservations",
+    "get_dhcp_servers",
+    "get_firewall_rules",
+    "get_firewall_hit_counts",
+    "get_usb_volumes",
 )
 
 

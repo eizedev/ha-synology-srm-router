@@ -13,8 +13,12 @@ from aiosynologysrm import (
     ConnectionStatus,
     DhcpClients,
     DhcpReservations,
+    DhcpServers,
     ExternalIp,
+    FirewallHitCount,
+    FirewallRules,
     NetworkDevices,
+    StorageVolumes,
     SystemInfo,
     Topology,
     Utilization,
@@ -110,6 +114,22 @@ class FakeClient:
     async def get_external_ip(self) -> tuple[ExternalIp, ...]:
         self._raise("get_external_ip")
         return ExternalIp.list_from_api(load(self.folder, "external_ip"))
+
+    async def get_dhcp_servers(self) -> DhcpServers:
+        self._raise("get_dhcp_servers")
+        return DhcpServers.from_api(load(self.folder, "dhcp_servers"))
+
+    async def get_firewall_rules(self) -> FirewallRules:
+        self._raise("get_firewall_rules")
+        return FirewallRules.from_api(load(self.folder, "firewall_rules"))
+
+    async def get_firewall_hit_counts(self) -> tuple[FirewallHitCount, ...]:
+        self._raise("get_firewall_hit_counts")
+        return FirewallHitCount.list_from_api(load(self.folder, "firewall_hit_counts"))
+
+    async def get_usb_volumes(self) -> StorageVolumes:
+        self._raise("get_usb_volumes")
+        return StorageVolumes.from_api(load(self.folder, "usb_volumes"))
 
 
 ERRORS: dict[str, dict[str, BaseException]] = {}

@@ -31,9 +31,10 @@ hide:
 ## What you get
 
 - One device per router or access point, with CPU load, memory, download and upload rate, the
-  number of clients on it, and the last boot.
+  number of clients on it, the last boot, and used and free space per USB volume.
 - On routers: WAN connection, public IPv4 and IPv6 address, and whether the router sits behind
-  another router or the provider's carrier-grade NAT.
+  another router or the provider's carrier-grade NAT; DHCP leases, reservations and how full
+  each network's pool is; the firewall's rules, with a sensor per rule counting its hits.
 - Device trackers for the clients you choose (or all that matter). Each says whether the client is
   home and which device, connection and radio it uses. Clients on a standalone access point are
   found there, even though the router itself reports them as wired; names are the ones given in
