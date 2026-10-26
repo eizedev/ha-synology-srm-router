@@ -221,8 +221,13 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         """Ask where the device is and how to reach it."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            self._data = {**_with_port(user_input), CONF_FINGERPRINT: None}
-            if user_input[CONF_USE_HTTPS] and user_input[CONF_VERIFY_CERTIFICATE]:
+            pin = bool(user_input[CONF_USE_HTTPS] and user_input[CONF_VERIFY_CERTIFICATE])
+            self._data = {
+                **_with_port(user_input),
+                CONF_FINGERPRINT: None,
+                CONF_VERIFY_CERTIFICATE: pin,
+            }
+            if pin:
                 try:
                     self._data[CONF_FINGERPRINT] = await _fingerprint(self._data)
                 except Exception as err:  # the form shows the error; unexpected ones are logged
@@ -277,7 +282,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 # The same device at a new address: take the address that was just verified.
                 self._abort_if_unique_id_configured(
                     updates={k: data[k] for k in (CONF_HOST, CONF_PORT, CONF_USE_HTTPS)}
-                    | {CONF_FINGERPRINT: data[CONF_FINGERPRINT]}
+                    | {k: data[k] for k in (CONF_FINGERPRINT, CONF_VERIFY_CERTIFICATE)}
                 )
                 self._data = data
                 if not self._probe.is_router and _router_configured(self.hass):
@@ -379,8 +384,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.seconds,
             CONF_FIREWALL_HITS: bool(choice.get(CONF_FIREWALL_HITS, False)),
         }
-        data = {k: v for k, v in self._data.items() if k != CONF_VERIFY_CERTIFICATE}
-        data[CONF_IS_ROUTER] = probe.is_router
+        data = {**self._data, CONF_IS_ROUTER: probe.is_router}
         return self.async_create_entry(title=_title(self.hass, probe), data=data, options=options)
 
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
@@ -445,9 +449,13 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
         if user_input is not None:
-            data = {**entry.data, **_with_port(user_input), CONF_FINGERPRINT: None}
-            data.pop(CONF_VERIFY_CERTIFICATE, None)
-            pin = user_input[CONF_USE_HTTPS] and user_input[CONF_VERIFY_CERTIFICATE]
+            pin = bool(user_input[CONF_USE_HTTPS] and user_input[CONF_VERIFY_CERTIFICATE])
+            data = {
+                **entry.data,
+                **_with_port(user_input),
+                CONF_FINGERPRINT: None,
+                CONF_VERIFY_CERTIFICATE: pin,
+            }
             try:
                 if pin:
                     data[CONF_FINGERPRINT] = await _fingerprint(data)
@@ -464,7 +472,9 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self._finish(entry, data, probe)
         defaults = {
             **entry.data,
-            CONF_VERIFY_CERTIFICATE: entry.data.get(CONF_FINGERPRINT) is not None,
+            CONF_VERIFY_CERTIFICATE: bool(
+                entry.data.get(CONF_VERIFY_CERTIFICATE) or entry.data.get(CONF_FINGERPRINT)
+            ),
         }
         return self.async_show_form(
             step_id="reconfigure",

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 import aiohttp
-from aiosynologysrm import SrmBlockedError, SrmClient, SrmError
+from aiosynologysrm import SrmBlockedError, SrmCertificateError, SrmClient, SrmError
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -26,6 +26,7 @@ from .const import (
     CONF_FINGERPRINT,
     CONF_IS_ROUTER,
     CONF_USE_HTTPS,
+    CONF_VERIFY_CERTIFICATE,
     DOMAIN,
     REQUEST_TIMEOUT,
     SESSION_NAME,
@@ -66,9 +67,17 @@ async def session_name(hass: HomeAssistant, purpose: str | None = None) -> str:
 
 
 def create_client(hass: HomeAssistant, data: dict[str, object], session: str) -> SrmClient:
-    """Build a client from an entry's data: pinned certificate, or none checked when chosen."""
+    """Build a client from an entry's data: pinned certificate, or none checked when chosen.
+
+    An entry that pins its certificate but has lost the fingerprint is refused rather than
+    connected unchecked; the certificate error leads to reauthentication, which shows the
+    certificate for confirmation.
+    """
     fingerprint = data.get(CONF_FINGERPRINT)
     use_https = bool(data[CONF_USE_HTTPS])
+    if use_https and data.get(CONF_VERIFY_CERTIFICATE) and not isinstance(fingerprint, str):
+        msg = "The certificate is pinned, but no fingerprint is stored"
+        raise SrmCertificateError(msg)
     ssl: bool | aiohttp.Fingerprint = False
     if use_https and isinstance(fingerprint, str):
         ssl = aiohttp.Fingerprint(bytes.fromhex(fingerprint))
@@ -93,7 +102,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
     since = blocked.get(entry.entry_id)
     if since is not None and dt_util.utcnow() - since < BLOCKED_RETRY:
         raise ConfigEntryNotReady(translation_domain=DOMAIN, translation_key="blocked")
-    client = create_client(hass, dict(entry.data), await session_name(hass))
+    try:
+        client = create_client(hass, dict(entry.data), await session_name(hass))
+    except SrmCertificateError as err:
+        raise map_error(err) from err
     try:
         await client.login()
         topology = await client.get_topology()

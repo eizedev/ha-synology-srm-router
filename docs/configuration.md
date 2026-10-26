@@ -29,7 +29,8 @@ device and not to something in between:
    characters; continue only if they match.
 
 When the certificate changes later, for example after a renewal, Home Assistant asks again and
-shows the new fingerprint. Without a checked certificate, or over HTTP, the account step says so
+shows the new fingerprint. A device set up with a checked certificate never connects unchecked:
+if its stored fingerprint is missing, Home Assistant asks you to confirm the certificate again. Without a checked certificate, or over HTTP, the account step says so
 before you enter the password. Adding a device again that is already set up with a pinned
 certificate keeps the pin; to change how it is checked, use *Reconfigure*.
 
@@ -102,8 +103,9 @@ host name or address (a PlayStation, a printer, ...) offer themselves under *Dis
 
 Each update reads several values from the device; SRM devices answer slowly (about half a second
 per call on an RT2600ac), so intervals much below the defaults mostly add load. Trackers of
-clients you no longer choose are removed. With *Track all clients* none are removed, so devices
-with private (rotating) MAC addresses collect trackers over time; delete those by hand.
+clients you no longer choose are removed. With *Track all clients* none are removed: a client
+SRM no longer lists keeps its tracker, which says away. Devices with private (rotating) MAC
+addresses therefore collect trackers over time; delete those by hand.
 
 ## Coming from the built-in Synology SRM integration
 

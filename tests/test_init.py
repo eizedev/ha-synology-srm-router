@@ -344,6 +344,26 @@ async def test_a_tracker_of_another_entry_is_not_duplicated(hass: HomeAssistant)
     ]
 
 
+async def test_a_tracker_of_a_forgotten_client_comes_back_away(hass: HomeAssistant) -> None:
+    # SRM no longer lists the client, so "track all" does not cover it: the tracker stays.
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    er.async_get(hass).async_get_or_create(
+        "device_tracker",
+        DOMAIN,
+        "02:00:00:00:00:77",
+        config_entry=entry,
+        suggested_object_id="old_laptop",
+        original_name="Old laptop",
+    )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    state = hass.states.get("device_tracker.old_laptop")
+    assert state is not None
+    assert state.state == "not_home"
+    assert state.attributes["friendly_name"] == "Old laptop"
+
+
 async def test_unchosen_trackers_are_removed(hass: HomeAssistant) -> None:
     mac = load("router", "wifi_devices")["device_list"][0]["mac_address"]
     entry = make_entry(tracked=[mac])
@@ -491,8 +511,10 @@ async def test_the_client_pins_the_certificate_and_names_the_session(
         assert kwargs["session_name"] == name
         assert isinstance(kwargs["ssl"], aiohttp.Fingerprint)
         assert kwargs["ssl"].fingerprint == bytes.fromhex(entry.data["fingerprint"])
-        create_client(hass, {**entry.data, "fingerprint": None}, name)
+        create_client(hass, {**entry.data, "fingerprint": None, "verify_certificate": False}, name)
         assert client.call_args.kwargs["ssl"] is False  # chosen: no certificate check
+        with pytest.raises(SrmCertificateError):  # pinned, but the fingerprint is gone
+            create_client(hass, {**entry.data, "fingerprint": None}, name)
         create_client(hass, {**entry.data, "use_https": False}, name)
         assert client.call_args.kwargs["ssl"] is False
 
