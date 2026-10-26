@@ -32,8 +32,9 @@ no addresses, names, passwords or the certificate fingerprint. Attach them to a 
 
 - A tracker's device is renamed to the client's host name whenever the integration loads, if
   another integration knows the same MAC address (a Sonos speaker, a vacuum): its tracker then
-  shows as `<host name> <name in SRM>`. Rename the device in Home Assistant; a name you give
-  stays. [#30](https://github.com/eizedev/ha-synology-srm-router/issues/30)
+  shows as `<host name> <name in SRM>`. Rename the tracker entity in Home Assistant (its
+  *Name* in the entity settings); a name you give stays. Renaming only the device is not enough:
+  the tracker then shows the name twice. [#30](https://github.com/eizedev/ha-synology-srm-router/issues/30)
 
 ## Removing the integration
 
