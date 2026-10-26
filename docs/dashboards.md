@@ -105,6 +105,29 @@ Router and access point with gauges, tiles and a traffic graph, the client lists
 [Download it](assets/example-dashboard.yaml) or copy it from here; the comment at the top says
 where to paste it and which entity IDs to adjust.
 
+### Entity IDs in other languages
+
+Home Assistant builds an entity ID from the entity's name in the language it had when the entity
+was created, for German and a number of other languages; for the rest it uses English. The
+example uses the English IDs. In German, these differ (the device prefix stays the model name):
+
+| English | German |
+|---|---|
+| `sensor.<device>_cpu_load` | `sensor.<device>_cpu_last` |
+| `sensor.<device>_memory_usage` | `sensor.<device>_speicherauslastung` |
+| `binary_sensor.<device>_wan_connection` | `binary_sensor.<device>_wan_verbindung` |
+| `sensor.<device>_public_ipv4_address` | `sensor.<device>_offentliche_ipv4_adresse` |
+| `sensor.<device>_dhcp_pool_usage_lan` | `sensor.<device>_dhcp_pool_belegt_lan` |
+| `sensor.<device>_dhcp_reservations` | `sensor.<device>_dhcp_reservierungen` |
+| `sensor.<device>_firewall_rules` | `sensor.<device>_firewall_regeln` |
+| `sensor.<device>_wired_clients` | `sensor.<device>_kabel_clients` |
+| `sensor.<device>_wi_fi_clients_5_ghz` | `sensor.<device>_wlan_clients_5_ghz` |
+| `sensor.<device>_last_boot` | `sensor.<device>_letzter_start` |
+
+`clients`, `download_rate`, `upload_rate` and `dhcp_leases` are the same in both. The Markdown
+templates find their sensors by attribute, not by ID, and work in every language. Every
+entity's ID is shown in its settings.
+
 ```yaml
 --8<-- "docs/assets/example-dashboard.yaml"
 ```

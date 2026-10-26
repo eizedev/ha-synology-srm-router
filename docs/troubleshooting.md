@@ -28,6 +28,14 @@ no addresses, names, passwords or the certificate fingerprint. Attach them to a 
 - Wired clients behind an access point's LAN port appear on the router.
 - The public IPv4 address is what SRM last recorded; it can lag behind a change.
 
+## Known issues
+
+- A tracker's device is renamed to the client's host name whenever the integration loads, if
+  another integration knows the same MAC address (a Sonos speaker, a vacuum): its tracker then
+  shows as `<host name> <name in SRM>`. Rename the tracker entity in Home Assistant (its
+  *Name* in the entity settings); a name you give stays. Renaming only the device is not enough:
+  the tracker then shows the name twice. [#30](https://github.com/eizedev/ha-synology-srm-router/issues/30)
+
 ## Removing the integration
 
 *Settings, Devices & services, Synology SRM Router*, then delete each entry. The integration only
