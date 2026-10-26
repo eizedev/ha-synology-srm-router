@@ -1,6 +1,7 @@
 # Installation
 
-Requires Home Assistant 2026.10.3 or newer and [HACS](https://hacs.xyz/).
+Requires Home Assistant 2026.10.3 or newer. [HACS](https://hacs.xyz/) is the easy way; without
+it, see [Without HACS](#without-hacs).
 
 ## In HACS
 
@@ -13,6 +14,22 @@ https://github.com/eizedev/ha-synology-srm-router
 ```
 
 Install **Synology SRM Router**, then restart Home Assistant.
+
+## Without HACS
+
+1. Download `synology_srm_router.zip` from the
+   [latest release](https://github.com/eizedev/ha-synology-srm-router/releases/latest).
+2. Optional: check it. The release notes list its SHA-256, which `shasum -a 256
+   synology_srm_router.zip` (macOS, Linux) or `Get-FileHash synology_srm_router.zip` (Windows)
+   must show as well. With the [GitHub CLI](https://cli.github.com/),
+   `gh attestation verify synology_srm_router.zip --repo eizedev/ha-synology-srm-router` also
+   proves that this repository's release workflow built it.
+3. Unpack it into `custom_components/synology_srm_router/` in your Home Assistant configuration
+   folder (the folder with `configuration.yaml`), so that `manifest.json` ends up directly in it.
+4. Restart Home Assistant.
+
+To update, replace the folder's content with the new release's zip and restart. HACS users get
+updates offered instead.
 
 ## Coming from the built-in Synology SRM integration
 

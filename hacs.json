@@ -1,5 +1,6 @@
 {
   "name": "Synology SRM Router",
   "homeassistant": "2026.10.3",
-  "render_readme": true
+  "render_readme": true,
+  "hide_default_branch": true
 }

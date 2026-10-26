@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call: # the release runs the same checks before it publishes
 
 permissions:
   contents: read
