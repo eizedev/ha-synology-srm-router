@@ -25,9 +25,9 @@
       },
       "certificate_public": {
         "title": "Zertifikat bestätigen",
-        "description": "Das Gerät zeigt ein Zertifikat von {issuer}, einer öffentlichen Zertifizierungsstelle, mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\n**Per Name prüfen (empfohlen):** Gib den Namen ein, für den das Zertifikat ausgestellt ist, also den, mit dem du das Gerät im Browser öffnest (zum Beispiel deinen DDNS-Namen). Home Assistant prüft dann jede Verbindung gegen die Zertifizierungsstelle und diesen Namen, und Erneuerungen brauchen nichts von dir.\n\n**Hinterlegen:** Lass das Feld, vergleiche den Fingerabdruck mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. Home Assistant vertraut dann genau diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung. [Mehr zu Zertifikaten]({docs})",
+        "description": "Das Gerät zeigt ein Zertifikat von {issuer}, einer öffentlichen Zertifizierungsstelle, mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\n**Per Name prüfen (empfohlen):** Gib den Namen ein, für den das Zertifikat ausgestellt ist, also den, mit dem du das Gerät im Browser öffnest (zum Beispiel deinen DDNS-Namen). Home Assistant prüft dann jede Verbindung gegen die Zertifizierungsstelle und diesen Namen, und Erneuerungen brauchen nichts von dir.\n\n**Hinterlegen:** Lass das Feld leer, vergleiche den Fingerabdruck mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. Home Assistant vertraut dann genau diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung. [Mehr zu Zertifikaten]({docs})",
         "data": {
-          "certificate_name": "Name im Zertifikat"
+          "certificate_name": "Name deines Geräts"
         },
         "data_description": {
           "certificate_name": "Zum Beispiel router.example.net. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
@@ -86,7 +86,7 @@
         "title": "Neues Zertifikat",
         "description": "Das Gerät zeigt ein Zertifikat, das nicht zu dem passt, dem Home Assistant bisher vertraut hat. Bisher vertraut: `{previous}` (ein Name steht für jedes gültige Zertifikat für diesen Namen, ein Fingerabdruck für genau ein Zertifikat).\n\nDas jetzt gezeigte Zertifikat ist von {issuer}, einer öffentlichen Zertifizierungsstelle, mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\n**Per Name prüfen (empfohlen):** Gib den Namen ein, für den das Zertifikat ausgestellt ist, also den, mit dem du das Gerät im Browser öffnest (zum Beispiel deinen DDNS-Namen). Home Assistant prüft dann jede Verbindung gegen die Zertifizierungsstelle und diesen Namen, und Erneuerungen brauchen nichts von dir.\n\n**Hinterlegen:** Leere das Feld, vergleiche den Fingerabdruck mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. Home Assistant vertraut dann genau diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung. [Mehr zu Zertifikaten]({docs})",
         "data": {
-          "certificate_name": "Name im Zertifikat"
+          "certificate_name": "Name deines Geräts"
         },
         "data_description": {
           "certificate_name": "Zum Beispiel router.example.net. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
@@ -107,7 +107,7 @@
         "title": "Zertifikat bestätigen",
         "description": "Bestätige, wie Home Assistant das Zertifikat prüft. Bisher vertraut: `{previous}` (ein Name steht für jedes gültige Zertifikat für diesen Namen, ein Fingerabdruck für genau ein Zertifikat).\n\nDas Gerät zeigt ein Zertifikat von {issuer}, einer öffentlichen Zertifizierungsstelle, mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\n**Per Name prüfen (empfohlen):** Gib den Namen ein, für den das Zertifikat ausgestellt ist, also den, mit dem du das Gerät im Browser öffnest (zum Beispiel deinen DDNS-Namen). Home Assistant prüft dann jede Verbindung gegen die Zertifizierungsstelle und diesen Namen, und Erneuerungen brauchen nichts von dir.\n\n**Hinterlegen:** Leere das Feld, vergleiche den Fingerabdruck mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. Home Assistant vertraut dann genau diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung. [Mehr zu Zertifikaten]({docs})",
         "data": {
-          "certificate_name": "Name im Zertifikat"
+          "certificate_name": "Name deines Geräts"
         },
         "data_description": {
           "certificate_name": "Zum Beispiel router.example.net. Home Assistant prüft, ob das Zertifikat dafür gültig ist."

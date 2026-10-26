@@ -758,15 +758,49 @@ async def test_reconfigure_switches_between_name_and_pin(hass: HomeAssistant) ->
     assert result["reason"] == "reconfigure_successful"
 
 
-async def test_reconfigure_suggests_a_host_name(hass: HomeAssistant) -> None:
+async def test_reconfigure_of_a_pin_suggests_no_name(hass: HomeAssistant) -> None:
     entry = make_entry()
     entry.add_to_hass(hass)
-    TRUSTED["srm.lan"] = (NAME,)
+    TRUSTED["srm.lan"] = ("srm.lan",)
     result = await entry.start_reconfigure_flow(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {**CONNECTION, "host": "srm.lan"}
     )
-    assert _suggested(result) == "srm.lan"  # typed by the user, unlike the certificate's names
+    assert result["step_id"] == "reconfigure_certificate_public"
+    assert _suggested(result) is None  # confirming keeps the pin; a name has to be entered
+
+
+async def test_clearing_the_name_after_an_error_pins(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("changed")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    ERRORS[ROUTER_HOST] = {"login": SrmConnectionError("gone")}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_CERTIFICATE_NAME] is None  # the earlier name is not kept
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+
+
+async def test_adding_again_does_not_switch_between_pin_and_name(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["reason"] == "already_configured"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+    assert entry.data.get(CONF_CERTIFICATE_NAME) is None
 
 
 def test_the_context_for_names_checks_the_chain_but_not_the_name() -> None:

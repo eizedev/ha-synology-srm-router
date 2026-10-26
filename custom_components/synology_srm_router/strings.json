@@ -25,9 +25,9 @@
       },
       "certificate_public": {
         "title": "Confirm the certificate",
-        "description": "The device presents a certificate issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Leave the field, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
+        "description": "The device presents a certificate issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Leave the field empty, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
         "data": {
-          "certificate_name": "Name on the certificate"
+          "certificate_name": "Name of your device"
         },
         "data_description": {
           "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
@@ -86,7 +86,7 @@
         "title": "New certificate",
         "description": "The device presents a certificate that does not match what Home Assistant trusted so far. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe certificate now presented is issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Clear the field, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
         "data": {
-          "certificate_name": "Name on the certificate"
+          "certificate_name": "Name of your device"
         },
         "data_description": {
           "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
@@ -107,7 +107,7 @@
         "title": "Confirm the certificate",
         "description": "Confirm how Home Assistant checks the certificate. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe device presents a certificate issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Clear the field, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
         "data": {
-          "certificate_name": "Name on the certificate"
+          "certificate_name": "Name of your device"
         },
         "data_description": {
           "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."

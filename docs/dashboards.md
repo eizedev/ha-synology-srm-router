@@ -4,7 +4,8 @@ The trackers carry where a client is (`connected_to`), how (`connection`) and on
 (`radio`, `signal`). A Markdown card turns that into lists, with nothing to install: add a card
 of the type *Markdown* and paste one of the templates below as its content. Names come from the
 devices themselves, so the templates escape what Markdown would read as a table, a link or an
-image, and turn line breaks into spaces.
+image, and turn line breaks into spaces. A name that is itself a web address can still show as a
+link to that address, as it reads.
 
 ## Who is where
 

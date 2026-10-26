@@ -101,12 +101,17 @@ def _unpublished_lines() -> list[tuple[str, str, str]]:
     log = _git(
         "log", "-p", "--no-color", "--no-ext-diff", "--unified=0", "--format=@%h", *revisions
     )
-    lines, commit, path = [], "", ""
+    lines, commit, path, header = [], "", "", False
     for line in log.splitlines():
-        if line.startswith("@") and not line.startswith("@@"):
-            commit = line[1:]
-        elif line.startswith("+++ "):
-            path = line.removeprefix("+++ ").removeprefix("b/")
+        if line.startswith("diff --git "):
+            header = True  # file headers up to the first hunk: an added "++ x" line is none
+        elif line.startswith("@@"):
+            header = False
+        elif header:
+            if line.startswith("+++ "):
+                path = line.removeprefix("+++ ").removeprefix("b/")
+        elif line.startswith("@"):
+            commit = line[1:]  # the --format line; lines inside a hunk start with + - or space
         elif line.startswith("+") and path not in SKIP:
             lines.append((commit, path, line[1:]))
     return lines
@@ -147,7 +152,11 @@ def test_unpublished_commits_are_read(tmp_path: Path, monkeypatch: pytest.Monkey
     (tmp_path / "notes.txt").write_text("router 00:11:32:00:00:01\n", encoding="utf-8")
     _git("add", "notes.txt")
     _git(*commit, "commit", "-q", "-m", "add")
-    (tmp_path / "notes.txt").write_text("router\n", encoding="utf-8")
+    first = _git("rev-parse", "HEAD").strip()
+    (tmp_path / "notes.txt").write_text("router\n++ 00:11:32:00:00:02\n", encoding="utf-8")
     _git(*commit, "commit", "-q", "-am", "remove")  # gone from the tree, not from the history
     found = [(path, p) for _, path, line in _unpublished_lines() for p in _problems(line)]
-    assert found == [("notes.txt", "MAC 00:11:32:00:00:01")]
+    assert found == [("notes.txt", "MAC 00:11:32:00:00:02"), ("notes.txt", "MAC 00:11:32:00:00:01")]
+    monkeypatch.setenv("PRIVACY_BASE", first)  # in CI: only the pull request's commits
+    found = [(path, p) for _, path, line in _unpublished_lines() for p in _problems(line)]
+    assert found == [("notes.txt", "MAC 00:11:32:00:00:02")]

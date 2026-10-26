@@ -397,9 +397,14 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 existing = self.hass.config_entries.async_entry_for_domain_unique_id(
                     DOMAIN, self._probe.serial
                 )
-                if existing is not None and _pinned(existing.data) and not _pinned(data):
-                    # Adding it again without a checked certificate must not remove the pin of
-                    # the existing entry; changing that is what "Reconfigure" is for.
+                if (
+                    existing is not None
+                    and _pinned(existing.data)
+                    and _kind(existing.data) != _kind(data)
+                ):
+                    # Adding it again must not change how the existing entry checks its
+                    # certificate (unchecked, or between name and pin) without showing what it
+                    # trusted so far; that is what "Reconfigure" is for.
                     return self.async_abort(reason="already_configured")
                 # The same device at a new address: take the address that was just verified.
                 self._abort_if_unique_id_configured(
@@ -563,20 +568,17 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
     def _confirm_again(self, step: str, entry: SrmConfigEntry) -> ConfigFlowResult:
         """Confirm a certificate for an existing entry, naming what it trusted so far.
 
-        The name field starts with the name the user gave before, or the host if it is a name;
-        never with a name from the certificate.
+        The name field starts with the name the user gave before, never with a name from the
+        certificate; for a pinned entry it starts empty, so confirming keeps a pin.
         """
-        host = str(self._data[CONF_HOST])
-        suggested = entry.data.get(CONF_CERTIFICATE_NAME) or None
-        if suggested is None and not _is_address(host):
-            suggested = host
-        return self._confirm(step, name=suggested, previous=entry.data)
+        name = entry.data.get(CONF_CERTIFICATE_NAME) or None
+        return self._confirm(step, name=name, previous=entry.data)
 
     async def _store_confirmed(
         self, step: str, entry: SrmConfigEntry, user_input: Mapping[str, Any] | None
     ) -> ConfigFlowResult:
         """Log in with the confirmed certificate and store it; an error shows it again."""
-        errors = await self._take_name(user_input) if user_input else {}
+        errors = await self._take_name(user_input)  # an empty field pins, whatever came before
         if not errors:
             try:
                 probe = await _probe(self.hass, self._data)
@@ -689,6 +691,13 @@ def _pinned(data: Mapping[str, Any]) -> bool:
 def _entered(user_input: Mapping[str, Any] | None) -> str | None:
     """Return the certificate name the user entered, or None for an empty field."""
     return str((user_input or {}).get(CONF_CERTIFICATE_NAME) or "").strip() or None
+
+
+def _kind(data: Mapping[str, Any]) -> str | None:
+    """Return how an entry checks its certificate: by name, by pin, or not at all."""
+    if data.get(CONF_FINGERPRINT):
+        return "pin"
+    return "name" if data.get(CONF_CERTIFICATE_NAME) else None
 
 
 def _trust(data: Mapping[str, Any]) -> str:
