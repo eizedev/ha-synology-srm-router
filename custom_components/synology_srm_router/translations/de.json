@@ -30,7 +30,7 @@
           "certificate_name": "Name deines Geräts"
         },
         "data_description": {
-          "certificate_name": "Zum Beispiel router.example.net. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
+          "certificate_name": "Nur der Name, zum Beispiel router.example.net, ohne https:// und Port. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
         },
         "submit": "Vertrauen"
       },
@@ -89,7 +89,7 @@
           "certificate_name": "Name deines Geräts"
         },
         "data_description": {
-          "certificate_name": "Zum Beispiel router.example.net. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
+          "certificate_name": "Nur der Name, zum Beispiel router.example.net, ohne https:// und Port. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
         },
         "submit": "Vertrauen"
       },
@@ -110,7 +110,7 @@
           "certificate_name": "Name deines Geräts"
         },
         "data_description": {
-          "certificate_name": "Zum Beispiel router.example.net. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
+          "certificate_name": "Nur der Name, zum Beispiel router.example.net, ohne https:// und Port. Home Assistant prüft, ob das Zertifikat dafür gültig ist."
         },
         "submit": "Vertrauen"
       },

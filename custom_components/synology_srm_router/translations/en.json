@@ -30,7 +30,7 @@
           "certificate_name": "Name of your device"
         },
         "data_description": {
-          "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
+          "certificate_name": "Only the name, for example router.example.net, without https:// and port. Home Assistant checks that the certificate is valid for it."
         },
         "submit": "Trust"
       },
@@ -89,7 +89,7 @@
           "certificate_name": "Name of your device"
         },
         "data_description": {
-          "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
+          "certificate_name": "Only the name, for example router.example.net, without https:// and port. Home Assistant checks that the certificate is valid for it."
         },
         "submit": "Trust"
       },
@@ -110,7 +110,7 @@
           "certificate_name": "Name of your device"
         },
         "data_description": {
-          "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
+          "certificate_name": "Only the name, for example router.example.net, without https:// and port. Home Assistant checks that the certificate is valid for it."
         },
         "submit": "Trust"
       },

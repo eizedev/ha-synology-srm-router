@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import ipaddress
 import ssl
 from typing import Any
+from urllib.parse import urlsplit
 
 from aiosynologysrm import (
     CertificateNames,
@@ -689,8 +690,18 @@ def _pinned(data: Mapping[str, Any]) -> bool:
 
 
 def _entered(user_input: Mapping[str, Any] | None) -> str | None:
-    """Return the certificate name the user entered, or None for an empty field."""
-    return str((user_input or {}).get(CONF_CERTIFICATE_NAME) or "").strip() or None
+    """Return the host name the user entered, or None for an empty field.
+
+    A pasted address from the browser works too: scheme, port and path are dropped.
+    """
+    value = str((user_input or {}).get(CONF_CERTIFICATE_NAME) or "").strip()
+    if not value:
+        return None
+    try:
+        host = urlsplit(value if "://" in value else f"//{value}").hostname
+    except ValueError:
+        return value  # not even URL-like; the certificate check refuses it
+    return host.rstrip(".") if host else value
 
 
 def _kind(data: Mapping[str, Any]) -> str | None:

@@ -809,3 +809,18 @@ def test_the_context_for_names_checks_the_chain_but_not_the_name() -> None:
     assert context.verify_mode == ssl.CERT_REQUIRED
     assert not context.check_hostname
     assert context.cert_store_stats()["x509_ca"] > 0  # the authorities are loaded
+
+
+@pytest.mark.parametrize(
+    ("entered", "name"),
+    [
+        (f"https://{NAME.upper()}:8001/webman/", NAME),
+        (f"{NAME}:8001", NAME),
+        (f" {NAME}. ", NAME),
+        ("", None),
+        ("   ", None),
+        ("http://[::1", "http://[::1"),  # not a URL: left as typed, the certificate check refuses
+    ],
+)
+def test_a_pasted_address_becomes_a_name(entered: str, name: str | None) -> None:
+    assert config_flow._entered({CONF_CERTIFICATE_NAME: entered}) == name
