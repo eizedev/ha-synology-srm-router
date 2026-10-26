@@ -6,12 +6,20 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-26
+
+### Fixed
+
+- A tracker's device keeps the client's name from SRM. When another integration knows the same
+  MAC address (a Sonos speaker, a vacuum), Home Assistant renamed it to the host name the client
+  reports on every load, and the tracker showed as `<host name> <name>`. Names you gave in Home
+  Assistant stay. [#30](https://github.com/eizedev/ha-synology-srm-router/issues/30)
+
 ### Changed
 
 - Release notes show the zip's SHA-256 in a block of its own, readable on phones.
-- Docs: which entity IDs differ when Home Assistant runs in German, for the example dashboard; the
-  known issue [#30](https://github.com/eizedev/ha-synology-srm-router/issues/30) (tracker devices
-  renamed to the client's host name on reload); a roadmap in the README.
+- Docs: which entity IDs differ when Home Assistant runs in German, for the example dashboard; a
+  roadmap in the README.
 
 ## [0.1.1] - 2026-10-26
 
@@ -73,6 +81,7 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/eizedev/ha-synology-srm-router/releases/tag/v0.1.0

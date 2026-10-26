@@ -9,7 +9,7 @@ from aiosynologysrm import helpers
 from homeassistant.components.device_tracker import ScannerEntity
 from homeassistant.const import STATE_HOME, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -123,6 +123,7 @@ class SrmTracker(ScannerEntity, RestoreEntity):
             seconds=entry.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.total_seconds())
         )
         self._picked = hub.wants(entry, mac)
+        self._entry_id = entry.entry_id
         self._update_from_hub()
 
     @property
@@ -146,11 +147,31 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         self.async_on_remove(
             async_dispatcher_connect(self.hass, SIGNAL_LOCATIONS, self._locations_changed)
         )
+        self._name_device()
 
     @callback
     def _locations_changed(self) -> None:
         self._update_from_hub()
+        self._name_device()
         self.async_write_ha_state()
+
+    @callback
+    def _name_device(self) -> None:
+        """Give the tracker's own device the client's name.
+
+        When another integration knows the MAC address, Home Assistant registers a device for
+        the tracker and names it after the host name on every load (a Sonos speaker reports
+        "SonosZP"). The host name stays as it is, for discovery; the name follows SRM.
+        """
+        device_id = self.registry_entry.device_id if self.registry_entry else None
+        registry = dr.async_get(self.hass)
+        device = registry.async_get(device_id) if device_id else None
+        if (
+            device is not None
+            and device.config_entries == {self._entry_id}
+            and device.name != self._attr_name
+        ):
+            registry.async_update_device(device.id, name=self._attr_name)
 
     @callback
     def _update_from_hub(self) -> None:
