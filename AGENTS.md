@@ -45,8 +45,6 @@ hassfest and the HACS check run in CI only.
 - **Docs describe the current state**: update `README.md`, `docs/` and `CHANGELOG.md` (Keep a
   Changelog, under `[Unreleased]`) in the same change. Commit messages follow Conventional
   Commits.
-
-## Don'ts
 - **Website**: `docs/` and `zensical.toml` are https://ha-synology-srm-router.eize.dev/, built by
   `.github/workflows/docs.yml` with the shared design from eizedev/brand (`docs-site/`);
   `docs/assets/site.css` is copied in at build time and not committed. Every repair has a page in
@@ -55,6 +53,9 @@ hassfest and the HACS check run in CI only.
 - **Screenshots** come from the demo instance in `scripts/demo/` (CONTRIBUTING.md, "Demo instance
   and screenshots"); regenerate them when dialogs or pages change, never take them from a real
   network. The example dashboard lives once, in `docs/assets/example-dashboard.yaml`.
+
+## Don'ts
+
 - Don't contact real devices from tests; use `tests/conftest.py`'s `FakeClient`.
 - Don't add write actions (services, switches, buttons that change the router).
 - Don't edit `uv.lock` by hand.
