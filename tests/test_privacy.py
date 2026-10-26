@@ -2,15 +2,21 @@
 
 Test data, docs and the demo use locally administered MAC addresses (02:...), the IPv4
 documentation ranges (RFC 5737) and 2001:db8::/32 (RFC 3849). Anything else may be copied from
-a real network, so it fails here before it is published.
+a real network, so it fails here before it is published. Lines added by commits that are
+not published yet are checked as well: a later commit that removes an address does not
+remove it from the history. Published commits are not checked again (`git log` of
+`HEAD --not --remotes`; in CI, the commits of the pull request via `PRIVACY_BASE`).
 """
 
 from __future__ import annotations
 
 import ipaddress
+import os
 from pathlib import Path
 import re
 import subprocess
+
+import pytest
 
 ROOT = Path(__file__).parents[1]
 SKIP = {"uv.lock", "tests/test_privacy.py"}  # this file holds the patterns themselves
@@ -27,13 +33,7 @@ IPV6 = re.compile(r"(?<![0-9a-f:])[0-9a-f]{1,4}(?::[0-9a-f]{0,4}){2,7}(?![0-9a-f
 
 
 def _files() -> list[Path]:
-    names = subprocess.run(
-        ["git", "ls-files"],  # noqa: S607 - git from PATH, as everywhere in development
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.split()
+    names = _git("ls-files").split()
     return [ROOT / n for n in names if n not in SKIP and (ROOT / n).is_file()]
 
 
@@ -73,6 +73,45 @@ def _ip_problem(text: str) -> str | None:
     return str(address)
 
 
+def _problems(line: str) -> list[str]:
+    """Return the real-looking MAC and IP addresses in one line."""
+    found = [f"MAC {p}" for run in COLON_RUN.findall(line) if (p := _mac_problem(run))]
+    found += [
+        f"address {p}"
+        for candidate in [*IPV4.findall(line), *IPV6.findall(line)]
+        if (p := _ip_problem(candidate))
+    ]
+    return found
+
+
+def _git(*args: str) -> str:
+    return subprocess.run(  # noqa: S603 - fixed git arguments from this file
+        ["git", *args],  # noqa: S607 - git from PATH, as everywhere in development
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+
+
+def _unpublished_lines() -> list[tuple[str, str, str]]:
+    """Return (commit, path, line) for every line added by a commit that is not published yet."""
+    base = os.environ.get("PRIVACY_BASE")
+    revisions = [f"{base}..HEAD"] if base else ["HEAD", "--not", "--remotes"]
+    log = _git(
+        "log", "-p", "--no-color", "--no-ext-diff", "--unified=0", "--format=@%h", *revisions
+    )
+    lines, commit, path = [], "", ""
+    for line in log.splitlines():
+        if line.startswith("@") and not line.startswith("@@"):
+            commit = line[1:]
+        elif line.startswith("+++ "):
+            path = line.removeprefix("+++ ").removeprefix("b/")
+        elif line.startswith("+") and path not in SKIP:
+            lines.append((commit, path, line[1:]))
+    return lines
+
+
 def test_no_real_network_identifiers() -> None:
     found = []
     for path in _files():
@@ -80,10 +119,35 @@ def test_no_real_network_identifiers() -> None:
         if text is None:
             continue
         for number, line in enumerate(text.splitlines(), 1):
-            for run in COLON_RUN.findall(line):
-                if problem := _mac_problem(run):
-                    found.append(f"{path.relative_to(ROOT)}:{number}: MAC {problem}")
-            for candidate in [*IPV4.findall(line), *IPV6.findall(line)]:
-                if problem := _ip_problem(candidate):
-                    found.append(f"{path.relative_to(ROOT)}:{number}: address {problem}")
+            found += [f"{path.relative_to(ROOT)}:{number}: {p}" for p in _problems(line)]
     assert not found, "\n".join(found)
+
+
+def test_no_real_network_identifiers_in_unpublished_commits() -> None:
+    found = [
+        f"commit {commit} {path}: {p}"
+        for commit, path, line in _unpublished_lines()
+        for p in _problems(line)
+    ]
+    assert not found, "\n".join(found)
+
+
+def test_unpublished_commits_are_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(globals(), "ROOT", tmp_path)
+    monkeypatch.delenv("PRIVACY_BASE", raising=False)
+    commit = [
+        "-c",
+        "user.name=t",
+        "-c",
+        "user.email=t@example.invalid",
+        "-c",
+        "commit.gpgsign=false",
+    ]
+    _git("init", "-q")
+    (tmp_path / "notes.txt").write_text("router 00:11:32:00:00:01\n", encoding="utf-8")
+    _git("add", "notes.txt")
+    _git(*commit, "commit", "-q", "-m", "add")
+    (tmp_path / "notes.txt").write_text("router\n", encoding="utf-8")
+    _git(*commit, "commit", "-q", "-am", "remove")  # gone from the tree, not from the history
+    found = [(path, p) for _, path, line in _unpublished_lines() for p in _problems(line)]
+    assert found == [("notes.txt", "MAC 00:11:32:00:00:01")]

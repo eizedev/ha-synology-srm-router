@@ -11,10 +11,10 @@
           "verify_certificate": "Check the certificate"
         },
         "data_description": {
-          "host": "Address or host name of the router or access point.",
+          "host": "Address or host name of the router or access point. With a certificate from a public authority (for example Let's Encrypt), its host name lets Home Assistant check the certificate by that name.",
           "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
           "use_https": "Recommended: the password travels encrypted.",
-          "verify_certificate": "Check the device's certificate after you confirmed it (by its name when a public authority vouches for it, else by its fingerprint). Turn off only if you accept that anyone in your network could read the password."
+          "verify_certificate": "Check the device's certificate: by the name it was issued for when a public authority vouches for it, else by its fingerprint after you confirmed it. Turn off only if you accept that anyone in your network could read the password."
         },
         "submit": "Next"
       },
@@ -23,14 +23,14 @@
         "description": "The device presents a certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nTo compare it, open {url} in a browser, click the padlock or the warning next to the address and show the certificate; it lists the SHA-256 fingerprint. Continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
         "submit": "Trust"
       },
-      "certificate_trusted": {
-        "title": "Certificate from a trusted authority",
-        "description": "The device presents a certificate for **{name}**, issued by {issuer}, a certificate authority that browsers and Home Assistant trust. Home Assistant will check every connection against this authority and this name, so renewals of the certificate (for example Let's Encrypt every few months) need nothing from you.\n\nContinue only if **{name}** is the name of your device. [More about certificates]({docs})",
+      "certificate_public": {
+        "title": "Confirm the certificate",
+        "description": "The device presents a certificate issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Leave the field, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
         "data": {
-          "pin_instead": "Pin this exact certificate instead"
+          "certificate_name": "Name on the certificate"
         },
         "data_description": {
-          "pin_instead": "Only if you prefer it: Home Assistant then trusts just this certificate, and every renewal needs your confirmation."
+          "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
         },
         "submit": "Trust"
       },
@@ -79,38 +79,38 @@
       },
       "reauth_certificate": {
         "title": "New certificate",
-        "description": "The device now presents a different certificate:\n\n`{fingerprint}`\n\nThis is expected after a certificate renewal. Compare it with the certificate shown at {url} in a browser and continue only if both match. [How to compare]({docs})",
+        "description": "The device presents a certificate that does not match what Home Assistant trusted so far. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe certificate now presented:\n\n`{fingerprint}`\n\nThis is expected after you renewed or replaced the certificate. Compare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
         "submit": "Trust"
       },
-      "reauth_trusted": {
-        "title": "Certificate from a trusted authority",
-        "description": "The device now presents a certificate for **{name}**, issued by {issuer}, a certificate authority that browsers and Home Assistant trust. From now on Home Assistant checks the authority and this name instead of one exact certificate, so renewals need nothing from you.\n\nContinue only if **{name}** is the name of your device. [More about certificates]({docs})",
+      "reauth_certificate_public": {
+        "title": "New certificate",
+        "description": "The device presents a certificate that does not match what Home Assistant trusted so far. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe certificate now presented is issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Clear the field, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
         "data": {
-          "pin_instead": "Pin this exact certificate instead"
+          "certificate_name": "Name on the certificate"
         },
         "data_description": {
-          "pin_instead": "Only if you prefer it: Home Assistant then trusts just this certificate, and every renewal needs your confirmation."
+          "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
         },
         "submit": "Trust"
       },
       "reconfigure_unprotected": {
         "title": "Stop checking the certificate?",
-        "description": "Home Assistant trusts exactly this device's certificate so far. Without the check, or over plain HTTP, anyone who can read traffic in your network could read the password, which is sent as soon as you continue. Continue only if you accept that; otherwise cancel. Help: [documentation]({docs})",
+        "description": "Home Assistant checks this device's certificate so far. Without the check, or over plain HTTP, anyone who can read traffic in your network could read the password, which is sent as soon as you continue. Continue only if you accept that; otherwise cancel. Help: [documentation]({docs})",
         "submit": "Continue unprotected"
       },
       "reconfigure_certificate": {
         "title": "Confirm the certificate",
-        "description": "The device presents a different certificate than the one trusted so far:\n\n`{fingerprint}`\n\nCompare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
+        "description": "The device presents a different certificate than the one trusted so far. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe certificate now presented:\n\n`{fingerprint}`\n\nCompare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
         "submit": "Trust"
       },
-      "reconfigure_trusted": {
-        "title": "Certificate from a trusted authority",
-        "description": "The device presents a certificate for **{name}**, issued by {issuer}, a certificate authority that browsers and Home Assistant trust. Home Assistant will check every connection against this authority and this name, so renewals need nothing from you.\n\nContinue only if **{name}** is the name of your device. [More about certificates]({docs})",
+      "reconfigure_certificate_public": {
+        "title": "Confirm the certificate",
+        "description": "Confirm how Home Assistant checks the certificate. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe device presents a certificate issued by {issuer}, a public certificate authority, with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\n**Check it by name (recommended):** enter the name the certificate was issued for, the one you open the device with in a browser (for example your DDNS name). Home Assistant then checks every connection against the authority and this name, and renewals need nothing from you.\n\n**Pin it:** Clear the field, compare the fingerprint with the certificate shown at {url} in a browser and continue only if both match. Home Assistant then trusts exactly this certificate, and every renewal needs your confirmation. [More about certificates]({docs})",
         "data": {
-          "pin_instead": "Pin this exact certificate instead"
+          "certificate_name": "Name on the certificate"
         },
         "data_description": {
-          "pin_instead": "Only if you prefer it: Home Assistant then trusts just this certificate, and every renewal needs your confirmation."
+          "certificate_name": "For example router.example.net. Home Assistant checks that the certificate is valid for it."
         },
         "submit": "Trust"
       },
@@ -124,10 +124,10 @@
           "verify_certificate": "Check the certificate"
         },
         "data_description": {
-          "host": "Address or host name of the router or access point.",
+          "host": "Address or host name of the router or access point. With a certificate from a public authority (for example Let's Encrypt), its host name lets Home Assistant check the certificate by that name.",
           "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
           "use_https": "Recommended: the password travels encrypted.",
-          "verify_certificate": "Check the device's certificate after you confirmed it (by its name when a public authority vouches for it, else by its fingerprint). Turn off only if you accept that anyone in your network could read the password."
+          "verify_certificate": "Check the device's certificate: by the name it was issued for when a public authority vouches for it, else by its fingerprint after you confirmed it. Turn off only if you accept that anyone in your network could read the password."
         },
         "submit": "Save"
       },
@@ -174,6 +174,7 @@
       "two_factor": "The account uses two-factor authentication. Use an account without it.",
       "blocked": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires.",
       "certificate": "The certificate is not the trusted one. Check the address, then confirm the new certificate.",
+      "name_mismatch": "The certificate is not valid for this name. Check the name, or clear the field to pin the certificate instead.",
       "invalid_host": "Enter a host name or an IP address, without port or path.",
       "not_admin": "SRM refused the account the rights for this; use an administrator account.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",

@@ -1,0 +1,13 @@
+{#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+{%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+{% set ts = states.device_tracker
+   | selectattr('state', 'eq', 'home')
+   | selectattr('attributes.radio', 'defined')
+   | selectattr('attributes.radio', 'ne', none)
+   | list %}
+{% for g in ts | groupby('attributes.radio') %}
+**{{ md(g.grouper) }}** ({{ g.list | count }})
+{% for s in g.list | sort(attribute='name') %}
+- {{ md(s.name) }} · {{ md(s.attributes.connected_to) }}, signal {{ s.attributes.signal }}
+{% endfor %}
+{% endfor %}

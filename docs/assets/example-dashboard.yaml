@@ -64,15 +64,17 @@ views:
           - type: markdown
             title: By radio
             content: |
+              {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+              {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
               {% set ts = states.device_tracker
                  | selectattr('state', 'eq', 'home')
                  | selectattr('attributes.radio', 'defined')
                  | selectattr('attributes.radio', 'ne', none)
                  | list %}
               {% for g in ts | groupby('attributes.radio') %}
-              **{{ g.grouper }}** ({{ g.list | count }})
+              **{{ md(g.grouper) }}** ({{ g.list | count }})
               {% for s in g.list | sort(attribute='name') %}
-              - {{ s.name }} · {{ s.attributes.connected_to }}, signal {{ s.attributes.signal }}
+              - {{ md(s.name) }} · {{ md(s.attributes.connected_to) }}, signal {{ s.attributes.signal }}
               {% endfor %}
               {% endfor %}
       - type: grid
@@ -83,14 +85,16 @@ views:
           - type: markdown
             title: Who is where
             content: |
+              {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+              {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
               {% set ts = states.device_tracker
                  | selectattr('state', 'eq', 'home')
                  | selectattr('attributes.connected_to', 'defined')
                  | list %}
               {% for g in ts | groupby('attributes.connected_to') %}
-              **{{ g.grouper }}** ({{ g.list | count }})
+              **{{ md(g.grouper) }}** ({{ g.list | count }})
               {% for s in g.list | sort(attribute='name') %}
-              - [{{ s.name }}](/history?entity_id={{ s.entity_id }}) · {{ s.attributes.connection }}{% if s.attributes.radio %} {{ s.attributes.radio }}, signal {{ s.attributes.signal }}{% endif %}
+              - [{{ md(s.name) }}](/history?entity_id={{ s.entity_id }}) · {{ md(s.attributes.connection) }}{% if s.attributes.radio %} {{ md(s.attributes.radio) }}, signal {{ s.attributes.signal }}{% endif %}
               {% endfor %}
               {% endfor %}
       - type: grid

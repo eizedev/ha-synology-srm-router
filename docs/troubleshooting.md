@@ -6,7 +6,8 @@
 | SRM refused the account the rights for this | Use an administrator account; only those are tested. |
 | The account uses two-factor authentication | Use an account without it; Home Assistant cannot enter codes unattended. |
 | The device blocks logins from Home Assistant | SRM's auto block locks out Home Assistant's address after failed attempts; see [the repair](repairs/blocked.md). |
-| The certificate does not match | The device presents a certificate Home Assistant does not trust: a pinned one that was renewed, or one from an authority that expired or no longer names the device. Confirm the new certificate when Home Assistant asks; compare it first ([how](configuration.md#certificate)). |
+| The certificate does not match | The device presents a certificate Home Assistant does not trust: a pinned one that was renewed, or one from an authority that expired or is no longer valid for the name you gave. Confirm the new certificate when Home Assistant asks; compare it first ([how](configuration.md#certificate)). |
+| The certificate is not valid for this name | The name you entered is not one the certificate was issued for. Enter the name you open the device with in a browser, or clear the field to pin the certificate ([how](configuration.md#certificate)). |
 | SRM refused the session right after the login | SRM does this now and then with a fresh session (error 119). Try again; if it repeats every time, check SRM's log for the account. |
 | The device could not be reached | Check host and port, and that HTTPS matches SRM's settings. |
 | The device reports no serial number | The device cannot be told apart from others and is not set up. Please report it with the model and firmware. |

@@ -376,7 +376,7 @@ async def test_clients_by_band_and_cable(hass: HomeAssistant) -> None:
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -> None:
-    await _setup(hass, make_entry(), make_entry("ap"))
+    await _setup(hass, make_entry(track_all=True), make_entry("ap"))
     cards = Path(__file__).parents[1] / "docs" / "assets" / "cards"
     expected = {
         "leases.jinja": "addresses handed out",
@@ -384,6 +384,8 @@ async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -
         "reservations.jinja": "reservations",
         "firewall.jinja": "| Rule | From → to |",
         "firewall-list.jinja": " hits",
+        "where.jinja": "](/history?entity_id=device_tracker.",
+        "radio.jinja": "**2.4G** (",
     }
     assert {f.name for f in cards.glob("*.jinja")} == set(expected)
     for name, text in expected.items():

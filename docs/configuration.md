@@ -9,10 +9,10 @@ point is shown there.
 
 | Field | Meaning |
 | --- | --- |
-| Host | Address or host name of the router or access point. |
+| Host | Address or host name of the router or access point. With a certificate from a public authority, the name it was issued for lets Home Assistant check it by that name (see below). |
 | Port | Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP. |
 | Use HTTPS | Recommended: the password travels encrypted. |
-| Check the certificate | Shows the certificate for you to confirm: its name when a public certificate authority vouches for it, else its fingerprint (see below). Turn off only if you accept that anyone in your network could read the password. |
+| Check the certificate | Checks the device's certificate: by the name you give when a public certificate authority vouches for it, else by its fingerprint after you confirmed it (see below). Turn off only if you accept that anyone in your network could read the password. |
 
 Each device is recognised by its serial number. Whether it runs as router or as access point is
 read at every start, so switching the operation mode in SRM needs no reconfiguration.
@@ -22,11 +22,19 @@ read at every start, so switching the operation mode in SRM needs no reconfigura
 How Home Assistant checks the device depends on its certificate:
 
 - **A certificate from a public certificate authority** (for example Let's Encrypt, which SRM
-  can request for a DDNS name): the dialog shows the name the certificate was issued for and the
-  authority. Continue only if that is your device's name. Home Assistant then checks every
-  connection against the authority and that name, also when you added the device by its IP
-  address, so renewals need nothing from you. *Pin this exact certificate instead* is there if
-  you prefer pinning; then every renewal needs a confirmation.
+  can request for a DDNS name): Home Assistant checks every connection against the authorities
+  and the name the certificate was issued for, like a browser, so renewals need nothing from you.
+    - Entered that name as *Host*: nothing to confirm.
+    - Entered an IP address: the dialog asks for the name, the one you open the device with in a
+      browser. Home Assistant checks that the certificate is valid for it. Leave the field empty
+      to pin the certificate instead; then every renewal needs a confirmation.
+
+    Home Assistant never takes the name from the certificate itself: anyone can get a valid
+    certificate for a name of their own, so only a name you know is yours proves anything. A
+    check by name trusts every authority Home Assistant trusts, and does not check whether a
+    certificate was revoked. A wildcard certificate (`*.example.net`) is valid for every name
+    under its domain, so whoever else holds its key passes the check too; pin the certificate
+    if that matters to you.
 - **SRM's own certificate**, which browsers do not trust: Home Assistant shows its SHA-256
   fingerprint once and then trusts exactly that certificate (pinning). To check that you are
   talking to your device and not to something in between:
@@ -36,11 +44,12 @@ How Home Assistant checks the device depends on its certificate:
     3. Compare the SHA-256 fingerprint there with the one in the dialog. Both list the same pairs
        of characters; continue only if they match.
 
-    When a pinned certificate changes, for example after a renewal, Home Assistant stops reading
-    the device and asks you to sign in again, then shows the new certificate. If it now comes from
-    a public authority, you can switch to checking its name. Home Assistant raises a repair for
-    this; [Ideas](ideas.md#sign-in-again-or-confirm-a-certificate) shows how to get it on your
-    phone.
+When the certificate no longer passes the check (a pinned one was renewed, or one checked by
+name expired or no longer fits the name), Home Assistant stops reading the device and asks you to
+sign in again. The dialog then names what was trusted so far and shows the new certificate. It
+never switches between a name and a pin on its own: to pin instead of a name, clear the name
+field. Home Assistant raises a repair for this;
+[Ideas](ideas.md#sign-in-again-or-confirm-a-certificate) shows how to get it on your phone.
 
 A device set up with a checked certificate never connects unchecked: if its stored name or
 fingerprint is missing, Home Assistant asks you to confirm the certificate again. Without a
@@ -138,9 +147,10 @@ for a while, both can use the same account; the built-in tracker asks the router
 ## Changing the connection or signing in again
 
 - *Reconfigure* changes host, port, HTTPS and certificate checking. A certificate that differs
-  from the trusted one is shown for you to confirm first. Switching a pinned device to an
+  from the pinned one is shown for you to confirm first; one from a public authority is always
+  shown, so you can switch between its name and a pin. Switching a checked device to an
   unchecked certificate or to HTTP asks for confirmation before the password is sent.
 - Adding a device that is already set up, at a new address, updates the address of the existing
   entry instead.
-- When the password changed, or the device presents a new certificate, Home Assistant asks you to
-  sign in again and shows the new fingerprint for you to confirm.
+- When the password changed, or the certificate no longer passes the check, Home Assistant asks
+  you to sign in again and shows the new certificate for you to confirm.

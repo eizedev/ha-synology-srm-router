@@ -544,6 +544,12 @@ async def test_the_client_pins_the_certificate_and_names_the_session(
         assert isinstance(kwargs["ssl"], ssl.SSLContext)
         assert kwargs["ssl"].check_hostname
         assert kwargs["server_hostname"] == "router.example.net"
+        # Both stored: the pin wins, being the narrower trust. An empty name is no name.
+        create_client(hass, {**entry.data, "certificate_name": "router.example.net"}, name)
+        assert isinstance(client.call_args.kwargs["ssl"], aiohttp.Fingerprint)
+        assert client.call_args.kwargs["server_hostname"] is None
+        with pytest.raises(SrmCertificateError):
+            create_client(hass, {**entry.data, "fingerprint": "", "certificate_name": ""}, name)
         create_client(hass, {**entry.data, "use_https": False}, name)
         assert client.call_args.kwargs["ssl"] is False
 

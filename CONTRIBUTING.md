@@ -43,6 +43,9 @@ again whenever the dialogs or pages change; it needs an installed Edge or Chrome
 - **Texts in two languages.** Every user-facing text goes into `strings.json`,
   `translations/en.json` and `translations/de.json`.
 - **No personal data** in code, docs or test data.
+- `tests/test_privacy.py` fails on MAC and IP addresses that may be real, in the files and in
+  every line your unpushed commits add. Run the tests before you push: removing an address in a
+  later commit leaves it in the history, so fix the commit that added it instead.
 - Update the docs and [CHANGELOG.md](CHANGELOG.md) in the same pull request.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
 

@@ -27,15 +27,19 @@ hassfest and the HACS check run in CI only.
   `coordinator.LocationHub` with `aiosynologysrm.helpers.locate_clients()`. Do not query other
   entries' devices from an entry.
 - **Coordinators poll, entities never do.** Fast coordinator: load, clients, Wi-Fi clients, WAN.
-  Slow coordinator: system information. One failing fast read leaves its part empty; only when
-  every read fails does the update fail. Reads the device does not offer are skipped, with their
-  entities.
+  Slow coordinator: system information, plus the optional reads in `SLOW_READS` (DHCP leases,
+  reservations and servers, firewall rules and hits on routers; USB volumes). One failing fast
+  read leaves its part empty, and only when every read fails does the update fail; a failing
+  optional slow read keeps its last value. Reads the device does not offer are skipped, with
+  their entities. Both coordinators share one client, so a remembered login error (auto block,
+  credentials) stops both without another login.
 - **Trackers**: routers own them (access points only without a router), in a fixed order, so the
   load order does not matter. A tracker holds its location for `LOCATION_GRACE` while the device
   it was on is missing.
 - **Errors**: authentication, two-factor, missing admin rights and certificate errors raise
-  `ConfigEntryAuthFailed` (reauth confirms the new certificate: its name when a public authority
-  vouches for it, else its fingerprint); SRM's auto block raises a repair
+  `ConfigEntryAuthFailed` (reauth shows what was trusted before and confirms the new
+  certificate: by a name the user enters when a public authority vouches for it, never a name
+  taken from the certificate; else by its fingerprint); SRM's auto block raises a repair
   and is retried every `BLOCKED_RETRY`; everything else is `UpdateFailed` or
   `ConfigEntryNotReady`. A failed setup always logs out. Messages come from `strings.json` (`exceptions`).
 - **Texts**: every user-facing text is in `strings.json` and in both `translations/en.json` and

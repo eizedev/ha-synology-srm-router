@@ -72,21 +72,22 @@ async def session_name(hass: HomeAssistant, purpose: str | None = None) -> str:
 def create_client(hass: HomeAssistant, data: dict[str, object], session: str) -> SrmClient:
     """Build a client from an entry's data: how its certificate is checked decides the rest.
 
-    A certificate from a public authority is checked against the authorities and the confirmed
-    name, so renewals need nothing; any other is pinned by its fingerprint; none is checked only
-    when chosen. An entry that checks its certificate but has lost both name and fingerprint is
-    refused rather than connected unchecked; the certificate error leads to reauthentication,
-    which shows the certificate for confirmation.
+    A pinned fingerprint accepts exactly one certificate. A certificate from a public authority
+    is checked against the authorities and the name the user gave, so renewals need nothing; the
+    pin wins if both are stored. None is checked only when chosen. An entry that checks its
+    certificate but has lost both name and fingerprint is refused rather than connected
+    unchecked; the certificate error leads to reauthentication, which shows the certificate for
+    confirmation.
     """
     fingerprint = data.get(CONF_FINGERPRINT)
     name = data.get(CONF_CERTIFICATE_NAME)
     use_https = bool(data[CONF_USE_HTTPS])
     ssl: bool | aiohttp.Fingerprint | SSLContext = False
     server_hostname: str | None = None
-    if use_https and isinstance(name, str):
-        ssl, server_hostname = get_default_context(), name
-    elif use_https and isinstance(fingerprint, str):
+    if use_https and fingerprint and isinstance(fingerprint, str):
         ssl = aiohttp.Fingerprint(bytes.fromhex(fingerprint))
+    elif use_https and name and isinstance(name, str):
+        ssl, server_hostname = get_default_context(), name
     elif use_https and data.get(CONF_VERIFY_CERTIFICATE):
         msg = "The certificate is checked, but neither its name nor its fingerprint is stored"
         raise SrmCertificateError(msg)

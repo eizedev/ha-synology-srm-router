@@ -12,7 +12,6 @@ CONF_FINGERPRINT: Final = "fingerprint"
 CONF_VERIFY_CERTIFICATE: Final = "verify_certificate"
 # The name a certificate from a public authority is checked against, instead of a fingerprint.
 CONF_CERTIFICATE_NAME: Final = "certificate_name"
-CONF_PIN_INSTEAD: Final = "pin_instead"
 CONF_TRACKED: Final = "tracked"
 CONF_TRACK_ALL: Final = "track_all"
 CONF_FAST_INTERVAL: Final = "fast_interval"
