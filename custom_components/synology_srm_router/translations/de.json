@@ -71,6 +71,11 @@
         "description": "Das Gerät zeigt jetzt ein anderes Zertifikat:\n\n`{fingerprint}`\n\nDas ist nach einer Erneuerung des Zertifikats normal. Vergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. [So vergleichst du]({docs})",
         "submit": "Vertrauen"
       },
+      "reconfigure_unprotected": {
+        "title": "Zertifikat nicht mehr prüfen?",
+        "description": "Bisher vertraut Home Assistant genau dem Zertifikat dieses Geräts. Ohne die Prüfung oder über reines HTTP kann jeder, der den Verkehr in deinem Netz mitlesen kann, das Passwort lesen; es wird gesendet, sobald du fortfährst. Mach nur weiter, wenn du das in Kauf nimmst; sonst brich ab. Hilfe: [Dokumentation]({docs})",
+        "submit": "Ungeschützt fortfahren"
+      },
       "reconfigure_certificate": {
         "title": "Zertifikat bestätigen",
         "description": "Das Gerät zeigt ein anderes Zertifikat als das bisher vertraute:\n\n`{fingerprint}`\n\nVergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
@@ -118,7 +123,7 @@
       },
       "credentials_unprotected": {
         "title": "Konto (Verbindung nicht geschützt)",
-        "description": "Das Zertifikat wird nicht geprüft oder die Verbindung ist reines HTTP: Wer den Verkehr in deinem Netz mitlesen kann, kann dieses Passwort lesen. Mach nur weiter, wenn du das in Kauf nimmst; sonst wähle HTTPS mit geprüftem Zertifikat. Nutze ein SRM-Administratorkonto (nur solche sind getestet). Hilfe: [Dokumentation]({docs})",
+        "description": "Das Zertifikat wird nicht geprüft oder die Verbindung ist reines HTTP: Wer den Verkehr in deinem Netz mitlesen kann, kann dieses Passwort lesen. Mach nur weiter, wenn du das in Kauf nimmst; sonst brich ab und richte das Gerät mit HTTPS und geprüftem Zertifikat neu ein. Nutze ein SRM-Administratorkonto (nur solche sind getestet). Hilfe: [Dokumentation]({docs})",
         "data": {
           "username": "Benutzername",
           "password": "Passwort"

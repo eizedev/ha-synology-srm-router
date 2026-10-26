@@ -244,8 +244,30 @@ async def test_reconfigure(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {**CONNECTION, CONF_VERIFY_CERTIFICATE: False}
     )
+    # Dropping the pin is confirmed first; nothing has been sent to the device yet.
+    assert result["step_id"] == "reconfigure_unprotected"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+    ERRORS[ROUTER_HOST] = {"login": SrmConnectionError("x")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_FINGERPRINT] is None
+    assert entry.data[CONF_VERIFY_CERTIFICATE] is False
+
+
+async def test_reconfigure_without_a_pin_asks_nothing_extra(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_FINGERPRINT: None, CONF_VERIFY_CERTIFICATE: False}
+    )
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONNECTION, CONF_USE_HTTPS: False, "port": 8000}
+    )
+    assert result["reason"] == "reconfigure_successful"
 
 
 async def test_options(hass: HomeAssistant) -> None:

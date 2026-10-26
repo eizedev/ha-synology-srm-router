@@ -71,6 +71,11 @@
         "description": "The device now presents a different certificate:\n\n`{fingerprint}`\n\nThis is expected after a certificate renewal. Compare it with the certificate shown at {url} in a browser and continue only if both match. [How to compare]({docs})",
         "submit": "Trust"
       },
+      "reconfigure_unprotected": {
+        "title": "Stop checking the certificate?",
+        "description": "Home Assistant trusts exactly this device's certificate so far. Without the check, or over plain HTTP, anyone who can read traffic in your network could read the password, which is sent as soon as you continue. Continue only if you accept that; otherwise cancel. Help: [documentation]({docs})",
+        "submit": "Continue unprotected"
+      },
       "reconfigure_certificate": {
         "title": "Confirm the certificate",
         "description": "The device presents a different certificate than the one trusted so far:\n\n`{fingerprint}`\n\nCompare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
@@ -118,7 +123,7 @@
       },
       "credentials_unprotected": {
         "title": "Account (connection not protected)",
-        "description": "The certificate is not checked, or the connection is plain HTTP: anyone who can read traffic in your network could read this password. Continue only if you accept that; otherwise go back and choose HTTPS with a checked certificate. Use an SRM administrator account (only those are tested). Help: [documentation]({docs})",
+        "description": "The certificate is not checked, or the connection is plain HTTP: anyone who can read traffic in your network could read this password. Continue only if you accept that; otherwise cancel and set up the device again with HTTPS and a checked certificate. Use an SRM administrator account (only those are tested). Help: [documentation]({docs})",
         "data": {
           "username": "Username",
           "password": "Password"

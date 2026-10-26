@@ -111,7 +111,7 @@ views:
             title: Unknown devices
             content: |
               {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
-              {%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+              {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
               {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
                  | selectattr('attributes.leases', 'defined') | first %}
               {% set rows = (s.attributes.leases if s else []) | selectattr('unknown') | list %}
@@ -129,7 +129,7 @@ views:
             title: Reservations
             content: |
               {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
-              {%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+              {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
               {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
                  | selectattr('attributes.reservations', 'defined') | first %}
               {% set rows = s.attributes.reservations if s else [] %}
@@ -156,7 +156,7 @@ views:
         title: Who has an address
         content: |
           {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
-          {%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+          {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
           {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
              | selectattr('attributes.leases', 'defined') | first %}
           {% set rows = s.attributes.leases if s else [] %}
@@ -183,7 +183,7 @@ views:
               title: Firewall rules
               content: |
                 {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
-                {%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+                {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
                 {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
                    | selectattr('attributes.rules', 'defined') | first %}
                 {% set rows = s.attributes.rules if s else [] %}
@@ -204,7 +204,7 @@ views:
               title: Firewall rules
               content: |
                 {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
-                {%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+                {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
                 {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
                    | selectattr('attributes.rules', 'defined') | first %}
                 {% set rows = s.attributes.rules if s else [] %}

@@ -1,5 +1,5 @@
 {
   "name": "Synology SRM Router",
-  "homeassistant": "2026.10.0",
+  "homeassistant": "2026.10.3",
   "render_readme": true
 }

@@ -124,7 +124,8 @@ for a while, both can use the same account; the built-in tracker asks the router
 ## Changing the connection or signing in again
 
 - *Reconfigure* changes host, port, HTTPS and certificate checking. A certificate that differs
-  from the trusted one is shown for you to confirm first.
+  from the trusted one is shown for you to confirm first. Switching a pinned device to an
+  unchecked certificate or to HTTP asks for confirmation before the password is sent.
 - Adding a device that is already set up, at a new address, updates the address of the existing
   entry instead.
 - When the password changed, or the device presents a new certificate, Home Assistant asks you to
