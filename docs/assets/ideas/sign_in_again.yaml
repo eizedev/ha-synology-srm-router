@@ -1,0 +1,21 @@
+# Home Assistant needs you: a router or access point asks to sign in again or to confirm a new
+# certificate. Home Assistant raises a repair for that; this sends it to your phone as well.
+automation:
+  - alias: Router needs attention
+    triggers:
+      - trigger: event
+        event_type: repairs_issue_registry_updated
+        event_data:
+          action: create
+          domain: homeassistant
+    conditions:
+      - condition: template
+        value_template: >
+          {{ trigger.event.data.issue_id.startswith('config_entry_reauth_synology_srm_router_') }}
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: Synology router
+          message: >
+            Home Assistant cannot read a router or access point until you sign in again or
+            confirm its new certificate. Open the repair in Home Assistant.

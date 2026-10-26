@@ -24,6 +24,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.synology_srm_router.const import (
+    CONF_CERTIFICATE_NAME,
     CONF_FINGERPRINT,
     CONF_SHOW_ALL,
     CONF_TRACK_ALL,
@@ -38,8 +39,10 @@ from .conftest import (
     ERRORS,
     FINGERPRINT,
     FINGERPRINTS,
+    ISSUER,
     ROUTER_HOST,
     SERIALS,
+    TRUSTED,
     UNSUPPORTED,
     FakeClient,
     make_entry,
@@ -565,3 +568,118 @@ async def test_options_show_all_known_clients_on_request(hass: HomeAssistant) ->
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert entry.options["consider_home"] == 60
+
+
+NAME = "router.example.net"
+
+
+async def _finish_setup(hass: HomeAssistant, result: ConfigFlowResult) -> ConfigFlowResult:
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "clients"  # protected: no warning before the password
+    return await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+
+async def test_a_certificate_from_an_authority_is_checked_by_its_name(
+    hass: HomeAssistant,
+) -> None:
+    TRUSTED[ROUTER_HOST] = ("*.example.net", NAME)
+    result = await _start(hass)
+    assert result["step_id"] == "certificate_trusted"
+    assert (result["description_placeholders"] or {})["name"] == NAME
+    assert (result["description_placeholders"] or {})["issuer"] == ISSUER
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _finish_setup(hass, result)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_CERTIFICATE_NAME] == NAME
+    assert result["data"][CONF_FINGERPRINT] is None
+    assert result["data"][CONF_VERIFY_CERTIFICATE] is True
+
+
+async def test_a_certificate_from_an_authority_can_be_pinned_instead(
+    hass: HomeAssistant,
+) -> None:
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"pin_instead": True}
+    )
+    assert result["step_id"] == "certificate"  # the fingerprint, to compare as usual
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _finish_setup(hass, result)
+    assert result["data"][CONF_FINGERPRINT] == FINGERPRINT
+    assert result["data"][CONF_CERTIFICATE_NAME] is None
+
+
+async def test_a_host_given_by_name_is_checked_against_that_name(hass: HomeAssistant) -> None:
+    TRUSTED[NAME] = ("other.example.net", NAME)
+    result = await _start(hass, {**CONNECTION, "host": NAME})
+    assert (result["description_placeholders"] or {})["name"] == NAME
+    # A local name the certificate does not list: one of the certificate's own names is offered.
+    TRUSTED["srm.lan"] = (NAME,)
+    result = await _start(hass, {**CONNECTION, "host": "srm.lan"})
+    assert (result["description_placeholders"] or {})["name"] == NAME
+
+
+async def test_without_a_name_that_fits_the_certificate_is_pinned(hass: HomeAssistant) -> None:
+    TRUSTED[ROUTER_HOST] = ("*.example.net",)  # a wildcard names no host to check against
+    result = await _start(hass)
+    assert result["step_id"] == "certificate"
+
+
+async def test_reauth_offers_a_certificate_from_an_authority(hass: HomeAssistant) -> None:
+    # The device moved from its own certificate to one from a public authority.
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("changed")}
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_trusted"
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_CERTIFICATE_NAME] == NAME
+    assert entry.data[CONF_FINGERPRINT] is None
+
+
+async def test_reauth_can_pin_instead(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("changed")}
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    FINGERPRINTS[ROUTER_HOST] = "cd" * 32
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"pin_instead": True}
+    )
+    assert result["step_id"] == "reauth_certificate"
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_FINGERPRINT] == "cd" * 32
+
+
+async def test_reconfigure_to_a_certificate_from_an_authority(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+    assert result["step_id"] == "reconfigure_trusted"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"pin_instead": True}
+    )
+    assert result["step_id"] == "reconfigure_certificate"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+    # Once more, keeping the name this time; then again: the same name needs no confirmation.
+    for step in ("reconfigure_trusted", None):
+        result = await entry.start_reconfigure_flow(hass)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+        if step is not None:
+            assert result["step_id"] == step
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        assert result["reason"] == "reconfigure_successful"
+        assert entry.data[CONF_CERTIFICATE_NAME] == NAME

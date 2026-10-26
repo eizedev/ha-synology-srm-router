@@ -35,7 +35,8 @@ changes a setting.
   about, named after your devices (sensors you switch on); a hits sensor per rule on request.
 - Device trackers that know which router or access point, connection and radio each client
   uses, named as in SRM.
-- Certificate pinning, and nothing but reading: the integration never changes a setting.
+- Checked certificates (by name for Let's Encrypt, so renewals need nothing; pinned for SRM's
+  own), and nothing but reading: the integration never changes a setting.
 
 ## Install
 

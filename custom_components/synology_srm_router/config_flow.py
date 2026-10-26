@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+import ipaddress
+import ssl
 from typing import Any
 
 from aiosynologysrm import (
@@ -16,6 +18,7 @@ from aiosynologysrm import (
     SrmSessionError,
     SrmTwoFactorRequiredError,
     get_certificate_fingerprint,
+    get_certificate_names,
 )
 from homeassistant.config_entries import (
     ConfigFlow,
@@ -38,18 +41,24 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 from homeassistant.util import dt as dt_util
-from homeassistant.util.ssl import get_default_no_verify_context
+from homeassistant.util.ssl import (
+    create_client_context,
+    get_default_context,
+    get_default_no_verify_context,
+)
 import probatio
 
 from . import create_client, session_name
 from .clients import Client, combine, dhcp_addresses, options as client_options
 from .const import (
+    CONF_CERTIFICATE_NAME,
     CONF_CONSIDER_HOME,
     CONF_FAST_INTERVAL,
     CONF_FINGERPRINT,
     CONF_FIREWALL_HITS,
     CONF_IS_ROUTER,
     CONF_OWN_TRACKERS,
+    CONF_PIN_INSTEAD,
     CONF_SHOW_ALL,
     CONF_SLOW_INTERVAL,
     CONF_TRACK_ALL,
@@ -144,6 +153,49 @@ async def _fingerprint(data: Mapping[str, Any]) -> str:
     )
 
 
+def _names_context() -> ssl.SSLContext:
+    """Verify the chain against the authorities but not the name (it reads files: executor)."""
+    context = create_client_context()
+    context.check_hostname = False
+    return context
+
+
+def _is_address(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host.removeprefix("[").removesuffix("]"))
+    except ValueError:
+        return False
+    return True
+
+
+async def _trusted_name(
+    hass: HomeAssistant, data: Mapping[str, Any]
+) -> tuple[str, str | None] | None:
+    """Return a name a public authority vouches for the device's certificate under, and the issuer.
+
+    The host comes first when it is a name; otherwise the certificate's own names, which only
+    work when the device is reached by its address and the user confirms the name. None when no
+    authority vouches for the certificate (SRM's own) or no name fits.
+    """
+    host, port = str(data[CONF_HOST]), int(data[CONF_PORT])
+    context = await hass.async_add_executor_job(_names_context)
+    try:
+        certificate = await get_certificate_names(host, port, ssl_context=context)
+    except SrmCertificateError:
+        return None
+    candidates = [] if _is_address(host) else [host]
+    candidates += [n for n in certificate.names if "*" not in n and n not in candidates]
+    for name in candidates:
+        try:
+            await get_certificate_fingerprint(
+                host, port, ssl_context=get_default_context(), server_hostname=name
+            )
+        except SrmCertificateError:
+            continue
+        return name, certificate.issuer
+    return None
+
+
 @dataclass(frozen=True, kw_only=True)
 class Probe:
     """What one login tells about a device."""
@@ -210,6 +262,8 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         self._show_all = False
         self._own_trackers = False
         self._from_menu = False
+        self._found_fingerprint: str | None = None
+        self._issuer: str | None = None
 
     @staticmethod
     @callback
@@ -225,15 +279,16 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             self._data = {
                 **_with_port(user_input),
                 CONF_FINGERPRINT: None,
+                CONF_CERTIFICATE_NAME: None,
                 CONF_VERIFY_CERTIFICATE: pin,
             }
             if pin:
                 try:
-                    self._data[CONF_FINGERPRINT] = await _fingerprint(self._data)
+                    self._data = await self._check(self._data)
                 except Exception as err:  # the form shows the error; unexpected ones are logged
                     errors["base"] = _error_key(err)
                 else:
-                    return await self.async_step_certificate()
+                    return self._confirm("certificate", "certificate_trusted")
             else:
                 return await self.async_step_credentials()
         schema = self.add_suggested_values_to_schema(_connection_schema({}), user_input or {})
@@ -247,11 +302,59 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_certificate(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Show the fingerprint; continuing means the user trusts it."""
-        if user_input is not None:
-            return await self.async_step_credentials()
+        """Continue once the user confirmed the fingerprint or the trusted name."""
+        return await self.async_step_credentials()
+
+    async def async_step_certificate_trusted(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm the name a public authority vouches for; pinning stays possible."""
+        if self._pin_instead(user_input):
+            return self._confirm("certificate", "certificate_trusted")
+        return await self.async_step_certificate(user_input)
+
+    async def _check(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Look at the device's certificate: a name an authority vouches for, else a fingerprint."""
+        fingerprint = await _fingerprint(data)
+        trusted = await _trusted_name(self.hass, data)
+        self._found_fingerprint = fingerprint
+        if trusted is None:
+            return {**data, CONF_CERTIFICATE_NAME: None, CONF_FINGERPRINT: fingerprint}
+        name, self._issuer = trusted
+        return {**data, CONF_CERTIFICATE_NAME: name, CONF_FINGERPRINT: None}
+
+    def _pin_instead(self, user_input: Mapping[str, Any] | None) -> bool:
+        """Switch from the trusted name to pinning when the user asked for it."""
+        if not user_input or not user_input.get(CONF_PIN_INSTEAD):
+            return False
+        self._data = {
+            **self._data,
+            CONF_CERTIFICATE_NAME: None,
+            CONF_FINGERPRINT: self._found_fingerprint,
+        }
+        return True
+
+    def _confirm(
+        self, pin_step: str, trusted_step: str, errors: dict[str, str] | None = None
+    ) -> ConfigFlowResult:
+        """Show the certificate for confirmation: the trusted name, or the fingerprint to pin."""
+        name = self._data.get(CONF_CERTIFICATE_NAME)
+        if name:
+            return self.async_show_form(
+                step_id=trusted_step,
+                data_schema=probatio.Schema(
+                    {probatio.Required(CONF_PIN_INSTEAD, default=False): BooleanSelector()}
+                ),
+                errors=errors or {},
+                description_placeholders={
+                    "name": name,
+                    "issuer": self._issuer or "?",
+                    "docs": DOCS_CERTIFICATE,
+                },
+            )
         return self.async_show_form(
-            step_id="certificate",
+            step_id=pin_step,
+            errors=errors or {},
             description_placeholders=_certificate_placeholders(self._data),
         )
 
@@ -271,18 +374,17 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 existing = self.hass.config_entries.async_entry_for_domain_unique_id(
                     DOMAIN, self._probe.serial
                 )
-                if (
-                    existing is not None
-                    and existing.data.get(CONF_FINGERPRINT)
-                    and not data.get(CONF_FINGERPRINT)
-                ):
+                if existing is not None and _pinned(existing.data) and not _pinned(data):
                     # Adding it again without a checked certificate must not remove the pin of
                     # the existing entry; changing that is what "Reconfigure" is for.
                     return self.async_abort(reason="already_configured")
                 # The same device at a new address: take the address that was just verified.
                 self._abort_if_unique_id_configured(
                     updates={k: data[k] for k in (CONF_HOST, CONF_PORT, CONF_USE_HTTPS)}
-                    | {k: data[k] for k in (CONF_FINGERPRINT, CONF_VERIFY_CERTIFICATE)}
+                    | {
+                        k: data[k]
+                        for k in (CONF_FINGERPRINT, CONF_CERTIFICATE_NAME, CONF_VERIFY_CERTIFICATE)
+                    }
                 )
                 self._data = data
                 if not self._probe.is_router and _router_configured(self.hass):
@@ -294,7 +396,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_clients()
         keep = {CONF_USERNAME: user_input[CONF_USERNAME]} if user_input else {}
         # Without a pinned certificate the same form says what that means for the password.
-        protected = bool(self._data.get(CONF_FINGERPRINT))
+        protected = _pinned(self._data)
         return self.async_show_form(
             step_id="credentials" if protected else "credentials_unprotected",
             data_schema=self.add_suggested_values_to_schema(probatio.Schema(CREDENTIALS), keep),
@@ -403,11 +505,11 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 probe = await _probe(self.hass, data)
             except SrmCertificateError:
                 try:
-                    self._data = {**data, CONF_FINGERPRINT: await _fingerprint(data)}
+                    self._data = await self._check(data)
                 except Exception as err:  # the form shows the error; unexpected ones are logged
                     errors["base"] = _error_key(err)
                 else:
-                    return await self.async_step_reauth_certificate()
+                    return self._confirm("reauth_certificate", "reauth_trusted")
             except Exception as err:  # the form shows the error; unexpected ones are logged
                 errors["base"] = _error_key(err)
             else:
@@ -424,20 +526,23 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reauth_certificate(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Show a new certificate; it is trusted only after confirmation."""
+        """Store the certificate the user confirmed; an error shows it again."""
         errors: dict[str, str] = {}
-        if user_input is not None:
-            try:
-                probe = await _probe(self.hass, self._data)
-            except Exception as err:  # the form shows the error; unexpected ones are logged
-                errors["base"] = _error_key(err)
-            else:
-                return await self._finish(self._get_reauth_entry(), self._data, probe)
-        return self.async_show_form(
-            step_id="reauth_certificate",
-            errors=errors,
-            description_placeholders=_certificate_placeholders(self._data),
-        )
+        try:
+            probe = await _probe(self.hass, self._data)
+        except Exception as err:  # the form shows the error; unexpected ones are logged
+            errors["base"] = _error_key(err)
+        else:
+            return await self._finish(self._get_reauth_entry(), self._data, probe)
+        return self._confirm("reauth_certificate", "reauth_trusted", errors)
+
+    async def async_step_reauth_trusted(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm a certificate from a public authority by its name; pinning stays possible."""
+        if self._pin_instead(user_input):
+            return self._confirm("reauth_certificate", "reauth_trusted")
+        return await self.async_step_reauth_certificate(user_input)
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -454,6 +559,7 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 **entry.data,
                 **_with_port(user_input),
                 CONF_FINGERPRINT: None,
+                CONF_CERTIFICATE_NAME: None,
                 CONF_VERIFY_CERTIFICATE: pin,
             }
             if not pin and _pinned(entry.data):
@@ -462,17 +568,17 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_reconfigure_unprotected()
             try:
                 if pin:
-                    data[CONF_FINGERPRINT] = await _fingerprint(data)
-                if data[CONF_FINGERPRINT] == entry.data.get(CONF_FINGERPRINT) or not pin:
+                    data = await self._check(data)
+                if not pin or _same_trust(data, entry.data):
                     probe: Probe | None = await _probe(self.hass, data)
                 else:
-                    probe = None  # a new certificate: confirm it before it is used
+                    probe = None  # a new certificate or name: confirm it before it is used
             except Exception as err:  # the form shows the error; unexpected ones are logged
                 errors["base"] = _error_key(err)
             else:
                 if probe is None:
                     self._data = data
-                    return await self.async_step_reconfigure_certificate()
+                    return self._confirm("reconfigure_certificate", "reconfigure_trusted")
                 return await self._finish(entry, data, probe)
         defaults = {**entry.data, CONF_VERIFY_CERTIFICATE: _pinned(entry.data)}
         return self.async_show_form(
@@ -502,20 +608,23 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure_certificate(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Show the certificate found at the new address; it is pinned only after confirmation."""
+        """Store the certificate the user confirmed; an error shows it again."""
         errors: dict[str, str] = {}
-        if user_input is not None:
-            try:
-                probe = await _probe(self.hass, self._data)
-            except Exception as err:  # the form shows the error; unexpected ones are logged
-                errors["base"] = _error_key(err)
-            else:
-                return await self._finish(self._get_reconfigure_entry(), self._data, probe)
-        return self.async_show_form(
-            step_id="reconfigure_certificate",
-            errors=errors,
-            description_placeholders=_certificate_placeholders(self._data),
-        )
+        try:
+            probe = await _probe(self.hass, self._data)
+        except Exception as err:  # the form shows the error; unexpected ones are logged
+            errors["base"] = _error_key(err)
+        else:
+            return await self._finish(self._get_reconfigure_entry(), self._data, probe)
+        return self._confirm("reconfigure_certificate", "reconfigure_trusted", errors)
+
+    async def async_step_reconfigure_trusted(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm a certificate from a public authority by its name; pinning stays possible."""
+        if self._pin_instead(user_input):
+            return self._confirm("reconfigure_certificate", "reconfigure_trusted")
+        return await self.async_step_reconfigure_certificate(user_input)
 
     async def _finish(
         self, entry: SrmConfigEntry, data: dict[str, Any], probe: Probe
@@ -529,8 +638,20 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 def _pinned(data: Mapping[str, Any]) -> bool:
-    """Whether an entry's certificate is pinned (or meant to be, with its fingerprint lost)."""
-    return bool(data.get(CONF_VERIFY_CERTIFICATE) or data.get(CONF_FINGERPRINT))
+    """Whether an entry's certificate is checked (or meant to be, with name and pin lost)."""
+    return bool(
+        data.get(CONF_VERIFY_CERTIFICATE)
+        or data.get(CONF_FINGERPRINT)
+        or data.get(CONF_CERTIFICATE_NAME)
+    )
+
+
+def _same_trust(data: Mapping[str, Any], stored: Mapping[str, Any]) -> bool:
+    """Whether the certificate is checked as before: the same name, or the same fingerprint."""
+    for key in (CONF_CERTIFICATE_NAME, CONF_FINGERPRINT):
+        if data.get(key) and data.get(key) == stored.get(key):
+            return True
+    return False
 
 
 def _pretty(fingerprint: str) -> str:

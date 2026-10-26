@@ -39,6 +39,16 @@ a similar per-network setting whose name depends on the maker, for example *MAC 
 Behind carrier-grade NAT the public address is shared and changes without notice; see
 [Entities](entities.md).
 
+## Sign in again or confirm a certificate
+
+When a router or access point needs you (a changed password, or a new certificate that is pinned
+or no longer valid), Home Assistant stops reading it and raises a repair. To hear about it before
+your trackers have been wrong for weeks, send that repair to your phone:
+
+```yaml
+--8<-- "docs/assets/ideas/sign_in_again.yaml"
+```
+
 ## Router or access point restarted
 
 ```yaml

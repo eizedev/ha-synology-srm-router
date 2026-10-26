@@ -14,13 +14,24 @@
           "host": "Adresse oder Hostname des Routers oder Access Points.",
           "port": "Leer lassen für die Voreinstellung von SRM: 8001 für HTTPS, 8000 für HTTP.",
           "use_https": "Empfohlen: Das Passwort wird verschlüsselt übertragen.",
-          "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung des Fingerabdrucks fest hinterlegt. Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
+          "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung geprüft (über seinen Namen, wenn eine öffentliche Stelle es ausgestellt hat, sonst über den Fingerabdruck). Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
         },
         "submit": "Weiter"
       },
       "certificate": {
         "title": "Zertifikat bestätigen",
         "description": "Das Gerät zeigt ein Zertifikat mit diesem SHA-256-Fingerabdruck:\n\n`{fingerprint}`\n\nZum Vergleichen öffne {url} im Browser, klicke auf das Schloss oder die Warnung neben der Adresse und lass dir das Zertifikat anzeigen; dort steht der SHA-256-Fingerabdruck. Fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
+        "submit": "Vertrauen"
+      },
+      "certificate_trusted": {
+        "title": "Zertifikat einer vertrauenswürdigen Stelle",
+        "description": "Das Gerät zeigt ein Zertifikat für **{name}**, ausgestellt von {issuer}, einer Zertifizierungsstelle, der Browser und Home Assistant vertrauen. Home Assistant prüft jede Verbindung gegen diese Stelle und diesen Namen; Erneuerungen des Zertifikats (etwa bei Let's Encrypt alle paar Monate) brauchen dann nichts von dir.\n\nFahre nur fort, wenn **{name}** der Name deines Geräts ist. [Mehr zu Zertifikaten]({docs})",
+        "data": {
+          "pin_instead": "Stattdessen genau dieses Zertifikat hinterlegen"
+        },
+        "data_description": {
+          "pin_instead": "Nur wenn du das lieber willst: Home Assistant vertraut dann nur diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung."
+        },
         "submit": "Vertrauen"
       },
       "credentials": {
@@ -71,6 +82,17 @@
         "description": "Das Gerät zeigt jetzt ein anderes Zertifikat:\n\n`{fingerprint}`\n\nDas ist nach einer Erneuerung des Zertifikats normal. Vergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen. [So vergleichst du]({docs})",
         "submit": "Vertrauen"
       },
+      "reauth_trusted": {
+        "title": "Zertifikat einer vertrauenswürdigen Stelle",
+        "description": "Das Gerät zeigt jetzt ein Zertifikat für **{name}**, ausgestellt von {issuer}, einer Zertifizierungsstelle, der Browser und Home Assistant vertrauen. Ab jetzt prüft Home Assistant die Stelle und diesen Namen statt eines bestimmten Zertifikats; Erneuerungen brauchen dann nichts von dir.\n\nFahre nur fort, wenn **{name}** der Name deines Geräts ist. [Mehr zu Zertifikaten]({docs})",
+        "data": {
+          "pin_instead": "Stattdessen genau dieses Zertifikat hinterlegen"
+        },
+        "data_description": {
+          "pin_instead": "Nur wenn du das lieber willst: Home Assistant vertraut dann nur diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung."
+        },
+        "submit": "Vertrauen"
+      },
       "reconfigure_unprotected": {
         "title": "Zertifikat nicht mehr prüfen?",
         "description": "Bisher vertraut Home Assistant genau dem Zertifikat dieses Geräts. Ohne die Prüfung oder über reines HTTP kann jeder, der den Verkehr in deinem Netz mitlesen kann, das Passwort lesen; es wird gesendet, sobald du fortfährst. Mach nur weiter, wenn du das in Kauf nimmst; sonst brich ab. Hilfe: [Dokumentation]({docs})",
@@ -79,6 +101,17 @@
       "reconfigure_certificate": {
         "title": "Zertifikat bestätigen",
         "description": "Das Gerät zeigt ein anderes Zertifikat als das bisher vertraute:\n\n`{fingerprint}`\n\nVergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
+        "submit": "Vertrauen"
+      },
+      "reconfigure_trusted": {
+        "title": "Zertifikat einer vertrauenswürdigen Stelle",
+        "description": "Das Gerät zeigt ein Zertifikat für **{name}**, ausgestellt von {issuer}, einer Zertifizierungsstelle, der Browser und Home Assistant vertrauen. Home Assistant prüft jede Verbindung gegen diese Stelle und diesen Namen; Erneuerungen brauchen dann nichts von dir.\n\nFahre nur fort, wenn **{name}** der Name deines Geräts ist. [Mehr zu Zertifikaten]({docs})",
+        "data": {
+          "pin_instead": "Stattdessen genau dieses Zertifikat hinterlegen"
+        },
+        "data_description": {
+          "pin_instead": "Nur wenn du das lieber willst: Home Assistant vertraut dann nur diesem Zertifikat, und jede Erneuerung braucht deine Bestätigung."
+        },
         "submit": "Vertrauen"
       },
       "reconfigure": {
@@ -94,7 +127,7 @@
           "host": "Adresse oder Hostname des Routers oder Access Points.",
           "port": "Leer lassen für die Voreinstellung von SRM: 8001 für HTTPS, 8000 für HTTP.",
           "use_https": "Empfohlen: Das Passwort wird verschlüsselt übertragen.",
-          "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung des Fingerabdrucks fest hinterlegt. Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
+          "verify_certificate": "Das Zertifikat des Geräts wird nach deiner Bestätigung geprüft (über seinen Namen, wenn eine öffentliche Stelle es ausgestellt hat, sonst über den Fingerabdruck). Nur abschalten, wenn du in Kauf nimmst, dass jemand in deinem Netz das Passwort mitlesen kann."
         },
         "submit": "Speichern"
       },
@@ -140,7 +173,7 @@
       "invalid_auth": "Benutzername oder Passwort falsch, oder das Konto darf sich nicht anmelden.",
       "two_factor": "Das Konto nutzt die Zwei-Faktor-Anmeldung. Nimm ein Konto ohne.",
       "blocked": "Das Gerät sperrt Anmeldungen von Home Assistant nach Fehlversuchen. Gib die Adresse in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft.",
-      "certificate": "Das Zertifikat passt nicht. Prüfe die Adresse und bestätige dann den neuen Fingerabdruck.",
+      "certificate": "Das Zertifikat ist nicht das vertraute. Prüfe die Adresse und bestätige dann das neue Zertifikat.",
       "invalid_host": "Gib einen Hostnamen oder eine IP-Adresse an, ohne Port oder Pfad.",
       "not_admin": "SRM hat dem Konto die Rechte dafür verweigert; nutze ein Administratorkonto.",
       "no_serial": "Das Gerät meldet keine Seriennummer und kann deshalb nicht eingerichtet werden.",
@@ -323,7 +356,7 @@
       "message": "Das Konto nutzt die Zwei-Faktor-Anmeldung. Nimm ein Konto ohne."
     },
     "certificate": {
-      "message": "Das Zertifikat passt nicht. Prüfe die Adresse und bestätige dann den neuen Fingerabdruck."
+      "message": "Das Zertifikat ist nicht das vertraute. Prüfe die Adresse und bestätige dann das neue Zertifikat."
     },
     "not_admin": {
       "message": "SRM hat dem Konto die Rechte dafür verweigert; nutze ein Administratorkonto."

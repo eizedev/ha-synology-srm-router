@@ -34,7 +34,8 @@ hassfest and the HACS check run in CI only.
   load order does not matter. A tracker holds its location for `LOCATION_GRACE` while the device
   it was on is missing.
 - **Errors**: authentication, two-factor, missing admin rights and certificate errors raise
-  `ConfigEntryAuthFailed` (reauth confirms a new fingerprint); SRM's auto block raises a repair
+  `ConfigEntryAuthFailed` (reauth confirms the new certificate: its name when a public authority
+  vouches for it, else its fingerprint); SRM's auto block raises a repair
   and is retried every `BLOCKED_RETRY`; everything else is `UpdateFailed` or
   `ConfigEntryNotReady`. A failed setup always logs out. Messages come from `strings.json` (`exceptions`).
 - **Texts**: every user-facing text is in `strings.json` and in both `translations/en.json` and

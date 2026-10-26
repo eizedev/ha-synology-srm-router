@@ -12,27 +12,41 @@ point is shown there.
 | Host | Address or host name of the router or access point. |
 | Port | Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP. |
 | Use HTTPS | Recommended: the password travels encrypted. |
-| Check the certificate | Shows the certificate's fingerprint for you to confirm, then trusts exactly that certificate (see below). Turn off only if you accept that anyone in your network could read the password. |
+| Check the certificate | Shows the certificate for you to confirm: its name when a public certificate authority vouches for it, else its fingerprint (see below). Turn off only if you accept that anyone in your network could read the password. |
 
 Each device is recognised by its serial number. Whether it runs as router or as access point is
 read at every start, so switching the operation mode in SRM needs no reconfiguration.
 
 ## Certificate
 
-SRM uses a certificate that browsers do not trust by default, so Home Assistant shows its SHA-256
-fingerprint once and then trusts exactly that certificate. To check that you are talking to your
-device and not to something in between:
+How Home Assistant checks the device depends on its certificate:
 
-1. Open the address shown in the dialog (for example `https://192.168.1.1:8001`) in a browser.
-2. Click the padlock or the warning next to the address and open the certificate details.
-3. Compare the SHA-256 fingerprint there with the one in the dialog. Both list the same pairs of
-   characters; continue only if they match.
+- **A certificate from a public certificate authority** (for example Let's Encrypt, which SRM
+  can request for a DDNS name): the dialog shows the name the certificate was issued for and the
+  authority. Continue only if that is your device's name. Home Assistant then checks every
+  connection against the authority and that name, also when you added the device by its IP
+  address, so renewals need nothing from you. *Pin this exact certificate instead* is there if
+  you prefer pinning; then every renewal needs a confirmation.
+- **SRM's own certificate**, which browsers do not trust: Home Assistant shows its SHA-256
+  fingerprint once and then trusts exactly that certificate (pinning). To check that you are
+  talking to your device and not to something in between:
 
-When the certificate changes later, for example after a renewal, Home Assistant asks again and
-shows the new fingerprint. A device set up with a checked certificate never connects unchecked:
-if its stored fingerprint is missing, Home Assistant asks you to confirm the certificate again. Without a checked certificate, or over HTTP, the account step says so
-before you enter the password. Adding a device again that is already set up with a pinned
-certificate keeps the pin; to change how it is checked, use *Reconfigure*.
+    1. Open the address shown in the dialog (for example `https://192.168.1.1:8001`) in a browser.
+    2. Click the padlock or the warning next to the address and open the certificate details.
+    3. Compare the SHA-256 fingerprint there with the one in the dialog. Both list the same pairs
+       of characters; continue only if they match.
+
+    When a pinned certificate changes, for example after a renewal, Home Assistant stops reading
+    the device and asks you to sign in again, then shows the new certificate. If it now comes from
+    a public authority, you can switch to checking its name. Home Assistant raises a repair for
+    this; [Ideas](ideas.md#sign-in-again-or-confirm-a-certificate) shows how to get it on your
+    phone.
+
+A device set up with a checked certificate never connects unchecked: if its stored name or
+fingerprint is missing, Home Assistant asks you to confirm the certificate again. Without a
+checked certificate, or over HTTP, the account step says so before you enter the password. Adding
+a device again that is already set up with a checked certificate keeps it; to change how it is
+checked, use *Reconfigure*.
 
 ![The certificate step with the fingerprint and how to compare it](assets/screenshots/setup-certificate.png){ width="560" }
 

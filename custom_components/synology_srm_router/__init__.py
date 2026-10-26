@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from ssl import SSLContext
 
 import aiohttp
 from aiosynologysrm import SrmBlockedError, SrmCertificateError, SrmClient, SrmError
@@ -20,9 +21,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
+from homeassistant.util.ssl import get_default_context
 
 from .const import (
     BLOCKED_RETRY,
+    CONF_CERTIFICATE_NAME,
     CONF_FINGERPRINT,
     CONF_IS_ROUTER,
     CONF_USE_HTTPS,
@@ -67,20 +70,26 @@ async def session_name(hass: HomeAssistant, purpose: str | None = None) -> str:
 
 
 def create_client(hass: HomeAssistant, data: dict[str, object], session: str) -> SrmClient:
-    """Build a client from an entry's data: pinned certificate, or none checked when chosen.
+    """Build a client from an entry's data: how its certificate is checked decides the rest.
 
-    An entry that pins its certificate but has lost the fingerprint is refused rather than
-    connected unchecked; the certificate error leads to reauthentication, which shows the
-    certificate for confirmation.
+    A certificate from a public authority is checked against the authorities and the confirmed
+    name, so renewals need nothing; any other is pinned by its fingerprint; none is checked only
+    when chosen. An entry that checks its certificate but has lost both name and fingerprint is
+    refused rather than connected unchecked; the certificate error leads to reauthentication,
+    which shows the certificate for confirmation.
     """
     fingerprint = data.get(CONF_FINGERPRINT)
+    name = data.get(CONF_CERTIFICATE_NAME)
     use_https = bool(data[CONF_USE_HTTPS])
-    if use_https and data.get(CONF_VERIFY_CERTIFICATE) and not isinstance(fingerprint, str):
-        msg = "The certificate is pinned, but no fingerprint is stored"
-        raise SrmCertificateError(msg)
-    ssl: bool | aiohttp.Fingerprint = False
-    if use_https and isinstance(fingerprint, str):
+    ssl: bool | aiohttp.Fingerprint | SSLContext = False
+    server_hostname: str | None = None
+    if use_https and isinstance(name, str):
+        ssl, server_hostname = get_default_context(), name
+    elif use_https and isinstance(fingerprint, str):
         ssl = aiohttp.Fingerprint(bytes.fromhex(fingerprint))
+    elif use_https and data.get(CONF_VERIFY_CERTIFICATE):
+        msg = "The certificate is checked, but neither its name nor its fingerprint is stored"
+        raise SrmCertificateError(msg)
     return SrmClient(
         str(data[CONF_HOST]),
         str(data[CONF_USERNAME]),
@@ -91,6 +100,7 @@ def create_client(hass: HomeAssistant, data: dict[str, object], session: str) ->
         ssl=ssl,
         timeout=REQUEST_TIMEOUT,
         session_name=session,
+        server_hostname=server_hostname,
     )
 
 

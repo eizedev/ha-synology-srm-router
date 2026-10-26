@@ -14,13 +14,24 @@
           "host": "Address or host name of the router or access point.",
           "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
           "use_https": "Recommended: the password travels encrypted.",
-          "verify_certificate": "Pin the device's certificate after you confirmed its fingerprint. Turn off only if you accept that anyone in your network could read the password."
+          "verify_certificate": "Check the device's certificate after you confirmed it (by its name when a public authority vouches for it, else by its fingerprint). Turn off only if you accept that anyone in your network could read the password."
         },
         "submit": "Next"
       },
       "certificate": {
         "title": "Confirm the certificate",
         "description": "The device presents a certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nTo compare it, open {url} in a browser, click the padlock or the warning next to the address and show the certificate; it lists the SHA-256 fingerprint. Continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
+        "submit": "Trust"
+      },
+      "certificate_trusted": {
+        "title": "Certificate from a trusted authority",
+        "description": "The device presents a certificate for **{name}**, issued by {issuer}, a certificate authority that browsers and Home Assistant trust. Home Assistant will check every connection against this authority and this name, so renewals of the certificate (for example Let's Encrypt every few months) need nothing from you.\n\nContinue only if **{name}** is the name of your device. [More about certificates]({docs})",
+        "data": {
+          "pin_instead": "Pin this exact certificate instead"
+        },
+        "data_description": {
+          "pin_instead": "Only if you prefer it: Home Assistant then trusts just this certificate, and every renewal needs your confirmation."
+        },
         "submit": "Trust"
       },
       "credentials": {
@@ -71,6 +82,17 @@
         "description": "The device now presents a different certificate:\n\n`{fingerprint}`\n\nThis is expected after a certificate renewal. Compare it with the certificate shown at {url} in a browser and continue only if both match. [How to compare]({docs})",
         "submit": "Trust"
       },
+      "reauth_trusted": {
+        "title": "Certificate from a trusted authority",
+        "description": "The device now presents a certificate for **{name}**, issued by {issuer}, a certificate authority that browsers and Home Assistant trust. From now on Home Assistant checks the authority and this name instead of one exact certificate, so renewals need nothing from you.\n\nContinue only if **{name}** is the name of your device. [More about certificates]({docs})",
+        "data": {
+          "pin_instead": "Pin this exact certificate instead"
+        },
+        "data_description": {
+          "pin_instead": "Only if you prefer it: Home Assistant then trusts just this certificate, and every renewal needs your confirmation."
+        },
+        "submit": "Trust"
+      },
       "reconfigure_unprotected": {
         "title": "Stop checking the certificate?",
         "description": "Home Assistant trusts exactly this device's certificate so far. Without the check, or over plain HTTP, anyone who can read traffic in your network could read the password, which is sent as soon as you continue. Continue only if you accept that; otherwise cancel. Help: [documentation]({docs})",
@@ -79,6 +101,17 @@
       "reconfigure_certificate": {
         "title": "Confirm the certificate",
         "description": "The device presents a different certificate than the one trusted so far:\n\n`{fingerprint}`\n\nCompare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
+        "submit": "Trust"
+      },
+      "reconfigure_trusted": {
+        "title": "Certificate from a trusted authority",
+        "description": "The device presents a certificate for **{name}**, issued by {issuer}, a certificate authority that browsers and Home Assistant trust. Home Assistant will check every connection against this authority and this name, so renewals need nothing from you.\n\nContinue only if **{name}** is the name of your device. [More about certificates]({docs})",
+        "data": {
+          "pin_instead": "Pin this exact certificate instead"
+        },
+        "data_description": {
+          "pin_instead": "Only if you prefer it: Home Assistant then trusts just this certificate, and every renewal needs your confirmation."
+        },
         "submit": "Trust"
       },
       "reconfigure": {
@@ -94,7 +127,7 @@
           "host": "Address or host name of the router or access point.",
           "port": "Leave empty for SRM's default: 8001 for HTTPS, 8000 for HTTP.",
           "use_https": "Recommended: the password travels encrypted.",
-          "verify_certificate": "Pin the device's certificate after you confirmed its fingerprint. Turn off only if you accept that anyone in your network could read the password."
+          "verify_certificate": "Check the device's certificate after you confirmed it (by its name when a public authority vouches for it, else by its fingerprint). Turn off only if you accept that anyone in your network could read the password."
         },
         "submit": "Save"
       },
@@ -140,7 +173,7 @@
       "invalid_auth": "Wrong username or password, or the account may not log in.",
       "two_factor": "The account uses two-factor authentication. Use an account without it.",
       "blocked": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires.",
-      "certificate": "The certificate does not match. Check the address, then confirm the new fingerprint.",
+      "certificate": "The certificate is not the trusted one. Check the address, then confirm the new certificate.",
       "invalid_host": "Enter a host name or an IP address, without port or path.",
       "not_admin": "SRM refused the account the rights for this; use an administrator account.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",
@@ -323,7 +356,7 @@
       "message": "The account uses two-factor authentication. Use an account without it."
     },
     "certificate": {
-      "message": "The certificate does not match. Check the address, then confirm the new fingerprint."
+      "message": "The certificate is not the trusted one. Check the address, then confirm the new certificate."
     },
     "not_admin": {
       "message": "SRM refused the account the rights for this; use an administrator account."
