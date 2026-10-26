@@ -45,7 +45,7 @@ jobs:
         run: |
           git archive --format=zip -o synology_srm_router.zip "$GITHUB_SHA:custom_components/synology_srm_router"
           sum=$(sha256sum synology_srm_router.zip | cut -d' ' -f1)
-          printf '\n**Manual install:** `synology_srm_router.zip`, SHA-256 `%s`\n' "$sum" >> notes.md
+          printf '\n**Manual install:** %s, SHA-256 %s\n' "\`synology_srm_router.zip\`" "\`$sum\`" >> notes.md
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: synology_srm_router.zip
