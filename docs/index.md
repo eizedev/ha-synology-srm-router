@@ -42,8 +42,8 @@ hide:
   home and which device, connection and radio it uses. Clients on a standalone access point are
   found there, even though the router itself reports them as wired; names are the ones given in
   SRM.
-- Certificate pinning: the device's certificate is shown once for you to confirm, then trusted
-  exactly.
+- Checked certificates: a Let's Encrypt certificate is checked by its name, so renewals need
+  nothing; SRM's own certificate is shown once for you to confirm, then trusted exactly.
 - It only reads: the integration never changes a setting in SRM.
 
 Built on [aiosynologysrm](https://aiosynologysrm.eize.dev/).

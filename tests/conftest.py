@@ -10,6 +10,7 @@ from typing import Any, ClassVar
 from unittest.mock import PropertyMock, patch
 
 from aiosynologysrm import (
+    CertificateNames,
     ConnectionStatus,
     DhcpClients,
     DhcpReservations,
@@ -18,6 +19,7 @@ from aiosynologysrm import (
     FirewallHitCount,
     FirewallRules,
     NetworkDevices,
+    SrmCertificateError,
     StorageVolumes,
     SystemInfo,
     Topology,
@@ -136,6 +138,9 @@ class FakeClient:
 ERRORS: dict[str, dict[str, BaseException]] = {}
 UNSUPPORTED: dict[str, set[str]] = {}
 FINGERPRINTS: dict[str, str] = {}  # a certificate other than FINGERPRINT, per host
+# Hosts whose certificate a public authority vouches for: its DNS names. Others are self-signed.
+TRUSTED: dict[str, tuple[str, ...]] = {}
+ISSUER = "Example CA (E1)"
 
 
 @pytest.fixture(autouse=True)
@@ -150,17 +155,30 @@ def fake_client() -> Generator[type[FakeClient]]:
     ERRORS.clear()
     UNSUPPORTED.clear()
     FINGERPRINTS.clear()
+    TRUSTED.clear()
 
-    async def fingerprint(host: str, port: int, **_: Any) -> str:
+    async def fingerprint(host: str, port: int, **kwargs: Any) -> str:
         if "fingerprint" in ERRORS.get(host, {}):
             raise ERRORS[host]["fingerprint"]
+        name = kwargs.get("server_hostname")
+        if name is not None and name not in TRUSTED.get(host, ()):
+            raise SrmCertificateError("not valid for this name")
         return FINGERPRINTS.get(host, FINGERPRINT)
+
+    async def names(host: str, port: int, **_: Any) -> CertificateNames:
+        if host not in TRUSTED:
+            raise SrmCertificateError("self-signed")
+        return CertificateNames(names=TRUSTED[host], issuer=ISSUER)
 
     with (
         patch("custom_components.synology_srm_router.SrmClient", FakeClient),
         patch(
             "custom_components.synology_srm_router.config_flow.get_certificate_fingerprint",
             fingerprint,
+        ),
+        patch(
+            "custom_components.synology_srm_router.config_flow.get_certificate_names",
+            names,
         ),
         patch(
             "custom_components.synology_srm_router.diagnostics.collect_diagnostics",

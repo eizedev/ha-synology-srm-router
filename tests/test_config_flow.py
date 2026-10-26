@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 import dataclasses
+import ssl
 from typing import Any
 from unittest.mock import patch
 
@@ -23,7 +24,9 @@ from homeassistant.data_entry_flow import FlowResultType
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.synology_srm_router import config_flow
 from custom_components.synology_srm_router.const import (
+    CONF_CERTIFICATE_NAME,
     CONF_FINGERPRINT,
     CONF_SHOW_ALL,
     CONF_TRACK_ALL,
@@ -38,8 +41,10 @@ from .conftest import (
     ERRORS,
     FINGERPRINT,
     FINGERPRINTS,
+    ISSUER,
     ROUTER_HOST,
     SERIALS,
+    TRUSTED,
     UNSUPPORTED,
     FakeClient,
     make_entry,
@@ -565,3 +570,257 @@ async def test_options_show_all_known_clients_on_request(hass: HomeAssistant) ->
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert entry.options["consider_home"] == 60
+
+
+NAME = "router.example.net"
+
+
+async def _finish_setup(hass: HomeAssistant, result: ConfigFlowResult) -> ConfigFlowResult:
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "clients"  # protected: no warning before the password
+    return await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+
+def _suggested(result: ConfigFlowResult, field: str = CONF_CERTIFICATE_NAME) -> object:
+    schema = result["data_schema"]
+    assert schema is not None
+    key = next(key for key in schema.schema if key == field)
+    return (key.description or {}).get("suggested_value")
+
+
+def _placeholder(result: ConfigFlowResult, name: str) -> str:
+    return (result["description_placeholders"] or {})[name]
+
+
+PRETTY = ":".join(FINGERPRINT[i : i + 2] for i in range(0, len(FINGERPRINT), 2)).upper()
+
+
+async def test_a_certificate_from_an_authority_is_checked_by_the_name_entered(
+    hass: HomeAssistant,
+) -> None:
+    TRUSTED[ROUTER_HOST] = ("*.example.net", NAME)
+    result = await _start(hass)
+    assert result["step_id"] == "certificate_public"
+    assert _placeholder(result, "issuer") == ISSUER
+    assert _placeholder(result, "fingerprint") == PRETTY
+    assert _suggested(result) is None  # never a name from the certificate: anyone can get one
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: f" {NAME} "}
+    )
+    result = await _finish_setup(hass, result)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_CERTIFICATE_NAME] == NAME
+    assert result["data"][CONF_FINGERPRINT] is None
+    assert result["data"][CONF_VERIFY_CERTIFICATE] is True
+
+
+async def test_a_name_the_certificate_is_not_valid_for_is_refused(hass: HomeAssistant) -> None:
+    # Someone else's certificate from a public authority, for a name of their own.
+    TRUSTED[ROUTER_HOST] = ("someone-else.example",)
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["step_id"] == "certificate_public"
+    assert result["errors"] == {CONF_CERTIFICATE_NAME: "name_mismatch"}
+    assert _suggested(result) == NAME  # what was typed stays
+    ERRORS[ROUTER_HOST] = {"fingerprint": SrmConnectionError("gone")}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS.clear()
+
+
+async def test_a_certificate_from_an_authority_can_be_pinned(hass: HomeAssistant) -> None:
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _finish_setup(hass, result)
+    assert result["data"][CONF_FINGERPRINT] == FINGERPRINT
+    assert result["data"][CONF_CERTIFICATE_NAME] is None
+
+
+async def test_a_host_name_the_certificate_is_valid_for_needs_no_question(
+    hass: HomeAssistant,
+) -> None:
+    TRUSTED[NAME] = ("other.example.net", NAME)
+    result = await _start(hass, {**CONNECTION, "host": NAME})
+    assert result["step_id"] == "credentials"  # like a browser: valid for the name typed
+    result = await _finish_setup(hass, result)
+    assert result["data"][CONF_CERTIFICATE_NAME] == NAME
+    assert result["data"][CONF_FINGERPRINT] is None
+    # A local name the certificate is not valid for: asked like an address, nothing suggested.
+    TRUSTED["srm.lan"] = (NAME,)
+    result = await _start(hass, {**CONNECTION, "host": "srm.lan"})
+    assert result["step_id"] == "certificate_public"
+    assert _suggested(result) is None
+
+
+async def test_reauth_offers_a_check_by_name(hass: HomeAssistant) -> None:
+    # The device moved from its own certificate to one from a public authority.
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("changed")}
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    FINGERPRINTS[ROUTER_HOST] = "cd" * 32
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_certificate_public"
+    assert _placeholder(result, "previous") == PRETTY  # what was trusted so far
+    assert _suggested(result) is None
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_CERTIFICATE_NAME] == NAME
+    assert entry.data[CONF_FINGERPRINT] is None
+
+
+async def test_reauth_of_a_name_that_no_longer_fits(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_CERTIFICATE_NAME: NAME, CONF_FINGERPRINT: None}
+    )
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("not valid for the name")}
+    TRUSTED[ROUTER_HOST] = ("someone-else.example",)
+    FINGERPRINTS[ROUTER_HOST] = "cd" * 32
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_certificate_public"
+    assert _placeholder(result, "previous") == NAME
+    assert _suggested(result) == NAME  # the user's own name from before, to keep it
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["errors"] == {CONF_CERTIFICATE_NAME: "name_mismatch"}  # no silent switch
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"  # pinning only with the field cleared
+    assert entry.data[CONF_FINGERPRINT] == "cd" * 32
+    assert entry.data[CONF_CERTIFICATE_NAME] is None
+
+
+async def test_reauth_of_a_name_when_the_device_is_back_to_its_own_certificate(
+    hass: HomeAssistant,
+) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_CERTIFICATE_NAME: NAME, CONF_FINGERPRINT: None}
+    )
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("self-signed")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_certificate"
+    assert _placeholder(result, "previous") == NAME
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["errors"] == {"base": "certificate"}  # still failing: shown again
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+
+
+async def test_reconfigure_switches_between_name_and_pin(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+    assert result["step_id"] == "reconfigure_certificate_public"
+    assert _placeholder(result, "previous") == PRETTY
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_CERTIFICATE_NAME] == NAME
+    # Always shown for a certificate from an authority, with the name from before.
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+    assert result["step_id"] == "reconfigure_certificate_public"
+    assert _suggested(result) == NAME
+    ERRORS[ROUTER_HOST] = {"login": SrmConnectionError("gone")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["errors"] == {"base": "cannot_connect"}
+    assert _suggested(result) is None  # the cleared field stays cleared
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+    assert entry.data[CONF_CERTIFICATE_NAME] is None
+    # The same certificate of the device's own, pinned: nothing to confirm.
+    TRUSTED.clear()
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+    assert result["reason"] == "reconfigure_successful"
+
+
+async def test_reconfigure_of_a_pin_suggests_no_name(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED["srm.lan"] = ("srm.lan",)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONNECTION, "host": "srm.lan"}
+    )
+    assert result["step_id"] == "reconfigure_certificate_public"
+    assert _suggested(result) is None  # confirming keeps the pin; a name has to be entered
+
+
+async def test_clearing_the_name_after_an_error_pins(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await entry.start_reauth_flow(hass)
+    ERRORS[ROUTER_HOST] = {"login": SrmCertificateError("changed")}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    ERRORS[ROUTER_HOST] = {"login": SrmConnectionError("gone")}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    assert result["errors"] == {"base": "cannot_connect"}
+    ERRORS.clear()
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_CERTIFICATE_NAME] is None  # the earlier name is not kept
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+
+
+async def test_adding_again_does_not_switch_between_pin_and_name(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    TRUSTED[ROUTER_HOST] = (NAME,)
+    result = await _start(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CERTIFICATE_NAME: NAME}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    assert result["reason"] == "already_configured"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
+    assert entry.data.get(CONF_CERTIFICATE_NAME) is None
+
+
+def test_the_context_for_names_checks_the_chain_but_not_the_name() -> None:
+    # What get_certificate_names() requires; the library refuses any other context.
+    context = config_flow._names_context()
+    assert context.verify_mode == ssl.CERT_REQUIRED
+    assert not context.check_hostname
+    assert context.cert_store_stats()["x509_ca"] > 0  # the authorities are loaded
+
+
+@pytest.mark.parametrize(
+    ("entered", "name"),
+    [
+        (f"https://{NAME.upper()}:8001/webman/", NAME),
+        (f"{NAME}:8001", NAME),
+        (f" {NAME}. ", NAME),
+        ("", None),
+        ("   ", None),
+        ("http://[::1", "http://[::1"),  # not a URL: left as typed, the certificate check refuses
+    ],
+)
+def test_a_pasted_address_becomes_a_name(entered: str, name: str | None) -> None:
+    assert config_flow._entered({CONF_CERTIFICATE_NAME: entered}) == name

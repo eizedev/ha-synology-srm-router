@@ -9,10 +9,10 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_FINGERPRINT, CONF_TRACKED
+from .const import CONF_CERTIFICATE_NAME, CONF_FINGERPRINT, CONF_TRACKED
 from .coordinator import SrmConfigEntry, get_hub
 
-TO_REDACT = {CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_FINGERPRINT}
+TO_REDACT = {CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_FINGERPRINT, CONF_CERTIFICATE_NAME}
 
 
 async def async_get_config_entry_diagnostics(

@@ -11,9 +11,14 @@ All notable changes to this project are documented here. The format follows
 - First version: one device per Synology router or access point (SRM), configured in the UI with
   certificate pinning, reauthentication and reconfiguration. Without a checked certificate the
   account step warns before the password is entered; adding a pinned device again keeps its pin.
-  A pinned device whose fingerprint is missing is refused and asks to confirm the certificate
-  again, instead of connecting unchecked. *Reconfigure* warns before a pinned device is switched
-  to an unchecked certificate or to HTTP.
+  A certificate from a public authority (for example Let's Encrypt) is checked against the
+  authorities and a name the user gives (the host name, or a name entered for a device added by
+  its IP address; never a name read from the certificate), so its renewals need no
+  confirmation; SRM's own certificate is pinned, and pinning stays available for the other kind.
+  Reauthentication and *Reconfigure* name what was trusted so far and never switch between name
+  and pin on their own. A checked device whose name or fingerprint is missing is refused and
+  asks to confirm the certificate again, instead of connecting unchecked. *Reconfigure* warns
+  before a checked device is switched to an unchecked certificate or to HTTP.
 - Sensors for CPU load, memory, download and upload rate, clients (all, per Wi-Fi band and wired)
   and last boot; on routers WAN connection, public IPv4 and IPv6 address, WAN address type and
   whether the router is behind NAT.

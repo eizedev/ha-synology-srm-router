@@ -2,23 +2,17 @@
 
 The trackers carry where a client is (`connected_to`), how (`connection`) and on which radio
 (`radio`, `signal`). A Markdown card turns that into lists, with nothing to install: add a card
-of the type *Markdown* and paste one of the templates below as its content.
+of the type *Markdown* and paste one of the templates below as its content. Names come from the
+devices themselves, so the templates escape what Markdown would read as a table, a link or an
+image, and turn line breaks into spaces. A name that is itself a web address can still show as a
+link to that address, as it reads.
 
 ## Who is where
 
 Every client at home, grouped by the router or access point it uses:
 
 ```jinja
-{% set ts = states.device_tracker
-   | selectattr('state', 'eq', 'home')
-   | selectattr('attributes.connected_to', 'defined')
-   | list %}
-{% for g in ts | groupby('attributes.connected_to') %}
-**{{ g.grouper }}** ({{ g.list | count }})
-{% for s in g.list | sort(attribute='name') %}
-- [{{ s.name }}](/history?entity_id={{ s.entity_id }}) · {{ s.attributes.connection }}{% if s.attributes.radio %} {{ s.attributes.radio }}, signal {{ s.attributes.signal }}{% endif %}
-{% endfor %}
-{% endfor %}
+--8<-- "docs/assets/cards/where.jinja"
 ```
 
 Each name links to the client's history.
@@ -28,17 +22,7 @@ Each name links to the client's history.
 Wi-Fi clients by band, with the device they use; useful to see what still uses 2.4 GHz:
 
 ```jinja
-{% set ts = states.device_tracker
-   | selectattr('state', 'eq', 'home')
-   | selectattr('attributes.radio', 'defined')
-   | selectattr('attributes.radio', 'ne', none)
-   | list %}
-{% for g in ts | groupby('attributes.radio') %}
-**{{ g.grouper }}** ({{ g.list | count }})
-{% for s in g.list | sort(attribute='name') %}
-- {{ s.name }} · {{ s.attributes.connected_to }}, signal {{ s.attributes.signal }}
-{% endfor %}
-{% endfor %}
+--8<-- "docs/assets/cards/radio.jinja"
 ```
 
 The radio names are SRM's: `2.4G`, `5G`, and `5G-2` for a second 5 GHz radio.
@@ -51,8 +35,6 @@ Every IPv4 lease of the router, online devices first: reserved, unknown (neither
 named in SRM), or when the lease runs out. The template finds the router's *DHCP leases* sensor
 by itself; enable that sensor first (it is disabled by default, see [Entities](entities.md)). The
 DHCP and firewall templates work the same way with *DHCP reservations* and *Firewall rules*.
-Names come from the devices themselves, so the templates escape what Markdown would read as a
-table, a link or an image, and turn line breaks into spaces.
 
 ```jinja
 --8<-- "docs/assets/cards/leases.jinja"
