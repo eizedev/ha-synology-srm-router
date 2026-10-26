@@ -79,7 +79,7 @@
       },
       "reauth_certificate": {
         "title": "New certificate",
-        "description": "The device presents a certificate that does not match what Home Assistant trusted so far. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate).\n\nThe certificate now presented:\n\n`{fingerprint}`\n\nThis is expected after you renewed or replaced the certificate. Compare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
+        "description": "The device presents a certificate that does not match what Home Assistant trusted so far. Trusted so far: `{previous}` (a name stands for every valid certificate for that name, a fingerprint for exactly one certificate). If Home Assistant checked it by name so far, the certificate has probably expired or SRM is back to its own: renew it in SRM instead of pinning it here.\n\nThe certificate now presented:\n\n`{fingerprint}`\n\nThis is expected after you renewed or replaced the certificate. Compare it with the certificate shown at {url} in a browser and continue only if both match; Home Assistant then trusts exactly this certificate. [How to compare]({docs})",
         "submit": "Trust"
       },
       "reauth_certificate_public": {
@@ -176,7 +176,7 @@
       "certificate": "The certificate is not the trusted one. Check the address, then confirm the new certificate.",
       "name_mismatch": "The certificate is not valid for this name. Check the name, or clear the field to pin the certificate instead.",
       "invalid_host": "Enter a host name or an IP address, without port or path.",
-      "not_admin": "SRM refused the account the rights for this; use an administrator account.",
+      "not_admin": "This account lacks the rights for this in SRM; use an administrator account.",
       "no_serial": "The device reports no serial number, so it cannot be set up.",
       "unknown": "Unexpected error, see the log.",
       "session_ended": "SRM refused the session right after the login. This happens now and then; try again."
@@ -360,7 +360,7 @@
       "message": "The certificate is not the trusted one. Check the address, then confirm the new certificate."
     },
     "not_admin": {
-      "message": "SRM refused the account the rights for this; use an administrator account."
+      "message": "This account lacks the rights for this in SRM; use an administrator account."
     },
     "blocked": {
       "message": "The device blocks logins from Home Assistant after failed attempts. Unblock the address in SRM's auto block settings, or wait until the block expires."

@@ -2,7 +2,7 @@
 
 | HACS | Release | CI | License |
 | ---- | ------- | -- | ------- |
-| [![HACS custom](https://img.shields.io/badge/HACS-custom-41BDF5?cacheSeconds=3600)](https://hacs.xyz/docs/faq/custom_repositories/) | [![Release](https://img.shields.io/github/v/release/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/releases) | [![CI](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml/badge.svg)](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml) | [![License](https://img.shields.io/github/license/eizedev/ha-synology-srm-router?cacheSeconds=3600)](LICENSE) |
+| [![HACS custom](https://img.shields.io/badge/HACS-custom-41BDF5?cacheSeconds=3600)](https://hacs.xyz/docs/faq/custom_repositories/) | [![Release](https://img.shields.io/github/v/release/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/releases) | [![CI](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml/badge.svg)](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml) | [![License](https://img.shields.io/github/license/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/blob/main/LICENSE) |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/assets/header-dark.svg">
@@ -21,9 +21,9 @@ changes a setting.
 
 **Documentation: [ha-synology-srm-router.eize.dev](https://ha-synology-srm-router.eize.dev/)**
 
-![A dashboard with router, access point, Wi-Fi clients by radio and who is where](docs/assets/screenshots/dashboard.png)
+![A dashboard with router, access point, Wi-Fi clients by radio and who is where](https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/docs/assets/screenshots/dashboard.png)
 
-![The firewall view: every rule with the devices it is about, its ports and hits](docs/assets/screenshots/dashboard-firewall.png)
+![The firewall view: every rule with the devices it is about, its ports and hits](https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/docs/assets/screenshots/dashboard-firewall.png)
 
 ## What you get
 
@@ -35,8 +35,9 @@ changes a setting.
   about, named after your devices (sensors you switch on); a hits sensor per rule on request.
 - Device trackers that know which router or access point, connection and radio each client
   uses, named as in SRM.
-- Checked certificates (by name for Let's Encrypt, so renewals need nothing; pinned for SRM's
-  own), and nothing but reading: the integration never changes a setting.
+- Checked certificates (by name for public certificate authorities such as Let's Encrypt, so
+  renewals need nothing; pinned for SRM's own), and nothing but reading: the integration never
+  changes a setting.
 
 ## Install
 
@@ -49,6 +50,11 @@ https://github.com/eizedev/ha-synology-srm-router
 
 Then add the integration once per router and per access point, router first. Requires Home
 Assistant 2026.10.3 or newer. Details: [Installation](https://ha-synology-srm-router.eize.dev/installation/).
+
+Without HACS: download `synology_srm_router.zip` from the
+[latest release](https://github.com/eizedev/ha-synology-srm-router/releases/latest) and unpack it
+into `custom_components/synology_srm_router/` in your Home Assistant configuration
+([details](https://ha-synology-srm-router.eize.dev/installation/#without-hacs)).
 
 ## Documentation
 
@@ -67,5 +73,5 @@ integrations that showed what is possible:
 
 ## License
 
-[MIT](LICENSE). The icon and header are CC BY 4.0; their source is in
+[MIT](https://github.com/eizedev/ha-synology-srm-router/blob/main/LICENSE). The icon and header are CC BY 4.0; their source is in
 [eizedev/brand](https://github.com/eizedev/brand).

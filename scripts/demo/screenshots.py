@@ -78,8 +78,6 @@ async def add_device(page: Page, port: int, prefix: str) -> None:
     await dialog_button(page, "Trust")
     await fields.nth(0).fill("homeassistant")
     await fields.nth(1).fill("demo")
-    if prefix:
-        await shoot(page, f"{prefix}-account", dialog)
     await dialog_button(page, "Next")
 
 
@@ -111,13 +109,10 @@ async def tour(page: Page) -> None:
     if True:
         await login(page)
 
-        # Router: every step of the dialog, the client list open, then "track all".
+        # Router: the documented steps of the dialog, then "track all".
         await add_device(page, ROUTER, "setup")
         dialog = page.get_by_role("dialog")
         await shoot(page, "setup-trackers", dialog)
-        await page.get_by_role("button", name="Clients to track").click()
-        await shoot(page, "setup-client-list")
-        await page.keyboard.press("Escape")
         await page.locator("dialog-data-entry-flow ha-form ha-switch").first.click()  # track all
         await page.locator("dialog-data-entry-flow ha-form ha-switch").last.click()  # rule sensors
         await dialog_button(page, "Finish")
@@ -130,17 +125,14 @@ async def tour(page: Page) -> None:
         await page.wait_for_timeout(2500)
         await dialog_button(page, "Skip and finish")
 
-        await page.goto(f"{BASE}/config/integrations/integration/synology_srm_router")
-        await shoot(page, "integration")
-
         hass = "document.querySelector('home-assistant').hass"
         ids = await page.evaluate(
             f"""async () => {{
                 const id = (e) => {hass}.entities[e]?.device_id;
-                return [id('sensor.rt2600ac_cpu_load'), id('sensor.mr2200ac_cpu_load')];
+                return [id('sensor.rt2600ac_cpu_load')];
             }}"""
         )
-        for device_id, name in zip(ids, ("device-router", "device-access-point"), strict=True):
+        for device_id, name in zip(ids, ("device-router",), strict=True):
             await page.goto(f"{BASE}/config/devices/device/{device_id}")
             await shoot(page, name)
 

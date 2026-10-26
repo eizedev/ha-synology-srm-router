@@ -51,4 +51,21 @@ again whenever the dialogs or pages change; it needs an installed Edge or Chrome
 
 ## Releases
 
-Maintainers tag `vX.Y.Z` on `main`; HACS offers each GitHub release.
+Releases come from a tag `vX.Y.Z` on `main`:
+
+1. In a pull request, rename `[Unreleased]` in CHANGELOG.md to `[X.Y.Z] - <date>`, add an empty
+   `[Unreleased]` above it and the compare links below, and set `version` in `manifest.json` to
+   `X.Y.Z` (a test checks that the manifest's version has a changelog section).
+2. After the merge, wait for the *Docs* run (the release notes link the website), then tag the
+   commit the merge created on `main` (not the pull request's own commits, which a squash merge
+   leaves out) `vX.Y.Z` and push the tag.
+3. `.github/workflows/release.yml` runs the checks again, refuses a tag that is not on `main` or
+   does not match the manifest, and creates the GitHub release: the changelog section as notes,
+   `synology_srm_router.zip` for manual installs with its SHA-256 and build provenance.
+
+HACS offers each GitHub release (not the default branch).
+
+If a run fails, fix the cause and re-run the failed job; the release step updates an existing
+release. A wrong tag (not on `main`, or not matching the manifest) fails before anything is
+published. Tags `v*` cannot be moved or deleted except by an administrator (ruleset "Release
+tags"): delete it with the bypass, fix `main` in a pull request, and tag again.

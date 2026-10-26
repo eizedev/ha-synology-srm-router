@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-26
+
 ### Added
 
 - First version: one device per Synology router or access point (SRM), configured in the UI with
@@ -57,4 +59,5 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/commits/main
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/eizedev/ha-synology-srm-router/releases/tag/v0.1.0
