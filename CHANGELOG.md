@@ -11,12 +11,15 @@ All notable changes to this project are documented here. The format follows
 - First version: one device per Synology router or access point (SRM), configured in the UI with
   certificate pinning, reauthentication and reconfiguration. Without a checked certificate the
   account step warns before the password is entered; adding a pinned device again keeps its pin.
+  A pinned device whose fingerprint is missing is refused and asks to confirm the certificate
+  again, instead of connecting unchecked.
 - Sensors for CPU load, memory, download and upload rate, clients (all, per Wi-Fi band and wired)
   and last boot; on routers WAN connection, public IPv4 and IPv6 address, WAN address type and
   whether the router is behind NAT.
 - Device trackers that combine the client lists of all routers and access points, with the
   device, connection and radio a client uses; they keep their last reliable location for a while
-  when the device a client was on cannot be read.
+  when the device a client was on cannot be read. After a restart, trackers of clients SRM no
+  longer lists come back as away, with their last name.
 - A repair when SRM's auto block locks out Home Assistant, also during setup, with a new login
   attempt every 15 minutes; it goes away with the entry.
 - On routers: DHCP leases and reservations, the usage of each network's DHCP pool, and the number

@@ -17,7 +17,7 @@ from aiosynologysrm import (
     SrmSessionError,
     SrmTwoFactorRequiredError,
 )
-from homeassistant.config_entries import SOURCE_USER, ConfigFlowResult
+from homeassistant.config_entries import SOURCE_USER, ConfigEntryState, ConfigFlowResult
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 import pytest
@@ -95,7 +95,7 @@ async def test_full_flow_pins_the_certificate(hass: HomeAssistant) -> None:
     assert result["title"] == "RT2600ac"
     assert result["result"].unique_id == SERIALS["router"]
     assert result["data"][CONF_FINGERPRINT] == FINGERPRINT
-    assert CONF_VERIFY_CERTIFICATE not in result["data"]
+    assert result["data"][CONF_VERIFY_CERTIFICATE] is True
     assert result["options"][CONF_TRACKED] == [chosen]
 
 
@@ -108,6 +108,7 @@ async def test_plain_http_skips_the_certificate(hass: HomeAssistant) -> None:
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_FINGERPRINT] is None
+    assert result["data"][CONF_VERIFY_CERTIFICATE] is False
     assert result["options"][CONF_TRACK_ALL] is True
 
 
@@ -182,6 +183,24 @@ async def test_reauth_after_a_certificate_change(hass: HomeAssistant) -> None:
     ERRORS.clear()
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["reason"] == "reauth_successful"
+
+
+async def test_a_pin_without_fingerprint_is_confirmed_again(hass: HomeAssistant) -> None:
+    # A pinned entry whose fingerprint got lost must not connect unchecked.
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_FINGERPRINT: None})
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    flow = next(
+        f for f in hass.config_entries.flow.async_progress() if f["context"]["source"] == "reauth"
+    )
+    result = await hass.config_entries.flow.async_configure(flow["flow_id"], CREDENTIALS)
+    assert result["step_id"] == "reauth_certificate"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_FINGERPRINT] == FINGERPRINT
 
 
 async def test_reauth_errors(hass: HomeAssistant) -> None:

@@ -35,6 +35,7 @@ from custom_components.synology_srm_router.const import (
     CONF_TRACK_ALL,
     CONF_TRACKED,
     CONF_USE_HTTPS,
+    CONF_VERIFY_CERTIFICATE,
     DOMAIN,
 )
 
@@ -182,6 +183,7 @@ def make_entry(kind: str = "router", **options: Any) -> MockConfigEntry:
             "username": "homeassistant",
             "password": "secret",
             CONF_FINGERPRINT: FINGERPRINT,
+            CONF_VERIFY_CERTIFICATE: True,
             CONF_IS_ROUTER: kind == "router",
         },
         options={

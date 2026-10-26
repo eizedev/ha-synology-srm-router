@@ -77,6 +77,16 @@ async def async_setup_entry(
             added.update(new)
             async_add_entities(SrmTracker(hub, entry, mac) for mac in new)
 
+    # Trackers this entry created before come back even while their client is unknown (SRM
+    # forgot it, or "track all" no longer covers it): away rather than unavailable.
+    restored = {
+        item.unique_id: item.original_name
+        for item in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if item.domain == Platform.DEVICE_TRACKER
+    }
+    if restored:
+        added.update(restored)
+        async_add_entities(SrmTracker(hub, entry, mac, name) for mac, name in restored.items())
     _add_new()
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_LOCATIONS, _add_new))
 
@@ -97,10 +107,13 @@ class SrmTracker(ScannerEntity, RestoreEntity):
     # for each tracker every few seconds.
     _unrecorded_attributes = frozenset({"signal"})
 
-    def __init__(self, hub: LocationHub, entry: SrmConfigEntry, mac: str) -> None:
-        """Track one MAC address."""
+    def __init__(
+        self, hub: LocationHub, entry: SrmConfigEntry, mac: str, name: str | None = None
+    ) -> None:
+        """Track one MAC address; the name is the last known one, for a client unknown now."""
         self._hub = hub
         self._attr_mac_address = mac
+        self._attr_name = name
         self._location: helpers.ClientLocation | None = None
         self._shown: helpers.ClientLocation | None = None
         self._held_since: datetime | None = None
@@ -166,7 +179,9 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         if entry is not None:
             self._attr_hostname = entry.hostname
         self._attr_ip_address = (entry.ip_addr if entry else None) or self._hub.ip(mac)
-        self._attr_name = self._hub.name(mac) or (entry.hostname if entry else None) or mac
+        self._attr_name = (
+            self._hub.name(mac) or (entry.hostname if entry else None) or self._attr_name or mac
+        )
 
     @property
     def is_connected(self) -> bool:
