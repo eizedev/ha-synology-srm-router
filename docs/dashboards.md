@@ -52,7 +52,7 @@ named in SRM), or when the lease runs out. The template finds the router's *DHCP
 by itself; enable that sensor first (it is disabled by default, see [Entities](entities.md)). The
 DHCP and firewall templates work the same way with *DHCP reservations* and *Firewall rules*.
 Names come from the devices themselves, so the templates escape what Markdown would read as a
-table, a link or an image.
+table, a link or an image, and turn line breaks into spaces.
 
 ```jinja
 --8<-- "docs/assets/cards/leases.jinja"

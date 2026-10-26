@@ -133,8 +133,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
             translation_key=mapped.translation_key if isinstance(mapped, UpdateFailed) else None,
             translation_placeholders=getattr(mapped, "translation_placeholders", None),
         ) from err
-    except ConfigEntryAuthFailed, ConfigEntryNotReady:
+    except (ConfigEntryAuthFailed, ConfigEntryNotReady) as err:
         await client.logout()  # do not leave a session open on the router for every retry
+        if err.translation_key == "blocked":  # the block showed in the first update, not the login
+            blocked[entry.entry_id] = dt_util.utcnow()
+            create_blocked_issue(hass, entry)
         raise
 
     if entry.data.get(CONF_IS_ROUTER) != is_router:

@@ -1,5 +1,5 @@
 {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
-{%- macro md(v) -%}{{ (v ~ '') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+{%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
 {% set s = states.sensor | selectattr('entity_id', 'in', integration_entities('synology_srm_router'))
    | selectattr('attributes.rules', 'defined') | first %}
 {% set rows = s.attributes.rules if s else [] %}

@@ -277,6 +277,24 @@ async def test_blocked_device_retries_and_reports_a_repair(
     assert issues.async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is None
 
 
+async def test_a_block_in_the_first_update_waits_like_one_at_login(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    ERRORS[ROUTER_HOST] = {"get_system_info": SrmBlockedError(407, "SYNO.API.Auth")}
+    entry = make_entry()
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    assert ir.async_get(hass).async_get_issue(DOMAIN, f"blocked_{entry.entry_id}") is not None
+    ERRORS.clear()
+    clients = len(FakeClient.instances)
+    await hass.config_entries.async_reload(entry.entry_id)
+    assert entry.state is ConfigEntryState.SETUP_RETRY  # no new login before BLOCKED_RETRY
+    assert len(FakeClient.instances) == clients
+    freezer.tick(BLOCKED_RETRY)
+    await hass.config_entries.async_reload(entry.entry_id)
+    assert entry.state is ConfigEntryState.LOADED  # type: ignore[comparison-overlap]
+
+
 async def test_missing_admin_rights_start_reauth(hass: HomeAssistant) -> None:
     entry = make_entry()
     await _setup(hass, entry)

@@ -379,9 +379,9 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             # Choosing nothing leaves the trackers to the router (dialogs have no "back").
             CONF_OWN_TRACKERS: self._own_trackers
             and bool(choice.get(CONF_TRACK_ALL) or choice.get(CONF_TRACKED)),
-            CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.seconds,
-            CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.seconds,
-            CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.seconds,
+            CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.total_seconds(),
+            CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.total_seconds(),
+            CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.total_seconds(),
             CONF_FIREWALL_HITS: bool(choice.get(CONF_FIREWALL_HITS, False)),
         }
         data = {**self._data, CONF_IS_ROUTER: probe.is_router}
@@ -456,6 +456,10 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_FINGERPRINT: None,
                 CONF_VERIFY_CERTIFICATE: pin,
             }
+            if not pin and _pinned(entry.data):
+                # The password would go out unprotected: say so before anything is sent.
+                self._data = data
+                return await self.async_step_reconfigure_unprotected()
             try:
                 if pin:
                     data[CONF_FINGERPRINT] = await _fingerprint(data)
@@ -470,16 +474,29 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._data = data
                     return await self.async_step_reconfigure_certificate()
                 return await self._finish(entry, data, probe)
-        defaults = {
-            **entry.data,
-            CONF_VERIFY_CERTIFICATE: bool(
-                entry.data.get(CONF_VERIFY_CERTIFICATE) or entry.data.get(CONF_FINGERPRINT)
-            ),
-        }
+        defaults = {**entry.data, CONF_VERIFY_CERTIFICATE: _pinned(entry.data)}
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(_connection_schema(defaults), defaults),
             errors=errors,
+        )
+
+    async def async_step_reconfigure_unprotected(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Warn before a pinned device is switched to an unchecked or plain HTTP connection."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                probe = await _probe(self.hass, self._data)
+            except Exception as err:  # the form shows the error; unexpected ones are logged
+                errors["base"] = _error_key(err)
+            else:
+                return await self._finish(self._get_reconfigure_entry(), self._data, probe)
+        return self.async_show_form(
+            step_id="reconfigure_unprotected",
+            errors=errors,
+            description_placeholders={"docs": DOCS_CERTIFICATE},
         )
 
     async def async_step_reconfigure_certificate(
@@ -509,6 +526,11 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_update_reload_and_abort(
             entry, data={**data, CONF_IS_ROUTER: probe.is_router}
         )
+
+
+def _pinned(data: Mapping[str, Any]) -> bool:
+    """Whether an entry's certificate is pinned (or meant to be, with its fingerprint lost)."""
+    return bool(data.get(CONF_VERIFY_CERTIFICATE) or data.get(CONF_FINGERPRINT))
 
 
 def _pretty(fingerprint: str) -> str:
@@ -629,9 +651,9 @@ class SrmOptionsFlow(OptionsFlowWithReload):
             )
         if timings:
             defaults = {
-                CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.seconds,
-                CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.seconds,
-                CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.seconds,
+                CONF_CONSIDER_HOME: DEFAULT_CONSIDER_HOME.total_seconds(),
+                CONF_FAST_INTERVAL: DEFAULT_FAST_INTERVAL.total_seconds(),
+                CONF_SLOW_INTERVAL: DEFAULT_SLOW_INTERVAL.total_seconds(),
             }
             limits = {
                 CONF_CONSIDER_HOME: (0, 3600),

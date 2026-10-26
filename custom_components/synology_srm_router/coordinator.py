@@ -195,7 +195,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
         is_router: bool,
     ) -> None:
         """Prepare the coordinator; the interval comes from the entry's options."""
-        seconds = entry.options.get(CONF_FAST_INTERVAL, DEFAULT_FAST_INTERVAL.seconds)
+        seconds = entry.options.get(CONF_FAST_INTERVAL, DEFAULT_FAST_INTERVAL.total_seconds())
         super().__init__(
             hass,
             LOGGER,
@@ -294,7 +294,7 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         is_router: bool,
     ) -> None:
         """Prepare the coordinator; the interval comes from the entry's options."""
-        seconds = entry.options.get(CONF_SLOW_INTERVAL, DEFAULT_SLOW_INTERVAL.seconds)
+        seconds = entry.options.get(CONF_SLOW_INTERVAL, DEFAULT_SLOW_INTERVAL.total_seconds())
         super().__init__(
             hass,
             LOGGER,
@@ -371,6 +371,7 @@ class LocationHub:
     _cache: dict[str, helpers.ClientLocation] | None = None
     _clients: dict[str, Client] | None = None
     _missing: frozenset[str] = frozenset()
+    _known: dict[str, frozenset[str]] = field(default_factory=dict)
     _store: Store[dict[str, str]] | None = None
     _saved_at: datetime | None = None
 
@@ -419,6 +420,7 @@ class LocationHub:
         """Drop the cached locations and tell the trackers."""
         self._cache = None
         self._clients = None
+        self._known.clear()
         async_dispatcher_send(self.hass, SIGNAL_LOCATIONS)
 
     def configured(self) -> list[ConfigEntry]:
@@ -517,14 +519,18 @@ class LocationHub:
         return any(e.entry_id not in self._missing for e in self.configured())
 
     def known(self, entry_id: str) -> frozenset[str]:
-        """Return the clients an entry's own device and Wi-Fi lists contain."""
+        """Return the clients an entry's own device and Wi-Fi lists contain (cached per update)."""
+        if (cached := self._known.get(entry_id)) is not None:
+            return cached
         loaded = self.loaded.get(entry_id)
         data = loaded.runtime_data.fast.data if loaded else None
         if data is None:
             return frozenset()
         macs = [d.mac for d in data.devices.devices] if data.devices else []
         macs += [w.mac_address for w in data.wifi.device_list] if data.wifi else []
-        return frozenset(m for mac in macs if (m := helpers.normalize_mac(mac)))
+        known = frozenset(m for mac in macs if (m := helpers.normalize_mac(mac)))
+        self._known[entry_id] = known
+        return known
 
     def keeps_trackers(self, entry: ConfigEntry) -> bool:
         """Whether an entry keeps trackers.

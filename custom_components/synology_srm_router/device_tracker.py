@@ -120,7 +120,7 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         self._missing_since: datetime | None = None
         self._connected = False
         self._consider_home = timedelta(
-            seconds=entry.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.seconds)
+            seconds=entry.options.get(CONF_CONSIDER_HOME, DEFAULT_CONSIDER_HOME.total_seconds())
         )
         self._picked = hub.wants(entry, mac)
         self._update_from_hub()
