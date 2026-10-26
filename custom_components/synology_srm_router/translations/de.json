@@ -79,7 +79,7 @@
       },
       "reauth_certificate": {
         "title": "Neues Zertifikat",
-        "description": "Das Gerät zeigt ein Zertifikat, das nicht zu dem passt, dem Home Assistant bisher vertraut hat. Bisher vertraut: `{previous}` (ein Name steht für jedes gültige Zertifikat für diesen Namen, ein Fingerabdruck für genau ein Zertifikat).\n\nDas jetzt gezeigte Zertifikat:\n\n`{fingerprint}`\n\nDas ist normal, wenn du das Zertifikat erneuert oder ausgetauscht hast. Vergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
+        "description": "Das Gerät zeigt ein Zertifikat, das nicht zu dem passt, dem Home Assistant bisher vertraut hat. Bisher vertraut: `{previous}` (ein Name steht für jedes gültige Zertifikat für diesen Namen, ein Fingerabdruck für genau ein Zertifikat). Hat Home Assistant es bisher per Name geprüft, ist das Zertifikat wahrscheinlich abgelaufen oder SRM nutzt wieder sein eigenes: Erneuere es dann in SRM, statt es hier zu hinterlegen.\n\nDas jetzt gezeigte Zertifikat:\n\n`{fingerprint}`\n\nDas ist normal, wenn du das Zertifikat erneuert oder ausgetauscht hast. Vergleiche es mit dem Zertifikat, das der Browser unter {url} zeigt, und fahre nur fort, wenn beide übereinstimmen; Home Assistant vertraut dann genau diesem Zertifikat. [So vergleichst du]({docs})",
         "submit": "Vertrauen"
       },
       "reauth_certificate_public": {

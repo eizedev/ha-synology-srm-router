@@ -49,11 +49,17 @@ jobs:
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: synology_srm_router.zip
-      - name: Create the release
+      # A re-run of a failed job updates the release instead of failing on it.
+      - name: Create or update the release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
-        run: >-
-          gh release create "$TAG" synology_srm_router.zip --repo "$REPO" --title "$TAG"
-          --notes-file notes.md --verify-tag
+        run: |
+          if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            gh release upload "$TAG" synology_srm_router.zip --repo "$REPO" --clobber
+            gh release edit "$TAG" --repo "$REPO" --notes-file notes.md
+          else
+            gh release create "$TAG" synology_srm_router.zip --repo "$REPO" --title "$TAG" \
+              --notes-file notes.md --verify-tag
+          fi
