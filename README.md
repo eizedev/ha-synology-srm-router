@@ -47,7 +47,7 @@ https://github.com/eizedev/ha-synology-srm-router
 ```
 
 Then add the integration once per router and per access point, router first. Requires Home
-Assistant 2026.10 or newer. Details: [Installation](https://ha-synology-srm-router.eize.dev/installation/).
+Assistant 2026.10.3 or newer. Details: [Installation](https://ha-synology-srm-router.eize.dev/installation/).
 
 ## Documentation
 

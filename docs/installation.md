@@ -1,6 +1,6 @@
 # Installation
 
-Requires Home Assistant 2026.10 or newer and [HACS](https://hacs.xyz/).
+Requires Home Assistant 2026.10.3 or newer and [HACS](https://hacs.xyz/).
 
 ## In HACS
 
