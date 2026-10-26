@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-26
+
+### Fixed
+
+- The icon is readable on light themes: transparent, with a variant for dark themes.
+- Smaller screenshots in the README, side by side.
+
 ## [0.1.0] - 2026-10-26
 
 ### Added
@@ -59,5 +66,6 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/eizedev/ha-synology-srm-router/releases/tag/v0.1.0

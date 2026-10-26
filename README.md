@@ -21,9 +21,10 @@ changes a setting.
 
 **Documentation: [ha-synology-srm-router.eize.dev](https://ha-synology-srm-router.eize.dev/)**
 
-![A dashboard with router, access point, Wi-Fi clients by radio and who is where](https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/docs/assets/screenshots/dashboard.png)
-
-![The firewall view: every rule with the devices it is about, its ports and hits](https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/docs/assets/screenshots/dashboard-firewall.png)
+<p>
+  <img src="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/docs/assets/screenshots/dashboard.png" alt="A dashboard with router, access point, Wi-Fi clients by radio and who is where" width="49%">
+  <img src="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/docs/assets/screenshots/dashboard-firewall.png" alt="The firewall view: every rule with the devices it is about, its ports and hits" width="49%">
+</p>
 
 ## What you get
 
