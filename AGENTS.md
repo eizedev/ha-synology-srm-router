@@ -50,6 +50,9 @@ hassfest and the HACS check run in CI only.
 - **Docs describe the current state**: update `README.md`, `docs/` and `CHANGELOG.md` (Keep a
   Changelog, under `[Unreleased]`) in the same change. Commit messages follow Conventional
   Commits.
+- **`.claude/settings.json`** keeps claude.ai session links out of commits and pull requests
+  (`attribution.sessionUrl: false`) and denies reads of secret files. Cloud sessions read only
+  this settings file, so keep these keys.
 - **Website**: `docs/` and `zensical.toml` are https://ha-synology-srm-router.eize.dev/, built by
   `.github/workflows/docs.yml` with the shared design from eizedev/brand (`docs-site/`);
   `docs/assets/site.css` is copied in at build time and not committed. Every repair has a page in
