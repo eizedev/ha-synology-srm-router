@@ -1,7 +1,9 @@
 # Example dashboard for Synology SRM Router: Settings, Dashboards, Add dashboard, "New dashboard
 # from scratch", then the three dots, Raw configuration editor, and paste this. Replace rt2600ac
-# and mr2200ac with your devices' entity ID prefixes (the model names, lower case). The DHCP and
-# firewall cards need the sensors DHCP leases, DHCP reservations and Firewall rules enabled.
+# and mr2200ac with your devices' entity ID prefixes (the model names, lower case). Entity IDs
+# follow Home Assistant's language at setup; in German, for example, cpu_load is cpu_last (see
+# the table on the Dashboards page). The DHCP and firewall cards need the sensors DHCP leases,
+# DHCP reservations and Firewall rules enabled.
 views:
   - title: Network
     type: sections

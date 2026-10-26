@@ -12,6 +12,8 @@ homeassistant:
 once, then restart. Or create the same automation in the editor (*Settings, Automations*, three
 dots, *Edit in YAML*) from the part below `automation:`. Replace `rt2600ac` and `mr2200ac` with
 your devices' entity ID prefixes, and `notify.mobile_app_phone` with your phone's notify action.
+In another language than English the rest of an ID can differ too; see
+[Entity IDs in other languages](dashboards.md#entity-ids-in-other-languages).
 
 ## Presence: who is home
 

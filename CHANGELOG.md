@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Release notes show the zip's SHA-256 in a block of its own, readable on phones.
+- Docs: which entity IDs differ when Home Assistant runs in German, for the example dashboard; the
+  known issue [#30](https://github.com/eizedev/ha-synology-srm-router/issues/30) (tracker devices
+  renamed to the client's host name on reload); a roadmap in the README.
+
 ## [0.1.1] - 2026-10-26
 
 ### Fixed

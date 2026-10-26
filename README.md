@@ -65,6 +65,14 @@ into `custom_components/synology_srm_router/` in your Home Assistant configurati
 - [Ideas and automations](https://ha-synology-srm-router.eize.dev/ideas/): presence, internet down, offline devices, data per day
 - [Troubleshooting](https://ha-synology-srm-router.eize.dev/troubleshooting/): messages, repairs, diagnostics, removal
 
+## Roadmap
+
+Planned work is grouped in [milestones](https://github.com/eizedev/ha-synology-srm-router/milestones):
+[0.2.0](https://github.com/eizedev/ha-synology-srm-router/milestone/1) brings a new-client event,
+Ethernet ports and Wi-Fi radios, [0.3.0](https://github.com/eizedev/ha-synology-srm-router/milestone/2)
+change events, repairs for risky router settings and discovery. Ideas and reports are welcome in
+the [issues](https://github.com/eizedev/ha-synology-srm-router/issues).
+
 ## Credits
 
 Built on the library [aiosynologysrm](https://github.com/eizedev/aiosynologysrm). Earlier
