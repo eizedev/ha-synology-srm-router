@@ -210,6 +210,37 @@ async def test_trackers_find_access_point_clients(
     assert state.attributes["connected_to"] == ap.title
 
 
+async def test_a_tracker_device_keeps_the_name_given_in_srm(hass: HomeAssistant) -> None:
+    # Named in SRM on the router, reported under another host name in the access point's list.
+    mac = "02:00:00:00:00:1a"
+    # Another integration knows the MAC, so Home Assistant registers the tracker's own device
+    # and names it after the tracker's host name on every load.
+    other = MockConfigEntry(domain="sonos")
+    other.add_to_hass(hass)
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=other.entry_id,
+        connections={(dr.CONNECTION_NETWORK_MAC, mac)},
+        name="Speaker",
+    )
+    router, ap = make_entry(track_all=True), make_entry("ap")
+    await _setup(hass, router, ap)
+    await hass.config_entries.async_reload(router.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("device_tracker", DOMAIN, mac)
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.attributes["host_name"] == "hostname-53"  # kept for discovery
+    assert state.attributes["friendly_name"] == "hostname-50"
+    entry = registry.async_get(entity_id)
+    assert entry is not None
+    assert entry.device_id is not None
+    device = dr.async_get(hass).async_get(entry.device_id)
+    assert device is not None
+    assert device.name == "hostname-50"
+
+
 async def test_selected_trackers_are_enabled(hass: HomeAssistant) -> None:
     mac = load("router", "wifi_devices")["device_list"][0]["mac_address"]
     await _setup(hass, make_entry(tracked=[mac]))
