@@ -15,13 +15,16 @@ import json
 from pathlib import Path
 import re
 import sys
+import time
 from typing import Any
+import urllib.error
 import urllib.request
 
 ROOT = Path(__file__).parents[1]
 HARNESS = "pytest-homeassistant-custom-component"
 INDEX = "https://pypi.org/pypi"
 TIMEOUT = 30
+ATTEMPTS = 3
 
 
 class HarnessError(Exception):
@@ -71,13 +74,26 @@ def harness_for(
 
 
 def _get(url: str) -> Any:
-    with urllib.request.urlopen(url, timeout=TIMEOUT) as response:  # noqa: S310 (fixed https URL)
-        return json.load(response)
+    """Read JSON from PyPI, trying again after a short wait when the network hiccups."""
+    for attempt in range(1, ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as response:  # noqa: S310 (https)
+                return json.load(response)
+        except OSError:  # URLError and timeouts
+            if attempt == ATTEMPTS:
+                raise
+            time.sleep(5 * attempt)
+    raise AssertionError  # unreachable: the last attempt returns or raises
+
+
+def available(releases: dict[str, list[dict[str, Any]]]) -> list[str]:
+    """Return the releases with files that are not all yanked."""
+    return [v for v, files in releases.items() if any(not f.get("yanked") for f in files)]
 
 
 def main() -> int:
     """Print the harness release for the version in hacs.json."""
-    releases = [v for v, files in _get(f"{INDEX}/{HARNESS}/json")["releases"].items() if files]
+    releases = available(_get(f"{INDEX}/{HARNESS}/json")["releases"])
     try:
         print(
             harness_for(

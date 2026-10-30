@@ -70,3 +70,67 @@ def test_the_minimum_is_the_one_in_the_docs() -> None:
 def test_the_installed_home_assistant_is_not_older_than_the_minimum() -> None:
     # Both test jobs run a Home Assistant at or above the minimum: the locked one, and the oldest.
     assert oldest.release_key(__version__) >= oldest.release_key(oldest.minimum())
+
+
+def test_yanked_releases_are_left_out() -> None:
+    releases = {
+        "0.13.376": [{"yanked": True}],
+        "0.13.375": [{"yanked": True}, {"yanked": False}],
+        "0.13.374": [{}],
+        "0.13.373": [],
+    }
+    assert oldest.available(releases) == ["0.13.375", "0.13.374"]
+
+
+def test_main_prints_the_harness(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    pins = {
+        "0.13.380": ["homeassistant==2099.1.0"],
+        "0.13.376": [f"homeassistant=={oldest.minimum()}"],
+    }
+
+    def get(url: str) -> object:
+        if url.endswith(f"{oldest.HARNESS}/json"):
+            return {"releases": {release: [{}] for release in pins}}
+        release = url.rsplit("/", 2)[-2]
+        return {"info": {"requires_dist": pins[release]}}
+
+    monkeypatch.setattr(oldest, "_get", get)
+    assert oldest.main() == 0
+    assert capsys.readouterr().out == "0.13.376\n"
+    pins.pop("0.13.376")
+    assert oldest.main() == 1
+    assert "no pytest-homeassistant-custom-component release" in capsys.readouterr().err
+
+
+def test_pypi_is_asked_again_after_a_hiccup(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    class Answer:
+        def __enter__(self) -> Answer:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            pass
+
+        def read(self) -> bytes:
+            return b'{"ok": true}'
+
+    def urlopen(url: str, timeout: int) -> Answer:
+        calls.append(url)
+        if len(calls) < oldest.ATTEMPTS:
+            raise oldest.urllib.error.URLError("down")
+        return Answer()
+
+    monkeypatch.setattr(oldest.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(oldest.time, "sleep", lambda seconds: None)
+    assert oldest._get("https://pypi.org/x") == {"ok": True}
+    assert len(calls) == oldest.ATTEMPTS
+
+    def down(url: str, timeout: int) -> Answer:
+        raise oldest.urllib.error.URLError("down")
+
+    monkeypatch.setattr(oldest.urllib.request, "urlopen", down)
+    with pytest.raises(oldest.urllib.error.URLError):
+        oldest._get("https://pypi.org/x")
