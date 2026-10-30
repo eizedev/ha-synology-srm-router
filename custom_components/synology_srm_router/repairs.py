@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -11,7 +11,8 @@ from homeassistant.helpers import issue_registry as ir
 from .const import DOCS_URL, DOMAIN
 from .coordinator import SlowData
 
-# Traffic from the internet that no firewall rule matches; "allow" lets it in.
+# Traffic from the internet that no firewall rule matches; "allow" lets it in. Recorded routers
+# answer "allow" or "deny"; any other value counts as not allowing.
 WAN_POLICIES = ("ipv4_wan_to_lan", "ipv4_wan_to_srm", "ipv6_wan_to_lan", "ipv6_wan_to_srm")
 
 
@@ -38,19 +39,34 @@ RISKS: dict[str, Callable[[SlowData], bool | None]] = {
     "auto_block_off": _auto_block_off,
     "firewall_open": _firewall_open,
 }
+# The read each risk comes from; without it (an access point, or firmware that lacks the read)
+# the risk is not checked and its repair goes.
+READS = {
+    "srm_from_internet": "get_allow_srm_from_wan",
+    "auto_block_off": "get_auto_block",
+    "firewall_open": "get_firewall_rules",
+}
 
 
 def _issue_id(key: str, entry: ConfigEntry) -> str:
     return f"{key}_{entry.entry_id}"
 
 
-def update_risk_issues(hass: HomeAssistant, entry: ConfigEntry, data: SlowData) -> None:
+def update_risk_issues(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    data: SlowData,
+    *,
+    is_router: bool,
+    supported: Collection[str],
+) -> None:
     """Raise a repair for each risky setting, and remove it once the setting is safe.
 
-    A repair stays while the router is not read, so one the user ignored stays ignored.
+    A repair stays while its setting cannot be read, so one the user ignored stays ignored. Only
+    routers are checked: a device switched to access point loses its repairs.
     """
     for key, check in RISKS.items():
-        risky = check(data)
+        risky = check(data) if is_router and READS[key] in supported else False
         if risky is None:
             continue
         if risky:

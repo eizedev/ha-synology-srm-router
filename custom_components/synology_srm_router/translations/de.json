@@ -1,6 +1,6 @@
 {
   "config": {
-    "flow_title": "{name}",
+    "flow_title": "{name} ({host})",
     "step": {
       "user": {
         "title": "Synology-Router oder Access Point",
@@ -514,8 +514,8 @@
       "description": "Die automatische Sperre von SRM weist Anmeldungen von Home Assistant nach Fehlversuchen ab, deshalb wird {name} nicht gelesen. Home Assistant versucht alle 15 Minuten, sich erneut anzumelden; jeder Versuch zählt für die Sperre mit. Gib die Adresse von Home Assistant in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft. Diese Meldung verschwindet nach der nächsten erfolgreichen Abfrage."
     },
     "srm_from_internet": {
-      "title": "{name} ist aus dem Internet verwaltbar",
-      "description": "Die Weboberfläche von SRM auf {name} ist aus dem Internet erreichbar. Jeder, der sie findet, kann Anmeldungen versuchen, und eine Lücke in SRM stünde dem ganzen Internet offen. Wenn du sie unterwegs nicht brauchst, schalte in SRM die Einstellung aus, die den Zugriff auf SRM aus dem Internet erlaubt, und nutze stattdessen ein VPN. Diese Meldung verschwindet, sobald die Einstellung aus ist."
+      "title": "{name} erlaubt den Zugriff auf SRM aus dem Internet",
+      "description": "SRM auf {name} ist so eingestellt, dass die Weboberfläche aus dem Internet erreichbar sein darf. Wo dein Anschluss das durchlässt, kann jeder, der sie findet, Anmeldungen versuchen, und eine Lücke in SRM stünde dem ganzen Internet offen. Wenn du sie unterwegs nicht brauchst, schalte in SRM die Einstellung aus, die den Zugriff auf SRM aus dem Internet erlaubt, und nutze stattdessen ein VPN. Diese Meldung verschwindet, sobald die Einstellung aus ist."
     },
     "auto_block_off": {
       "title": "Automatische Sperre auf {name} ist aus",

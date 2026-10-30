@@ -8,7 +8,8 @@ reachable from the internet, from anywhere.
 
 **What to do**
 
-Switch the auto block on in SRM, with a number of attempts and minutes that fits you. Home Assistant counts towards it too: with a wrong password it can block itself, see
+Switch the auto block on in SRM, with a number of attempts and minutes that fits you. Home
+Assistant counts towards it too: with a wrong password it can block itself, see
 [the device blocks Home Assistant](blocked.md).
 
 The repair disappears at the next slow update (every 5 minutes by default) after the auto block is

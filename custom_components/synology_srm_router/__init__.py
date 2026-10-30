@@ -168,10 +168,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         )
     blocked.pop(entry.entry_id, None)
     delete_blocked_issue(hass, entry)
-    update_risk_issues(hass, entry, slow.data)
-    entry.async_on_unload(
-        slow.async_add_listener(lambda: update_risk_issues(hass, entry, slow.data))
-    )
+
+    def _check_risks() -> None:
+        update_risk_issues(hass, entry, slow.data, is_router=is_router, supported=supported)
+
+    _check_risks()
+    entry.async_on_unload(slow.async_add_listener(_check_risks))
     hub = get_hub(hass)
     await hub.async_load()
     hub.async_add(entry)

@@ -16,7 +16,7 @@ nav = [
   { "Dashboards" = "dashboards.md" },
   { "Ideas and automations" = "ideas.md" },
   { "Troubleshooting" = "troubleshooting.md" },
-  { "Repairs" = [{ "Device blocks Home Assistant" = "repairs/blocked.md" }, { "Managed from the internet" = "repairs/srm-from-internet.md" }, { "Auto block is off" = "repairs/auto-block-off.md" }, { "Firewall lets the internet in" = "repairs/firewall-open.md" }] },
+  { "Repairs" = [{ "Device blocks Home Assistant" = "repairs/blocked.md" }, { "SRM allowed from the internet" = "repairs/srm-from-internet.md" }, { "Auto block is off" = "repairs/auto-block-off.md" }, { "Firewall lets the internet in" = "repairs/firewall-open.md" }] },
 ]
 
 [project.theme]

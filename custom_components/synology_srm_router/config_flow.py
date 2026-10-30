@@ -104,9 +104,10 @@ def _discovered_host(info: ZeroconfServiceInfo) -> str:
 def _discovered_port(info: ZeroconfServiceInfo) -> int:
     """Return the HTTPS port the device announced, else SRM's default."""
     try:
-        return int(info.properties.get("secure_admin_port") or DEFAULT_HTTPS_PORT)
+        port = int(info.properties.get("secure_admin_port") or DEFAULT_HTTPS_PORT)
     except ValueError:
         return DEFAULT_HTTPS_PORT
+    return port if 1 <= port <= 65535 else DEFAULT_HTTPS_PORT  # noqa: PLR2004
 
 
 def _connection_schema(defaults: Mapping[str, Any]) -> probatio.Schema:
@@ -345,7 +346,9 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_HOST: _discovered_host(discovery_info),
             CONF_PORT: _discovered_port(discovery_info),
         }
-        self.context["title_placeholders"] = {"name": model}
+        # The address shows on the card: anyone in the network can announce a device, so the user
+        # sees which address the password would go to. Home Assistant leaves out link-local ones.
+        self.context["title_placeholders"] = {"name": model, "host": self._discovered[CONF_HOST]}
         return await self.async_step_user()
 
     async def async_step_certificate(

@@ -8,7 +8,13 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from aiosynologysrm import AllowSrmFromWan, AutoBlock, FirewallRules, SrmConnectionError
+from aiosynologysrm import (
+    AllowSrmFromWan,
+    AutoBlock,
+    FirewallRules,
+    SrmConnectionError,
+    Topology,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
@@ -129,3 +135,17 @@ def test_every_repair_has_texts_and_a_page() -> None:
         page = ROOT / "docs" / "repairs" / f"{key.replace('_', '-')}.md"
         assert page.is_file(), page
         assert f"repairs/{page.name}" in (ROOT / "zensical.toml").read_text(encoding="utf-8")
+
+
+async def test_a_router_switched_to_access_point_loses_its_repairs(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    await _setup(hass, entry)
+    assert _issues(hass, entry) == {"srm_from_internet"}
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    access_point = load("ap", "topology")
+    with patch.object(
+        FakeClient, "get_topology", lambda self: _value(Topology.from_api(access_point))
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert _issues(hass, entry) == set()

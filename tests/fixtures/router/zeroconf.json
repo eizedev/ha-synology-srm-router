@@ -1,0 +1,20 @@
+{
+  "name": "router._http._tcp.local.",
+  "type": "_http._tcp.local.",
+  "port": 8000,
+  "addresses": [
+    "2001:db8::1",
+    "192.0.2.1"
+  ],
+  "properties": {
+    "vendor": "Synology",
+    "model": "RT2600ac",
+    "serial": "ROUTER0001",
+    "mac_address": "00:00:00:00:00:01",
+    "admin_port": "8000",
+    "secure_admin_port": "8001",
+    "version_major": "5",
+    "version_minor": "2",
+    "version_build": "9366"
+  }
+}

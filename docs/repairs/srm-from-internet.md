@@ -1,10 +1,11 @@
-# Repair: the router can be managed from the internet
+# Repair: the router allows access to SRM from the internet
 
 **Shown when** SRM allows access to its web interface from the internet on a router. Access points
 are not checked: an access point's WAN port is your own network, and it is reachable from the
 internet only through your router.
 
-Anyone on the internet who finds the router can try to sign in, and a flaw in SRM would be open
+Wherever your connection lets it through (a public address, a port your provider does not block),
+anyone on the internet who finds the router can try to sign in, and a flaw in SRM would be open
 to all of them, not only to your own network.
 
 **What to do**

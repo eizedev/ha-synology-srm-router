@@ -54,6 +54,7 @@ from .conftest import (
     TRUSTED,
     UNSUPPORTED,
     FakeClient,
+    load,
     make_entry,
 )
 
@@ -837,22 +838,16 @@ def test_a_pasted_address_becomes_a_name(entered: str, name: str | None) -> None
 
 
 def _announced(**properties: str) -> ZeroconfServiceInfo:
-    """A device's mDNS announcement as SRM sends it (names and addresses made up)."""
+    """The router's mDNS announcement, recorded on an RT2600ac and anonymized."""
+    recorded = load("router", "zeroconf")
     return ZeroconfServiceInfo(
-        ip_address=ip_address("2001:db8::1"),
-        ip_addresses=[ip_address("2001:db8::1"), ip_address(ROUTER_HOST)],
-        port=8000,
+        ip_address=ip_address(recorded["addresses"][0]),
+        ip_addresses=[ip_address(a) for a in recorded["addresses"]],
+        port=recorded["port"],
         hostname="router.local.",
-        type="_http._tcp.local.",
-        name="router._http._tcp.local.",
-        properties={
-            "vendor": "Synology",
-            "model": "RT2600ac",
-            "serial": SERIALS["router"],
-            "admin_port": "8000",
-            "secure_admin_port": "8001",
-            **properties,
-        },
+        type=recorded["type"],
+        name=recorded["name"],
+        properties={**recorded["properties"], **properties},
     )
 
 
@@ -879,7 +874,7 @@ async def test_a_discovered_router_is_set_up_from_the_filled_in_form(hass: HomeA
     suggested = _suggested_values(result)
     assert suggested == {"host": ROUTER_HOST, "port": 8001}  # IPv4 preferred over IPv6
     flows = hass.config_entries.flow.async_progress_by_handler(DOMAIN)
-    assert flows[0]["context"]["title_placeholders"] == {"name": "RT2600ac"}
+    assert flows[0]["context"]["title_placeholders"] == {"name": "RT2600ac", "host": ROUTER_HOST}
     result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
@@ -908,6 +903,8 @@ async def test_a_router_already_set_up_keeps_its_host(hass: HomeAssistant) -> No
 
 
 async def test_only_ipv6_and_an_odd_port(hass: HomeAssistant) -> None:
+    result = await _discover(hass, _announced(secure_admin_port="99999", serial="OTHER0003"))
+    assert _suggested_values(result)["port"] == 8001
     info = _announced(secure_admin_port="none")
     info.ip_addresses = [ip_address("2001:db8::1")]
     result = await _discover(hass, info)

@@ -1,6 +1,6 @@
 {
   "config": {
-    "flow_title": "{name}",
+    "flow_title": "{name} ({host})",
     "step": {
       "user": {
         "title": "Synology router or access point",
@@ -514,8 +514,8 @@
       "description": "SRM's auto block refuses logins from Home Assistant after failed attempts, so {name} is not read. Home Assistant tries to log in again every 15 minutes; each attempt counts towards the block. Unblock Home Assistant's address in SRM's auto block settings, or wait until the block expires. This message disappears after the next successful update."
     },
     "srm_from_internet": {
-      "title": "{name} can be managed from the internet",
-      "description": "SRM's web interface on {name} is reachable from the internet. Anyone who finds it can try to sign in, and a flaw in SRM would be open to the whole internet. Unless you need it while away, switch off the setting in SRM that allows access to SRM from the internet, and use a VPN instead. This message disappears once the setting is off."
+      "title": "{name} allows access to SRM from the internet",
+      "description": "SRM on {name} is set to allow access to its web interface from the internet. Wherever your connection lets it through, anyone who finds it can try to sign in, and a flaw in SRM would be open to the whole internet. Unless you need it while away, switch off the setting in SRM that allows access to SRM from the internet, and use a VPN instead. This message disappears once the setting is off."
     },
     "auto_block_off": {
       "title": "Auto block is off on {name}",
