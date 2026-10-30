@@ -205,7 +205,7 @@
         "data_description": {
           "track_all": "A tracker for every client that is online, has a name given in SRM, an IPv4 DHCP lease or reservation, or was seen in the last 30 days; new clients follow as they appear.",
           "tracked": "Only these clients get a tracker. Leave empty for none.",
-          "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
+          "fast_interval": "Clients, Wi-Fi, load, Ethernet ports and WAN. Default 30 s.",
           "slow_interval": "System information and USB storage; on routers also DHCP and the firewall. Default 300 s.",
           "show_all": "SRM keeps every client it ever saw. Turn on and continue to list them all, including ones gone long ago.",
           "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
@@ -231,7 +231,7 @@
         },
         "data_description": {
           "consider_home": "A client counts as away only after it was missing this long. SRM marks idle wired clients offline for a minute now and then. Default 180 s.",
-          "fast_interval": "Clients, Wi-Fi, load and WAN. Default 30 s.",
+          "fast_interval": "Clients, Wi-Fi, load, Ethernet ports and WAN. Default 30 s.",
           "slow_interval": "System information and USB storage; on routers also DHCP and the firewall. Default 300 s."
         }
       },
@@ -355,6 +355,9 @@
       },
       "radio_wireless_mode": {
         "name": "Wi-Fi mode {band}"
+      },
+      "port_speed": {
+        "name": "Port {port} speed"
       }
     },
     "binary_sensor": {
@@ -380,6 +383,9 @@
             "name": "Hidden SSID"
           }
         }
+      },
+      "port_link": {
+        "name": "Port {port}"
       }
     },
     "event": {

@@ -34,6 +34,7 @@ changes a setting.
   whether each Wi-Fi network (primary, guest) is on, per band, with events (and a blueprint for
   notifications) when a fixed channel changes or a network is switched off or on.
 - An event when a client joins the network for the first time, with a blueprint for notifications.
+- Link and speed of every Ethernet port of routers and access points.
 - On routers: WAN connection, public IPv4 and IPv6 address, whether the router is behind NAT, DHCP
   leases, reservations and pool usage, and the firewall rules with their hits. Lists behind the
   counts show who holds an address, which devices are unknown, and what each firewall rule is
@@ -73,8 +74,8 @@ into `custom_components/synology_srm_router/` in your Home Assistant configurati
 ## Roadmap
 
 Planned work is grouped in [milestones](https://github.com/eizedev/ha-synology-srm-router/milestones):
-[0.3.0](https://github.com/eizedev/ha-synology-srm-router/milestone/2) brings a new-client event,
-Ethernet ports, change events, repairs for risky router settings and discovery. Ideas and reports
+[0.3.0](https://github.com/eizedev/ha-synology-srm-router/milestone/2) brings change events,
+repairs for risky router settings and discovery. Ideas and reports
 are welcome in the [issues](https://github.com/eizedev/ha-synology-srm-router/issues).
 
 ## Credits

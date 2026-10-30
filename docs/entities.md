@@ -18,6 +18,8 @@
 | Channel *band* | | per Wi-Fi radio: the channel in use; attribute `configured_channel`: the one set in SRM, 0 when SRM picks it itself |
 | Channel width *band* | | per Wi-Fi radio: the widths allowed in SRM (for example 20/40/80 MHz), not the width in use, which SRM does not report; diagnostic |
 | Transmit power *band*, Wi-Fi mode *band* | | per Wi-Fi radio, as set in SRM; diagnostic, disabled by default |
+| Port *port* | | per Ethernet port (WAN, LAN 1, ...): link, as connectivity; unavailable while the device does not list the port |
+| Port *port* speed | Mbit/s | per Ethernet port: the link speed, 0 without a link; a port at 10 or 100 Mbit/s often means a cable or a device that only negotiates that; diagnostic |
 | New clients | | fires when a client is online for the first time; see [Events](events.md#new-clients), with a blueprint |
 | Wi-Fi events | | fires when a fixed channel changes or a Wi-Fi network is switched off or on; see [Events](events.md), with a blueprint for notifications |
 | Wi-Fi *network* *band* | | per Wi-Fi network (primary, guest and any other) and band: on or off as set in SRM. With Smart Connect on, the network's Smart Connect switch decides for all bands. A schedule that switches a network off at times is not taken into account. Attributes `ssid` (kept out of the history), `network_type`, `smart_connect`, `hidden` |

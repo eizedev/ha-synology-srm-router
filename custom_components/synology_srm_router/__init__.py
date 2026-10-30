@@ -64,6 +64,7 @@ GETTERS = (
     "get_wifi_radio_settings",
     "get_wifi_radio_status",
     "get_wifi_networks",
+    "get_eth_port_info",
 )
 
 

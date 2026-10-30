@@ -34,7 +34,7 @@ hide:
 - One device per router or access point, with CPU load, memory, download and upload rate, the
   number of clients on it (all, per Wi-Fi band and wired), the last boot, used and free space
   per USB volume, the channel of each Wi-Fi radio, and whether each Wi-Fi network (primary,
-  guest) is on, per band.
+  guest) is on, per band, and link and speed of every Ethernet port.
 - On routers: WAN connection, public IPv4 and IPv6 address, and whether the router sits behind
   another router or the provider's carrier-grade NAT; DHCP leases, reservations and how full
   each network's pool is; the firewall's rules with their hits. The lists behind these counts

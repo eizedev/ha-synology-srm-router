@@ -60,6 +60,7 @@ READS = (
     "get_utilization",
     "get_network_devices",
     "get_wifi_devices",
+    "get_eth_port_info",
     "get_connection_status",
     "get_external_ip",
 )

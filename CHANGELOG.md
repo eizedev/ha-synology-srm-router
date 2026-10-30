@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Ethernet ports per device: a link sensor (connectivity) and the link speed (Mbit/s, diagnostic)
+  for every port, WAN and LAN 1, 2, ..., read with the fast update. In a mesh only the device's own
+  ports. [#32](https://github.com/eizedev/ha-synology-srm-router/issues/32)
+
 - A *New clients* event entity per device: it fires when a client is online for the first time,
   with its name, addresses, connection and band, and whether its MAC address is a private (random)
   one. A client counts as new once; clients present at the first start, or appearing while a

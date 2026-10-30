@@ -13,6 +13,7 @@ from aiosynologysrm import (
     DhcpClients,
     DhcpReservations,
     DhcpServers,
+    EthPortInfo,
     ExternalIp,
     FirewallRule,
     FirewallRules,
@@ -77,13 +78,14 @@ type SrmConfigEntry = ConfigEntry[SrmRuntimeData]
 
 @dataclass(kw_only=True)
 class FastData:
-    """What changes quickly: load, clients, Wi-Fi clients, WAN."""
+    """What changes quickly: load, clients, Wi-Fi clients, Ethernet ports, WAN."""
 
     utilization: Utilization | None = None
     devices: NetworkDevices | None = None
     wifi: WifiDevices | None = None
     connection: ConnectionStatus | None = None
     external_ip: tuple[ExternalIp, ...] = ()
+    ports: EthPortInfo | None = None
 
 
 @dataclass(kw_only=True)
@@ -241,6 +243,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
             ("utilization", self.client.get_utilization),
             ("devices", self.client.get_network_devices),
             ("wifi", self.client.get_wifi_devices),
+            ("ports", self.client.get_eth_port_info),
         ):
             if getter.__name__ in self.supported:
                 calls[name] = getter
