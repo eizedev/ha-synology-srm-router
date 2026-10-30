@@ -12,6 +12,7 @@ nav = [
   { "Installation" = "installation.md" },
   { "Configuration" = "configuration.md" },
   { "Entities" = "entities.md" },
+  { "Events" = "events.md" },
   { "Dashboards" = "dashboards.md" },
   { "Ideas and automations" = "ideas.md" },
   { "Troubleshooting" = "troubleshooting.md" },
