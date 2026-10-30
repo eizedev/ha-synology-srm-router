@@ -91,9 +91,10 @@ they appear; one gone for good does not get a tracker.
 
 ![The tracker step: track all, choose clients, show all known clients](assets/screenshots/setup-trackers.png){ width="560" }
 
-A tracker is named after the name given in SRM, wherever it is set; otherwise after the name the
-client reports. A new name in SRM reaches Home Assistant with the next update, also for the
-tracker's device; a name you give in Home Assistant stays. Its attributes:
+Each tracker is the main entity of a device of its own, which stands for the client: identified
+by its MAC address and named after the name given in SRM, wherever it is set; otherwise after the
+name the client reports. A new name in SRM reaches Home Assistant with the next update; a name you
+give the device in Home Assistant stays. The tracker shows the device's name. Its attributes:
 
 | Attribute | Meaning |
 | --- | --- |

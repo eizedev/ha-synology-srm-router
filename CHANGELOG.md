@@ -13,6 +13,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Every tracker is the main entity of a device of its own, which carries the client's name from
+  SRM and its MAC address, as Home Assistant 2026.11 expects; it warned that trackers without
+  device info stop working in 2028.11. On Home Assistant 2026.10 this adds a device for each
+  tracked client; until now only clients another integration knows had one. Entity IDs stay; a
+  name you gave a tracker's device stays too. [#47](https://github.com/eizedev/ha-synology-srm-router/issues/47)
 - When a single read fails while the others work (the values it feeds show as unknown), the log
   says so once at info level, naming the read and the device, and again when it works. Before, only
   the debug log showed it.

@@ -412,7 +412,8 @@ async def test_a_tracker_of_another_entry_is_not_duplicated(hass: HomeAssistant)
 
 
 async def test_a_tracker_of_a_forgotten_client_comes_back_away(hass: HomeAssistant) -> None:
-    # SRM no longer lists the client, so "track all" does not cover it: the tracker stays.
+    # SRM no longer lists the client, so "track all" does not cover it: the tracker stays. Its
+    # registry entry is from before 0.1.4, without a device: the name comes from the entity.
     entry = make_entry(track_all=True)
     entry.add_to_hass(hass)
     er.async_get(hass).async_get_or_create(
@@ -422,6 +423,76 @@ async def test_a_tracker_of_a_forgotten_client_comes_back_away(hass: HomeAssista
         config_entry=entry,
         suggested_object_id="old_laptop",
         original_name="Old laptop",
+    )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    state = hass.states.get("device_tracker.old_laptop")
+    assert state is not None
+    assert state.state == "not_home"
+    assert state.attributes["friendly_name"] == "Old laptop"
+
+
+async def test_every_tracker_is_the_device_of_its_client(hass: HomeAssistant) -> None:
+    mac = load("router", "wifi_devices")["device_list"][0]["mac_address"]
+    entry = make_entry(tracked=[mac])
+    await _setup(hass, entry)
+    item = er.async_get(hass).async_get(
+        er.async_get(hass).async_get_entity_id("device_tracker", DOMAIN, mac) or ""
+    )
+    assert item is not None
+    assert item.has_entity_name
+    assert item.device_id is not None
+    device = dr.async_get(hass).async_get(item.device_id)
+    assert isinstance(device, dr.DeviceEntry)  # a main device, not a child device
+    assert (dr.CONNECTION_NETWORK_MAC, mac) in device.connections
+    assert device.config_entry_id == entry.entry_id
+    assert device.name
+    state = hass.states.get(item.entity_id)
+    assert state is not None
+    assert state.attributes["friendly_name"] == device.name
+
+
+async def test_a_renamed_client_renames_its_device_unless_named_in_ha(
+    hass: HomeAssistant,
+) -> None:
+    mac = load("router", "wifi_devices")["device_list"][0]["mac_address"]
+    entry = make_entry(tracked=[mac])
+    await _setup(hass, entry)
+    registry = dr.async_get(hass)
+    device = registry.async_get_device_by_connection(
+        (dr.CONNECTION_NETWORK_MAC, mac), entry.entry_id
+    )
+    assert device is not None
+    srm_name = device.name
+    registry.async_update_device(device.id, name="Stale name")
+    await _refresh(hass)
+    renamed = registry.async_get(device.id)
+    assert renamed is not None
+    assert renamed.name == srm_name
+    registry.async_update_device(device.id, name_by_user="Living room speaker")
+    await _refresh(hass)
+    entity_id = er.async_get(hass).async_get_entity_id("device_tracker", DOMAIN, mac)
+    state = hass.states.get(entity_id or "")
+    assert state is not None
+    assert state.attributes["friendly_name"] == "Living room speaker"
+
+
+async def test_a_forgotten_client_keeps_the_name_of_its_device(hass: HomeAssistant) -> None:
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        connections={(dr.CONNECTION_NETWORK_MAC, "02:00:00:00:00:77")},
+        name="Old laptop",
+    )
+    er.async_get(hass).async_get_or_create(
+        "device_tracker",
+        DOMAIN,
+        "02:00:00:00:00:77",
+        config_entry=entry,
+        device_id=device.id,
+        suggested_object_id="old_laptop",
+        has_entity_name=True,
     )
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
