@@ -231,14 +231,14 @@ wheels = [
 
 [[package]]
 name = "aiosynologysrm"
-version = "0.8.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/5f/84d951995f55231dd6c8e6499854ca72d1799c47c589a000387e0e776d44/aiosynologysrm-0.8.0.tar.gz", hash = "sha256:fdf9733037a65af74abb478c4068b22f9f12dc4763f9c0e44e7d774cd40a6a44", size = 220075, upload-time = "2026-10-26T13:09:45.466Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/61/a6ac2b9333f01c20bb52d4b2dc625c3f7a60be099e95cb2abea67f751613/aiosynologysrm-0.9.0.tar.gz", hash = "sha256:188ef8897eaddc4aa8619a582e5a221527c219b6629fb4a04a92359d4051b850", size = 225256, upload-time = "2026-10-30T12:58:51.43Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/7f/325b7b53d4e4cefff348a0e0b2555059217010e988a59a1ab32dbd2f111f/aiosynologysrm-0.8.0-py3-none-any.whl", hash = "sha256:06a94bcbe3fa0a742e0d36e1069fef2e3a5e89a64f9443da76e7001f7f4faa8d", size = 42302, upload-time = "2026-10-26T13:09:43.92Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/cd/366ece8a687204091967d738e244d554167e91b23e1960f3d803d9634f3a/aiosynologysrm-0.9.0-py3-none-any.whl", hash = "sha256:a2fe888a598bf3932f8195a2de23ee491edee3b52e7e1d0935eeee7220acbf49", size = 42906, upload-time = "2026-10-30T12:58:49.808Z" },
 ]
 
 [[package]]
@@ -1222,7 +1222,7 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aiosynologysrm", specifier = "==0.8.0" },
+    { name = "aiosynologysrm", specifier = "==0.9.0" },
     { name = "mypy", specifier = ">=1.15" },
     { name = "pytest-homeassistant-custom-component", specifier = "==0.13.374" },
     { name = "ruff", specifier = ">=0.11" },
