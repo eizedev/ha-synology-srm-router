@@ -22,6 +22,10 @@ no addresses, names, passwords or the certificate fingerprint. Attach them to a 
 
 - A tracker switches between home and away: raise *Time until away* in the options. SRM marks
   idle wired clients offline for a minute now and then.
+- A few values are unknown for a minute now and then: SRM did not answer one of the reads, while
+  the others worked. The log names the read and the device at info level, once when it fails and
+  once when it works again. On an RT2600ac this happened around SRM's own updates of its GeoIP
+  database and IP block list.
 - SRM keeps clients it saw long ago; *Show all known clients* lists them, the default list does not.
 - Mesh setups are untested; the integration was developed with a router and a standalone access
   point. Reports are welcome.

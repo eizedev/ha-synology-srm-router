@@ -79,7 +79,7 @@ async def test_unexpected_errors_are_not_swallowed() -> None:
         return 1
 
     with pytest.raises(RuntimeError):
-        await gather_partial({"a": broken, "b": fine})
+        await gather_partial({"a": broken, "b": fine}, set(), "Router")
 
 
 async def test_access_point_without_optional_reads(hass: HomeAssistant) -> None:

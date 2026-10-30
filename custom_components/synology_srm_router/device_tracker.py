@@ -168,7 +168,7 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         device = registry.async_get(device_id) if device_id else None
         if (
             device is not None
-            and device.config_entries == {self._entry_id}
+            and device.config_entry_id == self._entry_id
             and device.name != self._attr_name
         ):
             registry.async_update_device(device.id, name=self._attr_name)
