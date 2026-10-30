@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-30
+
 ### Added
 
 - Ethernet ports per device: a link sensor (connectivity) and the link speed (Mbit/s, diagnostic)
@@ -150,7 +152,8 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.2...v0.1.3

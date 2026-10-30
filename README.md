@@ -74,7 +74,7 @@ into `custom_components/synology_srm_router/` in your Home Assistant configurati
 ## Roadmap
 
 Planned work is grouped in [milestones](https://github.com/eizedev/ha-synology-srm-router/milestones):
-[0.3.0](https://github.com/eizedev/ha-synology-srm-router/milestone/2) brings change events,
+[0.4.0](https://github.com/eizedev/ha-synology-srm-router/milestone/5) brings change events,
 repairs for risky router settings and discovery. Ideas and reports
 are welcome in the [issues](https://github.com/eizedev/ha-synology-srm-router/issues).
 
