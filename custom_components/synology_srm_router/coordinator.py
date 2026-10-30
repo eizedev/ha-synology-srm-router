@@ -64,6 +64,8 @@ from .const import (
 from .firewall import rule_keys
 
 SIGNAL_LOCATIONS = f"{DOMAIN}_locations"
+# A client seen for the first time: (entry id of the device it is on, MAC address).
+SIGNAL_NEW_CLIENT = f"{DOMAIN}_new_client"
 STORE_VERSION = 1
 # "Last seen" is written at most this often; it only needs to survive a restart roughly.
 # (Store.async_delay_save postpones on every call, so it is not called on every update.)
@@ -389,6 +391,14 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
             registry.async_update_device(device.id, sw_version=system.firmware_ver)
 
 
+def private_mac(mac: str) -> bool:
+    """Whether an address is locally administered: a private (random) one of a phone or laptop."""
+    try:
+        return bool(int(mac[:2], 16) & 0x02)
+    except ValueError:
+        return False
+
+
 @dataclass
 class LocationHub:
     """Combines the client lists of every configured entry into one location per client.
@@ -406,6 +416,12 @@ class LocationHub:
     _known: dict[str, frozenset[str]] = field(default_factory=dict)
     _store: Store[dict[str, str]] | None = None
     _saved_at: datetime | None = None
+    first_seen: dict[str, datetime] = field(default_factory=dict)
+    """Every client ever seen, by MAC: a client not in it is new. Private (random) addresses are
+    forgotten after RECENTLY_SEEN, like in last_seen; fixed ones are kept."""
+    _known_store: Store[dict[str, str]] | None = None
+    _baseline: bool = False
+    """Whether the clients present at the very first start were taken in without events."""
 
     async def async_load(self) -> None:
         """Read when clients were last seen online; once per Home Assistant run."""
@@ -416,6 +432,12 @@ class LocationHub:
         for mac, text in stored.items():
             if (seen := dt_util.parse_datetime(text)) is not None:
                 self.last_seen.setdefault(mac, seen)
+        self._known_store = Store(self.hass, STORE_VERSION, f"{DOMAIN}.known_clients")
+        known = await self._known_store.async_load()
+        self._baseline = known is not None
+        for mac, text in (known or {}).items():
+            if (seen := dt_util.parse_datetime(text)) is not None:
+                self.first_seen.setdefault(mac, seen)
         self._prune(dt_util.utcnow())
 
     def _prune(self, now: datetime) -> None:
@@ -425,13 +447,23 @@ class LocationHub:
         """
         for mac in [m for m, seen in self.last_seen.items() if now - seen > RECENTLY_SEEN]:
             del self.last_seen[mac]
+        for mac in [
+            m
+            for m in self.first_seen
+            if private_mac(m) and now - self.last_seen.get(m, self.first_seen[m]) > RECENTLY_SEEN
+        ]:
+            del self.first_seen[mac]
 
     async def async_forget(self) -> None:
         """Delete what was remembered about clients; done when the last entry is removed."""
         store = self._store or Store(self.hass, STORE_VERSION, f"{DOMAIN}.last_seen")
         await store.async_remove()
-        self._store = None
+        known = self._known_store or Store(self.hass, STORE_VERSION, f"{DOMAIN}.known_clients")
+        await known.async_remove()
+        self._store = self._known_store = None
+        self._baseline = False
         self.last_seen.clear()
+        self.first_seen.clear()
 
     @callback
     def async_add(self, entry: SrmConfigEntry) -> None:
@@ -490,6 +522,7 @@ class LocationHub:
         for mac, location in locations.items():
             if location.online:
                 self.last_seen[mac] = now
+        self._find_new(locations, now)
         if self._store is not None and (
             self._saved_at is None or now - self._saved_at >= SAVE_INTERVAL
         ):
@@ -497,6 +530,30 @@ class LocationHub:
             self._prune(now)
             self._store.async_delay_save(
                 lambda: {mac: seen.isoformat() for mac, seen in self.last_seen.items()}
+            )
+
+    def _find_new(self, locations: dict[str, helpers.ClientLocation], now: datetime) -> None:
+        """Announce clients online for the first time; quietly take in everything else.
+
+        Only while every device delivered its lists: a device that loads late, or a truncated
+        list, would otherwise make clients seen long ago look new. At the very first start
+        everything present is taken in without events.
+        """
+        if self._known_store is None:
+            return
+        complete = self._baseline and not self._missing
+        new = [mac for mac in locations if mac not in self.first_seen]
+        for mac in new:
+            self.first_seen[mac] = now
+            location = locations[mac]
+            if complete and location.online and location.source is not None:
+                async_dispatcher_send(self.hass, SIGNAL_NEW_CLIENT, location.source, mac)
+        if not self._missing:
+            self._baseline = True
+        if new:
+            self._known_store.async_delay_save(
+                lambda: {mac: seen.isoformat() for mac, seen in self.first_seen.items()},
+                SAVE_INTERVAL.total_seconds(),
             )
 
     @property

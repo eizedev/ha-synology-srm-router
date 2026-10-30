@@ -885,4 +885,6 @@ async def test_last_seen_is_deleted_with_the_last_entry(
     await hass.config_entries.async_remove(router.entry_id)
     await hass.async_block_till_done()
     assert hub.last_seen == {}
+    assert hub.first_seen == {}
     assert "synology_srm_router.last_seen" not in hass_storage
+    assert "synology_srm_router.known_clients" not in hass_storage

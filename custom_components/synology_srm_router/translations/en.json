@@ -409,6 +409,34 @@
             "name": "Bands"
           }
         }
+      },
+      "client_events": {
+        "name": "New clients",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "new_client": "New client"
+            }
+          },
+          "name": {
+            "name": "Name"
+          },
+          "mac": {
+            "name": "MAC address"
+          },
+          "ip": {
+            "name": "IPv4 address"
+          },
+          "connection": {
+            "name": "Connection"
+          },
+          "band": {
+            "name": "Band"
+          },
+          "private_mac": {
+            "name": "Private MAC address"
+          }
+        }
       }
     }
   },

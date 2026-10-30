@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import copy
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from aiosynologysrm import SrmConnectionError, WifiNetworks, WifiRadioStatus
+from aiosynologysrm import NetworkDevices, SrmConnectionError, WifiNetworks, WifiRadioStatus
 from homeassistant.components.automation.config import AUTOMATION_BLUEPRINT_SCHEMA
 from homeassistant.components.blueprint.models import Blueprint
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 from homeassistant.util.yaml import load_yaml_dict
+
+from custom_components.synology_srm_router.coordinator import get_hub, private_mac
 
 from .conftest import ROUTER_HOST, SERIALS, UNSUPPORTED, FakeClient, load, make_entry
 
@@ -165,3 +169,146 @@ def test_the_blueprint_is_valid() -> None:
         schema=AUTOMATION_BLUEPRINT_SCHEMA,
     )
     assert set(blueprint.inputs) == {"events_entity", "event_types", "notify_action"}
+
+
+# New clients ---------------------------------------------------------------------------------
+
+
+def _known(hass_storage: dict[str, Any], *skip: str) -> None:
+    """Remember every client of both fixtures, except the ones to skip, as an earlier run did."""
+    macs = {
+        d["mac"].lower()
+        for folder in ("router", "ap")
+        for d in load(folder, "network_devices")["devices"]
+    } | {
+        w["mac_address"].lower()
+        for folder in ("router", "ap")
+        for w in load(folder, "wifi_devices")["device_list"]
+    }
+    seen = (dt_util.utcnow() - timedelta(days=1)).isoformat()
+    hass_storage["synology_srm_router.known_clients"] = {
+        "version": 1,
+        "key": "synology_srm_router.known_clients",
+        "data": dict.fromkeys(macs - set(skip), seen) | {"02:00:00:00:00:fe": "nonsense"},
+    }
+
+
+def _with_client(mac: str, hostname: str) -> Any:
+    """The router's client list with one more client online on a cable."""
+    data = copy.deepcopy(load("router", "network_devices"))
+    template = next(d for d in data["devices"] if d.get("connection") == "ethernet")
+    data["devices"].append({**template, "mac": mac, "hostname": hostname, "is_online": True})
+    return NetworkDevices.from_api(data)
+
+
+async def _refresh_fast(hass: HomeAssistant) -> None:
+    for entry in hass.config_entries.async_entries("synology_srm_router"):
+        if entry.state is ConfigEntryState.LOADED:
+            await entry.runtime_data.fast.async_refresh()
+    await hass.async_block_till_done()
+
+
+def _client_events(hass: HomeAssistant, serial: str) -> list[dict[str, Any]]:
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "event", "synology_srm_router", f"{serial}_client_events"
+    )
+    assert entity_id is not None
+    return [dict(s.attributes) for s in _written.get(entity_id, []) if s.state != "unknown"]
+
+
+async def test_a_new_client_fires_once(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
+    _known(hass_storage)
+    _record(hass)
+    await _setup(hass, make_entry(), make_entry("ap"))
+    devices = _with_client("00:00:00:00:00:42", "new-laptop")
+    with patch.object(FakeClient, "get_network_devices", _returning(devices, "router")):
+        await _refresh_fast(hass)
+        await _refresh_fast(hass)  # still there: no second event
+    [event] = _client_events(hass, ROUTER)
+    assert event["event_type"] == "new_client"
+    assert event["name"] == "new-laptop"
+    assert event["mac"] == "00:00:00:00:00:42"
+    assert event["connection"] == "ethernet"
+    assert event["private_mac"] is False
+    assert _client_events(hass, AP) == []
+    assert "00:00:00:00:00:42" in get_hub(hass).first_seen
+    assert "02:00:00:00:00:fe" not in get_hub(hass).first_seen  # an unreadable date is skipped
+
+
+async def test_a_private_address_is_marked(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    _known(hass_storage)
+    _record(hass)
+    await _setup(hass, make_entry(), make_entry("ap"))
+    devices = _with_client("02:00:00:00:00:99", "phone")
+    with patch.object(FakeClient, "get_network_devices", _returning(devices, "router")):
+        await _refresh_fast(hass)
+    [event] = _client_events(hass, ROUTER)
+    assert event["private_mac"] is True
+
+
+async def test_the_first_start_takes_in_every_client_quietly(hass: HomeAssistant) -> None:
+    _record(hass)
+    await _setup(hass, make_entry(), make_entry("ap"))
+    await _refresh_fast(hass)
+    assert _client_events(hass, ROUTER) == []
+    assert get_hub(hass).first_seen
+    # From now on a new client counts.
+    devices = _with_client("00:00:00:00:00:43", "printer")
+    with patch.object(FakeClient, "get_network_devices", _returning(devices, "router")):
+        await _refresh_fast(hass)
+    assert [e["name"] for e in _client_events(hass, ROUTER)] == ["printer"]
+
+
+async def test_no_new_clients_while_a_device_is_missing(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    _known(hass_storage)
+    _record(hass)
+    await _setup(hass, make_entry(), make_entry("ap"))
+    ap = next(c for c in reversed(FakeClient.instances) if c.folder == "ap")
+    for name in ("get_utilization", "get_network_devices", "get_wifi_devices"):
+        ap.errors[name] = SrmConnectionError("down")
+    ap_entry = next(
+        e for e in hass.config_entries.async_entries("synology_srm_router") if e.unique_id == AP
+    )
+    await ap_entry.runtime_data.fast.async_refresh()  # the access point's lists are gone first
+    await hass.async_block_till_done()
+    devices = _with_client("00:00:00:00:00:44", "tv")
+    with patch.object(FakeClient, "get_network_devices", _returning(devices, "router")):
+        await _refresh_fast(hass)
+    assert _client_events(hass, ROUTER) == []
+    assert "00:00:00:00:00:44" in get_hub(hass).first_seen  # taken in quietly
+
+
+def test_private_addresses_are_forgotten_after_a_while(hass: HomeAssistant) -> None:
+    hub = get_hub(hass)
+    old = dt_util.utcnow() - timedelta(days=40)
+    hub.first_seen.update({"02:00:00:00:00:01": old, "00:00:00:00:00:01": old})
+    hub._prune(dt_util.utcnow())
+    assert set(hub.first_seen) == {"00:00:00:00:00:01"}
+    assert private_mac("02:00:00:00:00:01")
+    assert not private_mac("00:00:00:00:00:01")
+    assert not private_mac("zz:00:00:00:00:01")
+
+
+def _returning(value: Any, folder: str) -> Any:
+    """A getter that answers with value for one device and as recorded for the others."""
+    original = FakeClient.get_network_devices
+
+    async def getter(self: FakeClient) -> Any:
+        if self.folder == folder:
+            return value
+        return await original(self)
+
+    getter.__name__ = "get_network_devices"  # the coordinator checks reads by name
+    return getter
+
+
+def test_the_new_clients_blueprint_is_valid() -> None:
+    path = BLUEPRINT.parent / "notify_new_clients.yaml"
+    blueprint = Blueprint(
+        load_yaml_dict(str(path)), expected_domain="automation", schema=AUTOMATION_BLUEPRINT_SCHEMA
+    )
+    assert set(blueprint.inputs) == {"events_entity", "include_private", "notify_action"}

@@ -33,6 +33,7 @@ changes a setting.
   (all, per Wi-Fi band and wired), last boot, USB storage, the channel of each Wi-Fi radio and
   whether each Wi-Fi network (primary, guest) is on, per band, with events (and a blueprint for
   notifications) when a fixed channel changes or a network is switched off or on.
+- An event when a client joins the network for the first time, with a blueprint for notifications.
 - On routers: WAN connection, public IPv4 and IPv6 address, whether the router is behind NAT, DHCP
   leases, reservations and pool usage, and the firewall rules with their hits. Lists behind the
   counts show who holds an address, which devices are unknown, and what each firewall rule is
@@ -64,7 +65,7 @@ into `custom_components/synology_srm_router/` in your Home Assistant configurati
 
 - [Configuration](https://ha-synology-srm-router.eize.dev/configuration/): certificate, account, device trackers, options
 - [Entities](https://ha-synology-srm-router.eize.dev/entities/)
-- [Events](https://ha-synology-srm-router.eize.dev/events/): Wi-Fi channel and network changes, a blueprint for notifications
+- [Events](https://ha-synology-srm-router.eize.dev/events/): new clients, Wi-Fi channel and network changes, blueprints for notifications
 - [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by radio, DHCP leases and unknown devices, firewall rules
 - [Ideas and automations](https://ha-synology-srm-router.eize.dev/ideas/): presence, internet down, offline devices, data per day
 - [Troubleshooting](https://ha-synology-srm-router.eize.dev/troubleshooting/): messages, repairs, diagnostics, removal

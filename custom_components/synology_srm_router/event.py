@@ -1,12 +1,21 @@
-"""Wi-Fi events of one device: a fixed channel changed, a Wi-Fi network was switched off or on."""
+"""Events of one device: Wi-Fi (fixed channel changed, network switched) and new clients."""
 
 from __future__ import annotations
 
 from homeassistant.components.event import EventEntity, EventEntityDescription
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .coordinator import SlowData, SrmConfigEntry, SrmSlowCoordinator
+from .coordinator import (
+    SIGNAL_NEW_CLIENT,
+    SlowData,
+    SrmConfigEntry,
+    SrmFastCoordinator,
+    SrmSlowCoordinator,
+    get_hub,
+    private_mac,
+)
 from .entity import SrmEntity
 from .wifi import band_label, networks, radios
 
@@ -20,6 +29,10 @@ DESCRIPTION = EventEntityDescription(
     event_types=[EVENT_CHANNEL_CHANGED, EVENT_NETWORK_OFF, EVENT_NETWORK_ON],
 )
 WIFI_READS = ("get_wifi_radio_settings", "get_wifi_networks")
+EVENT_NEW_CLIENT = "new_client"
+CLIENT_DESCRIPTION = EventEntityDescription(
+    key="client_events", translation_key="client_events", event_types=[EVENT_NEW_CLIENT]
+)
 
 
 async def async_setup_entry(
@@ -27,10 +40,12 @@ async def async_setup_entry(
     entry: SrmConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the Wi-Fi events entity of a device that offers its Wi-Fi settings."""
+    """Add the new-clients entity, and Wi-Fi events where the device offers its Wi-Fi settings."""
     runtime = entry.runtime_data
+    entities: list[EventEntity] = [SrmClientEvents(entry, runtime.fast)]
     if any(read in runtime.supported for read in WIFI_READS):
-        async_add_entities([SrmWifiEvents(entry, runtime.slow)])
+        entities.append(SrmWifiEvents(entry, runtime.slow))
+    async_add_entities(entities)
 
 
 def _channels(data: SlowData) -> dict[str, int]:
@@ -99,4 +114,50 @@ class SrmWifiEvents(SrmEntity[SrmSlowCoordinator], EventEntity):
     def _fire(self, event_type: str, attributes: dict[str, object]) -> None:
         """Fire and write the state at once, so two events in one update are both seen."""
         self._trigger_event(event_type, attributes)
+        self.async_write_ha_state()
+
+
+class SrmClientEvents(SrmEntity[SrmFastCoordinator], EventEntity):
+    """Fires when a client is online for the first time, on the device it is attached to.
+
+    A client counts as new once ever: its address is remembered across restarts (a private,
+    random address for 30 days after it was last seen). Clients present at the integration's
+    first start, and clients that appear while a device's list is missing, are taken in quietly.
+    ``private_mac`` tells a phone or laptop with a random address, which may come back new.
+    """
+
+    _attr_should_poll = False
+    # Names stay in the history; addresses do not.
+    _unrecorded_attributes = frozenset({"mac", "ip"})
+
+    def __init__(self, entry: SrmConfigEntry, coordinator: SrmFastCoordinator) -> None:
+        """Bind the entity to its device."""
+        super().__init__(entry, coordinator, CLIENT_DESCRIPTION)
+        self._entry_id = entry.entry_id
+
+    async def async_added_to_hass(self) -> None:
+        """Listen for new clients."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, SIGNAL_NEW_CLIENT, self._new_client)
+        )
+
+    @callback
+    def _new_client(self, source: str, mac: str) -> None:
+        if source != self._entry_id:
+            return
+        hub = get_hub(self.hass)
+        location = hub.locations.get(mac)
+        radio = location.radio_type if location else None
+        self._trigger_event(
+            EVENT_NEW_CLIENT,
+            {
+                "name": hub.name(mac) or mac,
+                "mac": mac,
+                "ip": hub.ip(mac),
+                "connection": location.connection if location else None,
+                "band": band_label(radio) if radio else None,
+                "private_mac": private_mac(mac),
+            },
+        )
         self.async_write_ha_state()
