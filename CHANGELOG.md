@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A *New clients* event entity per device: it fires when a client is online for the first time,
+  with its name, addresses, connection and band, and whether its MAC address is a private (random)
+  one. A client counts as new once; clients present at the first start, or appearing while a
+  device's lists are missing, are taken in without an event. A blueprint sends notifications and
+  leaves out private addresses unless you include them.
+  [#31](https://github.com/eizedev/ha-synology-srm-router/issues/31)
+
 ## [0.2.1] - 2026-10-30
 
 ### Added

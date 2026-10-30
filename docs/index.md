@@ -22,7 +22,7 @@ hide:
 - [**Installation**](installation.md)<br>HACS, the first device, the account to use.
 - [**Configuration**](configuration.md)<br>Certificate, device trackers, options.
 - [**Entities**](entities.md)<br>Sensors of routers and access points.
-- [**Events**](events.md)<br>Wi-Fi channel and network changes, with a blueprint for notifications.
+- [**Events**](events.md)<br>New clients, Wi-Fi channel and network changes, with blueprints for notifications.
 - [**Dashboards**](dashboards.md)<br>Who is where, by radio, DHCP leases and unknown devices, firewall rules.
 - [**Ideas and automations**](ideas.md)<br>Presence, internet down, offline devices, data per day.
 - [**Troubleshooting**](troubleshooting.md)<br>Messages, repairs, diagnostics, removal.

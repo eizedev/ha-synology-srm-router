@@ -106,6 +106,9 @@
     "event": {
       "wifi_events": {
         "default": "mdi:wifi-alert"
+      },
+      "client_events": {
+        "default": "mdi:account-network"
       }
     }
   }

@@ -46,6 +46,9 @@ you created one.
 - **`.storage/synology_srm_router.last_seen`**: when each client was last seen online, by MAC
   address, for 30 days; it decides which clients "matter". It is in every backup and is deleted
   when you remove the last router or access point.
+- **`.storage/synology_srm_router.known_clients`**: every MAC address seen, with the date, so a
+  client counts as new only once; private (random) addresses are dropped 30 days after they were
+  last seen. In every backup, deleted with the last router or access point.
 - **Recorder** (history): the states of all entities and the trackers' attributes (IP and IPv6
   address, MAC, host name, the device and radio a client uses). The Wi-Fi signal, the SSIDs and
   the lists of leases, reservations and firewall rules are left out; the counts are kept. Wi-Fi

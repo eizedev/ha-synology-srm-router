@@ -1,0 +1,62 @@
+blueprint:
+  name: Synology SRM new clients
+  description: >-
+    Send a notification when a client joins the network for the first time, with its name,
+    address and where it is attached. Uses the "New clients" entity of the Synology SRM Router
+    integration. Clients with a private (random) MAC address, such as phones that change it now
+    and then, are left out unless you include them.
+  domain: automation
+  source_url: https://github.com/eizedev/ha-synology-srm-router/blob/main/blueprints/automation/synology_srm_router/notify_new_clients.yaml
+  input:
+    events_entity:
+      name: New clients
+      description: The "New clients" entity of a router or access point.
+      selector:
+        entity:
+          filter:
+            - integration: synology_srm_router
+              domain: event
+    include_private:
+      name: Include private MAC addresses
+      description: Also notify for clients with a random address; they may come back as new.
+      default: false
+      selector:
+        boolean: {}
+    notify_action:
+      name: Notification
+      description: What to do, for example a notification to your phone.
+      default:
+        - action: persistent_notification.create
+          data:
+            title: "{{ title }}"
+            message: "{{ message }}"
+      selector:
+        action: {}
+
+mode: queued
+
+triggers:
+  - trigger: state
+    entity_id: !input events_entity
+    not_from: unavailable
+    not_to: unavailable
+
+variables:
+  include_private: !input include_private
+  attributes: "{{ trigger.to_state.attributes }}"
+  device: >-
+    {% set device = device_id(trigger.entity_id) %}
+    {{ device_attr(device, 'name_by_user') or device_attr(device, 'name') or trigger.entity_id }}
+  title: "New client on {{ device }}"
+  message: >-
+    {% set a = trigger.to_state.attributes %}
+    {{ a.name }}{% if a.ip %} ({{ a.ip }}){% endif %},
+    {% if a.connection == 'wifi' %}Wi-Fi{% if a.band %} {{ a.band }}{% endif %}{% elif a.connection == 'ethernet' %}cable{% else %}connection unknown{% endif %}.
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trigger.to_state.attributes.event_type == 'new_client'
+         and (include_private or not trigger.to_state.attributes.private_mac) }}
+
+actions: !input notify_action
