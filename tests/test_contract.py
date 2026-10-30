@@ -27,6 +27,8 @@ APIS = (
     "SYNO.Core.Security.Firewall.Rules",
     "SYNO.Core.Security.Firewall.Rules.HitCount",
     "SYNO.Core.Network.IPv6.Router.Prefix",
+    "SYNO.Core.Security.Firewall.AllowSrmFromWan",
+    "SYNO.Core.Security.AutoBlock",
     "SYNO.Core.Storage.Volume",
     "SYNO.Wifi.Device",
     "SYNO.Wifi.Radio.Setting",

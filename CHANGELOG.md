@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Repairs for router settings that weaken a router, each with a page in the docs that says what to
+  change in SRM: SRM's web interface reachable from the internet, the auto block switched off, a
+  firewall default policy that allows traffic from the internet. Checked with the slow update;
+  a repair goes once the setting is safe. Read only, as everything else.
+  [#35](https://github.com/eizedev/ha-synology-srm-router/issues/35)
+
 ## [0.4.0] - 2026-10-30
 
 ### Added
