@@ -102,6 +102,11 @@
           "on": "mdi:wifi"
         }
       }
+    },
+    "event": {
+      "wifi_events": {
+        "default": "mdi:wifi-alert"
+      }
     }
   }
 }

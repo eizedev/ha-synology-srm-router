@@ -47,7 +47,7 @@ from .coordinator import (
 )
 
 BLOCKED_AT: HassKey[dict[str, datetime]] = HassKey(f"{DOMAIN}_blocked_at")
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER, Platform.SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER, Platform.EVENT, Platform.SENSOR]
 # The reads the coordinators use; each is checked against the device's API catalog once.
 GETTERS = (
     "get_utilization",

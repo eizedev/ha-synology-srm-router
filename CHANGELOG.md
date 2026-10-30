@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A *Wi-Fi events* entity per device: it fires when a radio set to a fixed channel runs on
+  another one (on 5 GHz usually a radar switch) and when a Wi-Fi network is switched off or on,
+  once per network. A radio on automatic channel selection changing its channel is no event. A
+  blueprint sends notifications for them.
+  [#54](https://github.com/eizedev/ha-synology-srm-router/issues/54)
+
 ## [0.2.0] - 2026-10-30
 
 ### Added

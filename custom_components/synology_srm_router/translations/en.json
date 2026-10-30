@@ -381,6 +381,35 @@
           }
         }
       }
+    },
+    "event": {
+      "wifi_events": {
+        "name": "Wi-Fi events",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "channel_changed": "Channel changed",
+              "network_off": "Wi-Fi network switched off",
+              "network_on": "Wi-Fi network switched on"
+            }
+          },
+          "band": {
+            "name": "Band"
+          },
+          "channel": {
+            "name": "Channel"
+          },
+          "previous": {
+            "name": "Previous channel"
+          },
+          "network": {
+            "name": "Network"
+          },
+          "bands": {
+            "name": "Bands"
+          }
+        }
+      }
     }
   },
   "exceptions": {

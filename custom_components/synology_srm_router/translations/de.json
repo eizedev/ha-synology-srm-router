@@ -381,6 +381,35 @@
           }
         }
       }
+    },
+    "event": {
+      "wifi_events": {
+        "name": "WLAN-Ereignisse",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "channel_changed": "Kanal gewechselt",
+              "network_off": "WLAN-Netz ausgeschaltet",
+              "network_on": "WLAN-Netz eingeschaltet"
+            }
+          },
+          "band": {
+            "name": "Band"
+          },
+          "channel": {
+            "name": "Kanal"
+          },
+          "previous": {
+            "name": "Vorheriger Kanal"
+          },
+          "network": {
+            "name": "Netz"
+          },
+          "bands": {
+            "name": "Bänder"
+          }
+        }
+      }
     }
   },
   "exceptions": {

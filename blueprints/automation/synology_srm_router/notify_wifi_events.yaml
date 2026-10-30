@@ -1,0 +1,68 @@
+blueprint:
+  name: Synology SRM Wi-Fi events
+  description: >-
+    Send a notification when a Wi-Fi radio that is set to a fixed channel runs on another one
+    (on 5 GHz usually a radar switch), or when a Wi-Fi network is switched off or on.
+    Uses the "Wi-Fi events" entity of the Synology SRM Router integration.
+  domain: automation
+  source_url: https://github.com/eizedev/ha-synology-srm-router/blob/main/blueprints/automation/synology_srm_router/notify_wifi_events.yaml
+  input:
+    events_entity:
+      name: Wi-Fi events
+      description: The "Wi-Fi events" entity of a router or access point.
+      selector:
+        entity:
+          filter:
+            - integration: synology_srm_router
+              domain: event
+    event_types:
+      name: Events
+      default: [channel_changed, network_off, network_on]
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Fixed channel changed
+              value: channel_changed
+            - label: Wi-Fi network switched off
+              value: network_off
+            - label: Wi-Fi network switched on
+              value: network_on
+    notify_action:
+      name: Notification
+      description: What to do, for example a notification to your phone.
+      default:
+        - action: persistent_notification.create
+          data:
+            title: "{{ title }}"
+            message: "{{ message }}"
+      selector:
+        action: {}
+
+mode: queued
+
+triggers:
+  - trigger: state
+    entity_id: !input events_entity
+    not_from: unavailable
+    not_to: unavailable
+
+variables:
+  event_types: !input event_types
+  event_type: "{{ trigger.to_state.attributes.event_type }}"
+  device: >-
+    {% set device = device_id(trigger.entity_id) %}
+    {{ device_attr(device, 'name_by_user') or device_attr(device, 'name') or trigger.entity_id }}
+  title: "{{ device }}"
+  message: >-
+    {% set a = trigger.to_state.attributes %}
+    {% if event_type == 'channel_changed' %}{{ a.band }} runs on channel {{ a.channel }} instead of {{ a.previous }}.
+    {% elif event_type == 'network_off' %}Wi-Fi {{ a.network }} is off ({{ a.bands | join(', ') }}).
+    {% elif event_type == 'network_on' %}Wi-Fi {{ a.network }} is on ({{ a.bands | join(', ') }}).
+    {% endif %}
+
+conditions:
+  - condition: template
+    value_template: "{{ event_type in event_types }}"
+
+actions: !input notify_action
