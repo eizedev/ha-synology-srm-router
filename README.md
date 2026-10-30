@@ -29,7 +29,8 @@ changes a setting.
 ## What you get
 
 - One device per router or access point: CPU load, memory, download and upload rate, clients
-  (all, per Wi-Fi band and wired), last boot, USB storage.
+  (all, per Wi-Fi band and wired), last boot, USB storage, the channel of each Wi-Fi radio and
+  whether each Wi-Fi network (primary, guest) is on, per band.
 - On routers: WAN connection, public IPv4 and IPv6 address, whether the router is behind NAT, DHCP
   leases, reservations and pool usage, and the firewall rules with their hits. Lists behind the
   counts show who holds an address, which devices are unknown, and what each firewall rule is
@@ -68,8 +69,8 @@ into `custom_components/synology_srm_router/` in your Home Assistant configurati
 ## Roadmap
 
 Planned work is grouped in [milestones](https://github.com/eizedev/ha-synology-srm-router/milestones):
-[0.2.0](https://github.com/eizedev/ha-synology-srm-router/milestone/1) brings a new-client event,
-Ethernet ports and Wi-Fi radios, [0.3.0](https://github.com/eizedev/ha-synology-srm-router/milestone/2)
+[0.2.0](https://github.com/eizedev/ha-synology-srm-router/milestone/1) brings a new-client event
+and Ethernet ports, [0.3.0](https://github.com/eizedev/ha-synology-srm-router/milestone/2)
 change events, repairs for risky router settings and discovery. Ideas and reports are welcome in
 the [issues](https://github.com/eizedev/ha-synology-srm-router/issues).
 

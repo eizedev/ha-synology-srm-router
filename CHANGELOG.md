@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Wi-Fi per device: the channel of each radio (with the channel set in SRM), the allowed channel
+  width as a diagnostic, transmit power and Wi-Fi mode (disabled by default), and a binary sensor
+  per Wi-Fi network and band that says whether it is on, for every network SRM has (primary,
+  guest, ...). With Smart Connect on, its switch decides for all bands. The Wi-Fi passwords that
+  SRM sends along never reach Home Assistant (aiosynologysrm 0.10.0 keeps only known fields).
+  [#33](https://github.com/eizedev/ha-synology-srm-router/issues/33)
+
 ### Fixed
 
 - Old trackers can be deleted in Home Assistant. With *Track all clients*, a tracker of a client

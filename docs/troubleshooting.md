@@ -47,8 +47,9 @@ you created one.
   address, for 30 days; it decides which clients "matter". It is in every backup and is deleted
   when you remove the last router or access point.
 - **Recorder** (history): the states of all entities and the trackers' attributes (IP and IPv6
-  address, MAC, host name, the device and radio a client uses). The Wi-Fi signal and the lists of
-  leases, reservations and firewall rules are left out; the counts are kept.
+  address, MAC, host name, the device and radio a client uses). The Wi-Fi signal, the SSIDs and
+  the lists of leases, reservations and firewall rules are left out; the counts are kept. Wi-Fi
+  passwords never reach Home Assistant: the library leaves them out of what it reads.
 - **Visible to every user** of Home Assistant, not only administrators: every state with its
   attributes, including those lists when you enable their sensors.
 - **Diagnostics** (the download for an issue): settings without address, account, password,

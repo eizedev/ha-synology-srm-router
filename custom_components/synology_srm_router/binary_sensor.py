@@ -1,22 +1,24 @@
-"""Binary sensors: WAN connection and whether the router sits behind NAT."""
+"""Binary sensors: WAN connection, whether the router sits behind NAT, Wi-Fi networks on or off."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
-from aiosynologysrm import helpers
+from aiosynologysrm import WifiNetworkProfile, WifiNetworkRadio, helpers
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .coordinator import FastData, SrmConfigEntry, SrmFastCoordinator
+from .coordinator import FastData, SrmConfigEntry, SrmFastCoordinator, SrmSlowCoordinator
 from .entity import SrmEntity
+from .wifi import band_label, networks
 
 PARALLEL_UPDATES = 0
 
@@ -63,11 +65,37 @@ async def async_setup_entry(
     entry: SrmConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the WAN binary sensors; access points have no WAN of their own."""
+    """Add the WAN binary sensors (access points have no WAN of their own) and Wi-Fi networks."""
     runtime = entry.runtime_data
-    if not runtime.is_router or "get_connection_status" not in runtime.supported:
-        return
-    async_add_entities(SrmBinarySensor(entry, entry.runtime_data.fast, d) for d in BINARY_SENSORS)
+    if runtime.is_router and "get_connection_status" in runtime.supported:
+        async_add_entities(SrmBinarySensor(entry, runtime.fast, d) for d in BINARY_SENSORS)
+    _add_networks(entry, async_add_entities)
+
+
+@callback
+def _add_networks(
+    entry: SrmConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
+) -> None:
+    """Add a binary sensor for every Wi-Fi network on every band, as they appear.
+
+    A network or band that is gone leaves its sensor unavailable, since it may come back.
+    """
+    slow = entry.runtime_data.slow
+    added: set[str] = set()
+
+    @callback
+    def _update() -> None:
+        new = [
+            SrmWifiNetworkSensor(entry, key, profile, band)
+            for key, (profile, band, _) in networks(slow.data).items()
+            if key not in added
+        ]
+        if new:
+            added.update(sensor.network_key for sensor in new)
+            async_add_entities(new)
+
+    _update()
+    entry.async_on_unload(slow.async_add_listener(_update))
 
 
 class SrmBinarySensor(SrmEntity[SrmFastCoordinator], BinarySensorEntity):
@@ -79,3 +107,60 @@ class SrmBinarySensor(SrmEntity[SrmFastCoordinator], BinarySensorEntity):
     def is_on(self) -> bool | None:
         """The current state."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+
+class SrmWifiNetworkSensor(SrmEntity[SrmSlowCoordinator], BinarySensorEntity):
+    """Whether one Wi-Fi network is on on one band, as set in SRM."""
+
+    # The SSID is not a secret, but the history does not need it.
+    _unrecorded_attributes = frozenset({"ssid"})
+
+    def __init__(
+        self, entry: SrmConfigEntry, key: str, profile: WifiNetworkProfile, band: str
+    ) -> None:
+        """Bind the sensor to one network and band; named after the network as in SRM."""
+        super().__init__(
+            entry,
+            entry.runtime_data.slow,
+            BinarySensorEntityDescription(
+                key=f"wifi_network_{key}", translation_key="wifi_network"
+            ),
+        )
+        self.network_key = key
+        self._attr_translation_placeholders = {
+            "network": profile.name or profile.network_type or str(profile.id),
+            "band": band_label(band),
+        }
+
+    @property
+    def _network(self) -> tuple[WifiNetworkProfile, str, bool | None] | None:
+        return networks(self.coordinator.data).get(self.network_key)
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the device does not list the network on this band."""
+        return super().available and self._network is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        """Whether the network is on on this band."""
+        network = self._network
+        return network[2] if network else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """SSID and settings of the entry that decides: Smart Connect or the band's own."""
+        network = self._network
+        if network is None:
+            return {}
+        profile, band, _ = network
+        wanted = helpers.SMART_CONNECT if profile.enable_smart_connect else band
+        radio: WifiNetworkRadio | None = next(
+            (r for r in profile.radio_list if r.radio_type == wanted), None
+        )
+        return {
+            "ssid": radio.ssid if radio else None,
+            "network_type": profile.network_type,
+            "smart_connect": profile.enable_smart_connect,
+            "hidden": radio.hide_ssid if radio else None,
+        }

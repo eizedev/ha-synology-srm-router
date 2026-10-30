@@ -28,6 +28,9 @@ APIS = (
     "SYNO.Core.Security.Firewall.Rules.HitCount",
     "SYNO.Core.Storage.Volume",
     "SYNO.Wifi.Device",
+    "SYNO.Wifi.Radio.Setting",
+    "SYNO.Wifi.Radio.Status",
+    "SYNO.Wifi.Network.Setting",
 )
 HOST, PORT = "192.0.2.1", 8000
 

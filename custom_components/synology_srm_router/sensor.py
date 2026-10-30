@@ -9,7 +9,14 @@ from functools import partial
 import ipaddress
 from typing import Any
 
-from aiosynologysrm import DhcpServer, FirewallRule, StorageVolume, helpers
+from aiosynologysrm import (
+    DhcpServer,
+    FirewallRule,
+    StorageVolume,
+    WifiRadioSetting,
+    WifiRadioState,
+    helpers,
+)
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -35,6 +42,7 @@ from .coordinator import (
 )
 from .entity import SrmEntity
 from .firewall import address_key, rule_label, rule_rows
+from .wifi import band_label, radios, width_label
 
 # Coordinators poll; entities never call the router themselves.
 PARALLEL_UPDATES = 0
@@ -479,11 +487,11 @@ def usb_volumes(data: SlowData) -> dict[str, StorageVolume]:
 def _add_dynamic(
     hass: HomeAssistant, entry: SrmConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
-    """Add sensors for firewall rules, DHCP pools and USB volumes as they appear.
+    """Add sensors for firewall rules, DHCP pools, USB volumes and Wi-Fi radios as they appear.
 
     Hits sensors exist only with the option "firewall_hits". A rule that is gone (deleted, or
     edited, which gives it a new key) loses its sensor, and gets one again if it returns; a DHCP
-    pool or USB volume that is gone leaves its sensor unavailable, since it may come back.
+    pool, USB volume or radio that is gone leaves its sensor unavailable, since it may come back.
     """
     runtime = entry.runtime_data
     slow = runtime.slow
@@ -514,6 +522,10 @@ def _add_dynamic(
             if f"usb_{path}" not in added:
                 added.add(f"usb_{path}")
                 new += [SrmUsbSensor(entry, path, volume, kind) for kind in USB_SENSORS]
+        for radio_type in radios(data):
+            if f"radio_{radio_type}" not in added:
+                added.add(f"radio_{radio_type}")
+                new += [SrmRadioSensor(entry, radio_type, kind) for kind in RADIO_SENSORS]
         if new:
             async_add_entities(new)
 
@@ -705,3 +717,80 @@ class SrmUsbSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
         """The current value."""
         volume = self._volume
         return self.entity_description.value_fn(volume) if volume else None
+
+
+@dataclass(frozen=True, kw_only=True)
+class SrmRadioSensorDescription(SensorEntityDescription):
+    """One value of a Wi-Fi radio: from its settings and its live state."""
+
+    value_fn: Callable[[WifiRadioSetting, WifiRadioState | None], Any]
+
+
+RADIO_SENSORS: tuple[SrmRadioSensorDescription, ...] = (
+    SrmRadioSensorDescription(
+        key="radio_channel",
+        translation_key="radio_channel",
+        value_fn=lambda _, state: state.channel if state else None,
+    ),
+    SrmRadioSensorDescription(
+        key="radio_channel_width",
+        translation_key="radio_channel_width",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda setting, _: width_label(setting.channel_width),
+    ),
+    SrmRadioSensorDescription(
+        key="radio_transmit_power",
+        translation_key="radio_transmit_power",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda setting, _: setting.transmit_power,
+    ),
+    SrmRadioSensorDescription(
+        key="radio_wireless_mode",
+        translation_key="radio_wireless_mode",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda setting, _: setting.wireless_mode,
+    ),
+)
+
+
+class SrmRadioSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
+    """One value of one Wi-Fi radio, by SRM's band name (``2.4G``, ``5G``, ``5G-2``)."""
+
+    entity_description: SrmRadioSensorDescription
+
+    def __init__(
+        self, entry: SrmConfigEntry, radio_type: str, description: SrmRadioSensorDescription
+    ) -> None:
+        """Bind the sensor to one radio."""
+        super().__init__(
+            entry,
+            entry.runtime_data.slow,
+            dataclasses.replace(description, key=f"{description.key}_{radio_type}"),
+        )
+        self._radio_type = radio_type
+        self._attr_translation_placeholders = {"band": band_label(radio_type)}
+
+    @property
+    def _radio(self) -> tuple[WifiRadioSetting, WifiRadioState | None] | None:
+        return radios(self.coordinator.data).get(self._radio_type)
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the device does not list the radio."""
+        return super().available and self._radio is not None
+
+    @property
+    def native_value(self) -> Any:
+        """The current value."""
+        radio = self._radio
+        return self.entity_description.value_fn(*radio) if radio else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """For the channel: the one set in SRM, 0 when SRM picks it itself."""
+        radio = self._radio
+        if self.entity_description.translation_key != "radio_channel" or radio is None:
+            return {}
+        return {"configured_channel": radio[0].channel}
