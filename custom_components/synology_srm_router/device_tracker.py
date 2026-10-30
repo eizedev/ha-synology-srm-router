@@ -10,6 +10,7 @@ from homeassistant.components.device_tracker import ScannerEntity
 from homeassistant.const import STATE_HOME, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -79,8 +80,9 @@ async def async_setup_entry(
 
     # Trackers this entry created before come back even while their client is unknown (SRM
     # forgot it, or "track all" no longer covers it): away rather than unavailable.
+    devices = dr.async_get(hass)
     restored = {
-        item.unique_id: item.original_name
+        item.unique_id: _known_name(devices, item)
         for item in er.async_entries_for_config_entry(registry, entry.entry_id)
         if item.domain == Platform.DEVICE_TRACKER
     }
@@ -89,6 +91,12 @@ async def async_setup_entry(
         async_add_entities(SrmTracker(hub, entry, mac, name) for mac, name in restored.items())
     _add_new()
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_LOCATIONS, _add_new))
+
+
+def _known_name(devices: dr.DeviceRegistry, item: er.RegistryEntry) -> str | None:
+    """Return the last name of a tracker's client: its device's, or the entity's before 0.1.4."""
+    device = devices.async_get(item.device_id) if item.device_id else None
+    return (device.name if device else None) or item.original_name
 
 
 class SrmTracker(ScannerEntity, RestoreEntity):
@@ -100,8 +108,12 @@ class SrmTracker(ScannerEntity, RestoreEntity):
     to the router or appear away. A client counts as away only after it was missing for the
     entry's "consider home" time, because SRM marks idle wired clients offline now and then.
     A client that was home before Home Assistant restarted gets the same time to show up again.
+
+    Each tracker is the main entity of a device of its own, named after the client in SRM.
     """
 
+    _attr_has_entity_name = True
+    _attr_name = None
     _attr_should_poll = False
     # The signal changes on almost every update; recording it would add a row to the database
     # for each tracker every few seconds.
@@ -113,7 +125,7 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         """Track one MAC address; the name is the last known one, for a client unknown now."""
         self._hub = hub
         self._attr_mac_address = mac
-        self._attr_name = name
+        self._client_name = name
         self._location: helpers.ClientLocation | None = None
         self._shown: helpers.ClientLocation | None = None
         self._held_since: datetime | None = None
@@ -136,6 +148,19 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         """Unknown while no router or access point delivers client data."""
         return self._hub.anything_available
 
+    @property  # type: ignore[misc]  # final in Home Assistant 2026.10
+    def device_info(self) -> DeviceInfo:
+        """The client as a device, named as in SRM.
+
+        From Home Assistant 2026.11 a tracker provides its device. In 2026.10 the base class
+        marks this property final, for type checkers only; a tracker with device info is then
+        registered the usual way, instead of in a device of its own named after the host name.
+        """
+        return DeviceInfo(
+            connections={(CONNECTION_NETWORK_MAC, self._attr_mac_address or "")},
+            name=self._client_name,
+        )
+
     async def async_added_to_hass(self) -> None:
         """Follow the shared locations."""
         await super().async_added_to_hass()
@@ -157,21 +182,16 @@ class SrmTracker(ScannerEntity, RestoreEntity):
 
     @callback
     def _name_device(self) -> None:
-        """Give the tracker's own device the client's name.
-
-        When another integration knows the MAC address, Home Assistant registers a device for
-        the tracker and names it after the host name on every load (a Sonos speaker reports
-        "SonosZP"). The host name stays as it is, for discovery; the name follows SRM.
-        """
+        """Rename the client's device when its name in SRM changes; a name set in HA stays."""
         device_id = self.registry_entry.device_id if self.registry_entry else None
         registry = dr.async_get(self.hass)
         device = registry.async_get(device_id) if device_id else None
         if (
             device is not None
             and device.config_entry_id == self._entry_id
-            and device.name != self._attr_name
+            and device.name != self._client_name
         ):
-            registry.async_update_device(device.id, name=self._attr_name)
+            registry.async_update_device(device.id, name=self._client_name)
 
     @callback
     def _update_from_hub(self) -> None:
@@ -200,8 +220,8 @@ class SrmTracker(ScannerEntity, RestoreEntity):
         if entry is not None:
             self._attr_hostname = entry.hostname
         self._attr_ip_address = (entry.ip_addr if entry else None) or self._hub.ip(mac)
-        self._attr_name = (
-            self._hub.name(mac) or (entry.hostname if entry else None) or self._attr_name or mac
+        self._client_name = (
+            self._hub.name(mac) or (entry.hostname if entry else None) or self._client_name or mac
         )
 
     @property
