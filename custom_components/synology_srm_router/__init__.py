@@ -61,6 +61,9 @@ GETTERS = (
     "get_firewall_rules",
     "get_firewall_hit_counts",
     "get_usb_volumes",
+    "get_wifi_radio_settings",
+    "get_wifi_radio_status",
+    "get_wifi_networks",
 )
 
 

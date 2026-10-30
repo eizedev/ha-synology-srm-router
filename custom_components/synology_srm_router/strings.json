@@ -338,6 +338,23 @@
       },
       "wired_clients": {
         "name": "Wired clients"
+      },
+      "radio_channel": {
+        "name": "Channel {band}",
+        "state_attributes": {
+          "configured_channel": {
+            "name": "Configured channel (0 = automatic)"
+          }
+        }
+      },
+      "radio_channel_width": {
+        "name": "Channel width {band}"
+      },
+      "radio_transmit_power": {
+        "name": "Transmit power {band}"
+      },
+      "radio_wireless_mode": {
+        "name": "Wi-Fi mode {band}"
       }
     },
     "binary_sensor": {
@@ -346,6 +363,23 @@
       },
       "behind_nat": {
         "name": "Behind NAT"
+      },
+      "wifi_network": {
+        "name": "Wi-Fi {network} {band}",
+        "state_attributes": {
+          "ssid": {
+            "name": "SSID"
+          },
+          "network_type": {
+            "name": "Network type"
+          },
+          "smart_connect": {
+            "name": "Smart Connect"
+          },
+          "hidden": {
+            "name": "Hidden SSID"
+          }
+        }
       }
     }
   },

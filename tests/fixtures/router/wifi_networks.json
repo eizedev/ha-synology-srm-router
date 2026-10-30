@@ -1,0 +1,212 @@
+{
+  "profiles": [
+    {
+      "enable_smart_connect": true,
+      "id": 0,
+      "name": "name-1",
+      "network_type": "primary",
+      "radio_list": [
+        {
+          "advance": {
+            "ampdu": true,
+            "ap_enable_11r": false,
+            "ap_isolation": false,
+            "ap_mcast_translating": false,
+            "ap_mumimo": true,
+            "country_abbrev_override_enable": false,
+            "dtim": 4,
+            "enable_extended_nss": true,
+            "enable_ofdma": true,
+            "key_rotation": 3600,
+            "pmf_mode": "capable",
+            "sc_disable_legacy_steering": true,
+            "uapsd_enable": true
+          },
+          "enable": true,
+          "enable_client_isolation": false,
+          "hide_ssid": false,
+          "mac_filter": {
+            "profile_id": -1
+          },
+          "max_connection": 128,
+          "radio_type": "SmartConnect",
+          "schedule": {
+            "enable": false,
+            "mode": "customized",
+            "schedule_value": "schedule_value-1",
+            "valid_for": 0
+          },
+          "ssid": "ssid-1"
+        },
+        {
+          "advance": {
+            "ampdu": true,
+            "ap_enable_11r": false,
+            "ap_isolation": false,
+            "ap_mcast_translating": true,
+            "ap_mumimo": true,
+            "country_abbrev_override_enable": false,
+            "dtim": 4,
+            "enable_extended_nss": false,
+            "enable_ofdma": true,
+            "key_rotation": 3600,
+            "pmf_mode": "disabled",
+            "sc_disable_legacy_steering": true,
+            "uapsd_enable": true
+          },
+          "enable": true,
+          "enable_client_isolation": false,
+          "hide_ssid": false,
+          "mac_filter": {
+            "profile_id": -1
+          },
+          "max_connection": 128,
+          "radio_type": "2.4G",
+          "schedule": {
+            "enable": false,
+            "mode": "customized",
+            "schedule_value": "schedule_value-1",
+            "valid_for": 0
+          },
+          "ssid": "ssid-2"
+        },
+        {
+          "advance": {
+            "ampdu": true,
+            "ap_enable_11r": false,
+            "ap_isolation": false,
+            "ap_mcast_translating": true,
+            "ap_mumimo": true,
+            "country_abbrev_override_enable": false,
+            "dtim": 4,
+            "enable_extended_nss": false,
+            "enable_ofdma": true,
+            "key_rotation": 3600,
+            "pmf_mode": "disabled",
+            "sc_disable_legacy_steering": true,
+            "uapsd_enable": true
+          },
+          "enable": true,
+          "enable_client_isolation": false,
+          "hide_ssid": false,
+          "mac_filter": {
+            "profile_id": -1
+          },
+          "max_connection": 128,
+          "radio_type": "5G",
+          "schedule": {
+            "enable": false,
+            "mode": "customized",
+            "schedule_value": "schedule_value-1",
+            "valid_for": 0
+          },
+          "ssid": "ssid-3"
+        }
+      ]
+    },
+    {
+      "enable_smart_connect": true,
+      "id": 1,
+      "name": "name-2",
+      "network_type": "guest",
+      "radio_list": [
+        {
+          "advance": {
+            "ampdu": true,
+            "ap_enable_11r": false,
+            "ap_isolation": false,
+            "ap_mcast_translating": true,
+            "ap_mumimo": true,
+            "country_abbrev_override_enable": false,
+            "dtim": 4,
+            "enable_extended_nss": false,
+            "enable_ofdma": true,
+            "key_rotation": 3600,
+            "pmf_mode": "capable",
+            "sc_disable_legacy_steering": true,
+            "uapsd_enable": true
+          },
+          "enable": true,
+          "enable_client_isolation": true,
+          "hide_ssid": false,
+          "mac_filter": {
+            "profile_id": -1
+          },
+          "max_connection": 128,
+          "radio_type": "SmartConnect",
+          "schedule": {
+            "enable": false,
+            "mode": "customized",
+            "schedule_value": "schedule_value-1",
+            "valid_for": 0
+          },
+          "ssid": "ssid-4"
+        },
+        {
+          "advance": {
+            "ampdu": true,
+            "ap_enable_11r": false,
+            "ap_isolation": false,
+            "ap_mcast_translating": true,
+            "ap_mumimo": true,
+            "country_abbrev_override_enable": false,
+            "dtim": 4,
+            "enable_extended_nss": false,
+            "enable_ofdma": true,
+            "key_rotation": 3600,
+            "pmf_mode": "disabled",
+            "sc_disable_legacy_steering": true,
+            "uapsd_enable": true
+          },
+          "enable": false,
+          "enable_client_isolation": true,
+          "hide_ssid": false,
+          "mac_filter": {
+            "profile_id": -1
+          },
+          "max_connection": 128,
+          "radio_type": "2.4G",
+          "schedule": {
+            "enable": false,
+            "mode": "customized",
+            "schedule_value": "schedule_value-1",
+            "valid_for": 0
+          },
+          "ssid": "ssid-5"
+        },
+        {
+          "advance": {
+            "ampdu": true,
+            "ap_enable_11r": false,
+            "ap_isolation": false,
+            "ap_mcast_translating": true,
+            "ap_mumimo": true,
+            "country_abbrev_override_enable": false,
+            "dtim": 4,
+            "enable_extended_nss": false,
+            "enable_ofdma": true,
+            "key_rotation": 3600,
+            "pmf_mode": "disabled",
+            "sc_disable_legacy_steering": true,
+            "uapsd_enable": true
+          },
+          "enable": false,
+          "enable_client_isolation": true,
+          "hide_ssid": false,
+          "mac_filter": {
+            "profile_id": -1
+          },
+          "max_connection": 128,
+          "radio_type": "5G",
+          "schedule": {
+            "enable": false,
+            "mode": "customized",
+            "schedule_value": "schedule_value-1",
+            "valid_for": 0
+          },
+          "ssid": "ssid-6"
+        }
+      ]
+    }
+  ]
+}

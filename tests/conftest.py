@@ -25,6 +25,9 @@ from aiosynologysrm import (
     Topology,
     Utilization,
     WifiDevices,
+    WifiNetworks,
+    WifiRadioSettings,
+    WifiRadioStatus,
 )
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -133,6 +136,18 @@ class FakeClient:
     async def get_usb_volumes(self) -> StorageVolumes:
         self._raise("get_usb_volumes")
         return StorageVolumes.from_api(load(self.folder, "usb_volumes"))
+
+    async def get_wifi_radio_settings(self) -> WifiRadioSettings:
+        self._raise("get_wifi_radio_settings")
+        return WifiRadioSettings.from_api(load(self.folder, "wifi_radio_settings"))
+
+    async def get_wifi_radio_status(self) -> WifiRadioStatus:
+        self._raise("get_wifi_radio_status")
+        return WifiRadioStatus.from_api(load(self.folder, "wifi_radio_status"))
+
+    async def get_wifi_networks(self) -> WifiNetworks:
+        self._raise("get_wifi_networks")
+        return WifiNetworks.from_api(load(self.folder, "wifi_networks"))
 
 
 ERRORS: dict[str, dict[str, BaseException]] = {}

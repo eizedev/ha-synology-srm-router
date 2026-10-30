@@ -29,6 +29,9 @@ from aiosynologysrm import (
     Topology,
     Utilization,
     WifiDevices,
+    WifiNetworks,
+    WifiRadioSettings,
+    WifiRadioStatus,
     helpers,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -83,7 +86,7 @@ class FastData:
 
 @dataclass(kw_only=True)
 class SlowData:
-    """What changes rarely: system information and USB storage; DHCP and firewall on routers.
+    """What changes rarely: system information, USB storage and Wi-Fi; DHCP and firewall on routers.
 
     Everything but the system information is optional: a read that fails keeps what is known.
     """
@@ -102,6 +105,10 @@ class SlowData:
     Not kept when its read fails: a counter must not be matched against a newer rule list.
     """
     usb: StorageVolumes | None = None
+    radio_settings: WifiRadioSettings | None = None
+    radio_status: WifiRadioStatus | None = None
+    wifi_networks: WifiNetworks | None = None
+    """Every Wi-Fi network with its bands; the library keeps the Wi-Fi keys out of it."""
     rules: dict[str, FirewallRule] = field(default_factory=dict)
     """Firewall rules by a key from their content (see firewall.rule_keys), computed once."""
 
@@ -114,6 +121,9 @@ SLOW_READS: tuple[tuple[str, str, bool], ...] = (
     ("firewall", "get_firewall_rules", True),
     ("hits", "get_firewall_hit_counts", True),
     ("usb", "get_usb_volumes", False),
+    ("radio_settings", "get_wifi_radio_settings", False),
+    ("radio_status", "get_wifi_radio_status", False),
+    ("wifi_networks", "get_wifi_networks", False),
 )
 
 
