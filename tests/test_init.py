@@ -14,6 +14,7 @@ from unittest.mock import patch
 import aiohttp
 from aiosynologysrm import (
     ExternalIp,
+    NetworkDevices,
     SrmAuthenticationError,
     SrmBlockedError,
     SrmCertificateError,
@@ -26,10 +27,12 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import (
+    area_registry as ar,
     device_registry as dr,
     entity_registry as er,
     issue_registry as ir,
 )
+from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_restore_cache
@@ -411,25 +414,135 @@ async def test_a_tracker_of_another_entry_is_not_duplicated(hass: HomeAssistant)
     ]
 
 
-async def test_a_tracker_of_a_forgotten_client_comes_back_away(hass: HomeAssistant) -> None:
-    # SRM no longer lists the client, so "track all" does not cover it: the tracker stays. Its
-    # registry entry is from before 0.1.4, without a device: the name comes from the entity.
-    entry = make_entry(track_all=True)
-    entry.add_to_hass(hass)
-    er.async_get(hass).async_get_or_create(
+FORGOTTEN = "02:00:00:00:00:77"  # a client SRM no longer lists
+
+
+def _forgotten_tracker(
+    hass: HomeAssistant, entry: MockConfigEntry, *, device: bool = False
+) -> er.RegistryEntry:
+    """Register a tracker of a client that is gone, as an earlier run left it."""
+    device_id = None
+    if device:
+        device_id = (
+            dr.async_get(hass)
+            .async_get_or_create(
+                config_entry_id=entry.entry_id,
+                connections={(dr.CONNECTION_NETWORK_MAC, FORGOTTEN)},
+                name="Old laptop",
+            )
+            .id
+        )
+    return er.async_get(hass).async_get_or_create(
         "device_tracker",
         DOMAIN,
-        "02:00:00:00:00:77",
+        FORGOTTEN,
         config_entry=entry,
+        device_id=device_id,
         suggested_object_id="old_laptop",
         original_name="Old laptop",
     )
+
+
+async def test_an_unchanged_tracker_of_a_forgotten_client_is_not_provided(
+    hass: HomeAssistant,
+) -> None:
+    # "Track all" no longer covers it and nobody changed it: it stays registered, unprovided, so
+    # Home Assistant shows it unavailable and lets the user delete it.
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    _forgotten_tracker(hass, entry)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    state = hass.states.get("device_tracker.old_laptop")
+    assert er.async_get(hass).async_get("device_tracker.old_laptop") is not None
+    assert hass.states.get("device_tracker.old_laptop") is None
+
+
+@pytest.mark.parametrize("aliases", [[], [er.COMPUTED_NAME]])
+async def test_default_aliases_are_no_change(hass: HomeAssistant, aliases: list[Any]) -> None:
+    # Which of the two an entity has depends on when it was created.
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    _forgotten_tracker(hass, entry)
+    er.async_get(hass).async_update_entity("device_tracker.old_laptop", aliases=aliases)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("device_tracker.old_laptop") is None
+
+
+async def test_the_device_name_written_from_srm_is_no_change(hass: HomeAssistant) -> None:
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    item = _forgotten_tracker(hass, entry, device=True)
+    dr.async_get(hass).async_update_device(item.device_id or "", name="Laptop (SRM)")
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("device_tracker.old_laptop") is None
+
+
+ENTITY_CHANGES: dict[str, dict[str, Any]] = {
+    "name": {"name": "My laptop"},
+    "icon": {"icon": "mdi:laptop"},
+    "area": {"area_id": "office"},
+    "labels": {"labels": {"kept"}},
+    "categories": {"categories": {"device_tracker": "kept"}},
+    "alias": {"aliases": [er.COMPUTED_NAME, "laptop"]},
+    "hidden": {"hidden_by": er.RegistryEntryHider.USER},
+}
+DEVICE_CHANGES: dict[str, dict[str, Any]] = {
+    "device name": {"name_by_user": "My laptop"},
+    "device area": {"area_id": "office"},
+    "device labels": {"labels": {"kept"}},
+}
+
+
+@pytest.mark.parametrize("change", [*ENTITY_CHANGES, *DEVICE_CHANGES, "person", "chosen"])
+async def test_a_changed_tracker_of_a_forgotten_client_comes_back_away(
+    hass: HomeAssistant, change: str
+) -> None:
+    # Someone looks after it: away rather than unavailable, with its last known name.
+    entry = make_entry(track_all=True, tracked=[FORGOTTEN] if change == "chosen" else [])
+    entry.add_to_hass(hass)
+    ar.async_get(hass).async_create("Office")
+    item = _forgotten_tracker(hass, entry, device=change in DEVICE_CHANGES)
+    if change in ENTITY_CHANGES:
+        er.async_get(hass).async_update_entity(item.entity_id, **ENTITY_CHANGES[change])
+    if change in DEVICE_CHANGES:
+        dr.async_get(hass).async_update_device(item.device_id or "", **DEVICE_CHANGES[change])
+    if change == "person":
+        assert await async_setup_component(
+            hass,
+            "person",
+            {"person": [{"id": "1", "name": "Owner", "device_trackers": [item.entity_id]}]},
+        )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    state = hass.states.get(item.entity_id)
     assert state is not None
     assert state.state == "not_home"
-    assert state.attributes["friendly_name"] == "Old laptop"
+    if change not in ("name", *DEVICE_CHANGES):
+        # From the entity: a registry entry from before 0.1.4 has no device.
+        assert state.attributes["friendly_name"] == "Old laptop"
+
+
+async def test_an_unprovided_tracker_returns_when_its_client_does(hass: HomeAssistant) -> None:
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    _forgotten_tracker(hass, entry)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("device_tracker.old_laptop") is None
+
+    listed = load("router", "network_devices")
+    back = {**listed["devices"][0], "mac": FORGOTTEN, "hostname": "old-laptop"}
+
+    async def get_network_devices(_: FakeClient) -> NetworkDevices:  # named as the getter it is
+        return NetworkDevices.from_api({**listed, "devices": [*listed["devices"], back]})
+
+    with patch.object(FakeClient, "get_network_devices", get_network_devices):
+        await _refresh(hass)
+    state = hass.states.get("device_tracker.old_laptop")  # the same entity as before
+    assert state is not None
+    assert state.state == "home"
 
 
 async def test_every_tracker_is_the_device_of_its_client(hass: HomeAssistant) -> None:
@@ -494,6 +607,8 @@ async def test_a_forgotten_client_keeps_the_name_of_its_device(hass: HomeAssista
         suggested_object_id="old_laptop",
         has_entity_name=True,
     )
+    # Changed by the user, so it stays provided; the device's name is the one from SRM.
+    er.async_get(hass).async_update_entity("device_tracker.old_laptop", icon="mdi:laptop")
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     state = hass.states.get("device_tracker.old_laptop")
