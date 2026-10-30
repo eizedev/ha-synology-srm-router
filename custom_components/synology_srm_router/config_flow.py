@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 import ipaddress
+import re
 import ssl
 from typing import Any
 from urllib.parse import urlsplit
@@ -42,6 +43,7 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from homeassistant.util import dt as dt_util
 from homeassistant.util.ssl import (
     create_client_context,
@@ -86,6 +88,25 @@ DOCS_SETUP = f"{DOCS_URL}configuration/"
 DOCS_CERTIFICATE = f"{DOCS_URL}configuration/#certificate"
 DOCS_ACCOUNT = f"{DOCS_URL}configuration/#account"
 DOCS_TRACKERS = f"{DOCS_URL}configuration/#device-trackers"
+
+
+# SRM's models (RT1900ac, RT2600ac, MR2200ac, RT6600ax, WRX560); a Synology NAS announces itself
+# the same way, with a model such as DS923+.
+SRM_MODEL = re.compile(r"(RT|MR|WRX)\d", re.IGNORECASE)
+
+
+def _discovered_host(info: ZeroconfServiceInfo) -> str:
+    """Return an IPv4 address the device announced, else the address Home Assistant chose."""
+    ipv4 = [a for a in info.ip_addresses if isinstance(a, ipaddress.IPv4Address)]
+    return str(ipv4[0]) if ipv4 else info.host
+
+
+def _discovered_port(info: ZeroconfServiceInfo) -> int:
+    """Return the HTTPS port the device announced, else SRM's default."""
+    try:
+        return int(info.properties.get("secure_admin_port") or DEFAULT_HTTPS_PORT)
+    except ValueError:
+        return DEFAULT_HTTPS_PORT
 
 
 def _connection_schema(defaults: Mapping[str, Any]) -> probatio.Schema:
@@ -264,6 +285,8 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
         # The issuer when a public authority vouches for the certificate: the confirmation then
         # offers to check it by a name the user enters.
         self._issuer: str | None = None
+        # Host and port of a device found on the network, suggested in the first form.
+        self._discovered: dict[str, Any] = {}
 
     @staticmethod
     @callback
@@ -296,13 +319,34 @@ class SrmConfigFlow(ConfigFlow, domain=DOMAIN):
                     return self._confirm("certificate")
             else:
                 return await self.async_step_credentials()
-        schema = self.add_suggested_values_to_schema(_connection_schema({}), user_input or {})
+        schema = self.add_suggested_values_to_schema(
+            _connection_schema({}), user_input or self._discovered
+        )
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
             errors=errors,
             description_placeholders={"docs": DOCS_SETUP},
         )
+
+    async def async_step_zeroconf(self, discovery_info: ZeroconfServiceInfo) -> ConfigFlowResult:
+        """Offer a router or access point that announced itself, with its address filled in.
+
+        A Synology NAS announces itself alike and is left out by its model. A device already set
+        up is left as it is: its entry may use a host name, which the address must not replace.
+        """
+        model = str(discovery_info.properties.get("model") or "")
+        serial = str(discovery_info.properties.get("serial") or "")
+        if not SRM_MODEL.match(model) or not serial:
+            return self.async_abort(reason="not_srm_device")
+        await self.async_set_unique_id(serial)
+        self._abort_if_unique_id_configured()
+        self._discovered = {
+            CONF_HOST: _discovered_host(discovery_info),
+            CONF_PORT: _discovered_port(discovery_info),
+        }
+        self.context["title_placeholders"] = {"name": model}
+        return await self.async_step_user()
 
     async def async_step_certificate(
         self, user_input: dict[str, Any] | None = None

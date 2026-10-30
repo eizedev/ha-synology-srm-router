@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format follows
   firewall default policy that allows traffic from the internet. Checked with the slow update;
   a repair goes once the setting is safe. Read only, as everything else.
   [#35](https://github.com/eizedev/ha-synology-srm-router/issues/35)
+- Discovery: routers and access points that announce themselves on the network (mDNS) are offered
+  in Home Assistant with host and HTTPS port filled in; a Synology NAS announcing itself the same
+  way is left out, and a device already set up keeps its host.
+  [#36](https://github.com/eizedev/ha-synology-srm-router/issues/36)
 
 ## [0.4.0] - 2026-10-30
 

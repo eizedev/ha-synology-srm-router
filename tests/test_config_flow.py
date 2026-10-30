@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 import dataclasses
+from ipaddress import ip_address
 import ssl
 from typing import Any
 from unittest.mock import patch
@@ -18,9 +19,15 @@ from aiosynologysrm import (
     SrmSessionError,
     SrmTwoFactorRequiredError,
 )
-from homeassistant.config_entries import SOURCE_USER, ConfigEntryState, ConfigFlowResult
+from homeassistant.config_entries import (
+    SOURCE_USER,
+    SOURCE_ZEROCONF,
+    ConfigEntryState,
+    ConfigFlowResult,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -824,3 +831,85 @@ def test_the_context_for_names_checks_the_chain_but_not_the_name() -> None:
 )
 def test_a_pasted_address_becomes_a_name(entered: str, name: str | None) -> None:
     assert config_flow._entered({CONF_CERTIFICATE_NAME: entered}) == name
+
+
+# Discovery -----------------------------------------------------------------------------------
+
+
+def _announced(**properties: str) -> ZeroconfServiceInfo:
+    """A device's mDNS announcement as SRM sends it (names and addresses made up)."""
+    return ZeroconfServiceInfo(
+        ip_address=ip_address("2001:db8::1"),
+        ip_addresses=[ip_address("2001:db8::1"), ip_address(ROUTER_HOST)],
+        port=8000,
+        hostname="router.local.",
+        type="_http._tcp.local.",
+        name="router._http._tcp.local.",
+        properties={
+            "vendor": "Synology",
+            "model": "RT2600ac",
+            "serial": SERIALS["router"],
+            "admin_port": "8000",
+            "secure_admin_port": "8001",
+            **properties,
+        },
+    )
+
+
+def _suggested_values(result: ConfigFlowResult) -> dict[str, Any]:
+    schema = result["data_schema"]
+    assert schema is not None
+    return {
+        str(key): key.description["suggested_value"]
+        for key in schema.schema
+        if key.description and "suggested_value" in key.description
+    }
+
+
+async def _discover(hass: HomeAssistant, info: ZeroconfServiceInfo) -> ConfigFlowResult:
+    return await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_ZEROCONF}, data=info
+    )
+
+
+async def test_a_discovered_router_is_set_up_from_the_filled_in_form(hass: HomeAssistant) -> None:
+    result = await _discover(hass, _announced())
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    suggested = _suggested_values(result)
+    assert suggested == {"host": ROUTER_HOST, "port": 8001}  # IPv4 preferred over IPv6
+    flows = hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+    assert flows[0]["context"]["title_placeholders"] == {"name": "RT2600ac"}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CONNECTION)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], CREDENTIALS)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_TRACK_ALL: False, CONF_TRACKED: []}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id == SERIALS["router"]
+
+
+async def test_a_nas_is_not_offered(hass: HomeAssistant) -> None:
+    result = await _discover(hass, _announced(model="DS923+"))
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "not_srm_device"
+    result = await _discover(hass, _announced(serial=""))
+    assert result["reason"] == "not_srm_device"
+
+
+async def test_a_router_already_set_up_keeps_its_host(hass: HomeAssistant) -> None:
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    result = await _discover(hass, _announced())
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert entry.data["host"] == ROUTER_HOST
+
+
+async def test_only_ipv6_and_an_odd_port(hass: HomeAssistant) -> None:
+    info = _announced(secure_admin_port="none")
+    info.ip_addresses = [ip_address("2001:db8::1")]
+    result = await _discover(hass, info)
+    suggested = _suggested_values(result)
+    assert suggested == {"host": "2001:db8::1", "port": 8001}

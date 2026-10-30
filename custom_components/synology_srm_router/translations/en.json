@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "Synology router or access point",
@@ -186,7 +187,8 @@
       "reauth_successful": "Signed in again.",
       "reconfigure_successful": "Connection changed.",
       "wrong_device": "This is a different device than the one set up.",
-      "unknown": "Unexpected error, see the log."
+      "unknown": "Unexpected error, see the log.",
+      "not_srm_device": "Found on the network, but not a Synology router or access point."
     }
   },
   "options": {

@@ -57,7 +57,8 @@ above), install **Synology SRM Router** and restart Home Assistant:
 https://github.com/eizedev/ha-synology-srm-router
 ```
 
-Then add the integration once per router and per access point, router first. Requires Home
+Then add the integration once per router and per access point, router first; Home Assistant
+also finds them on the network and offers them. Requires Home
 Assistant 2026.10.3 or newer. Details: [Installation](https://ha-synology-srm-router.eize.dev/installation/).
 
 Without HACS: download `synology_srm_router.zip` from the
