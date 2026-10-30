@@ -41,6 +41,7 @@ from .coordinator import (
     SrmSlowCoordinator,
     create_blocked_issue,
     delete_blocked_issue,
+    device_identifier,
     get_hub,
     map_error,
 )
@@ -185,4 +186,4 @@ async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: SrmConfigEntry, device: dr.DeviceEntry
 ) -> bool:
     """Allow removing a tracked client's device; the router or AP itself stays while set up."""
-    return (DOMAIN, entry.unique_id or entry.entry_id) not in device.identifiers
+    return device_identifier(entry) not in device.identifiers

@@ -545,6 +545,44 @@ async def test_an_unprovided_tracker_returns_when_its_client_does(hass: HomeAssi
     assert state.state == "home"
 
 
+async def test_empty_client_devices_are_removed(hass: HomeAssistant) -> None:
+    entry = make_entry(track_all=True)
+    entry.add_to_hass(hass)
+    devices = dr.async_get(hass)
+    empty = devices.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        connections={(dr.CONNECTION_NETWORK_MAC, "02:00:00:00:00:78")},
+    )
+    disabled = devices.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        connections={(dr.CONNECTION_NETWORK_MAC, "02:00:00:00:00:79")},
+    )
+    er.async_get(hass).async_get_or_create(
+        "device_tracker",
+        DOMAIN,
+        "02:00:00:00:00:79",
+        config_entry=entry,
+        device_id=disabled.id,
+        disabled_by=er.RegistryEntryDisabler.USER,
+    )
+    # Another integration's device for the same client is a device of its own.
+    other = MockConfigEntry(domain="other")
+    other.add_to_hass(hass)
+    foreign = devices.async_get_or_create(
+        config_entry_id=other.entry_id,
+        connections={(dr.CONNECTION_NETWORK_MAC, "02:00:00:00:00:78")},
+    )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert devices.async_get(empty.id) is None
+    assert devices.async_get(disabled.id) is not None
+    kept = devices.async_get(foreign.id)
+    assert kept is not None
+    assert kept.config_entry_id == other.entry_id
+    router = devices.async_get_device_by_identifier((DOMAIN, entry.unique_id or ""), entry.entry_id)
+    assert router is not None  # the entry's own device stays
+
+
 async def test_every_tracker_is_the_device_of_its_client(hass: HomeAssistant) -> None:
     mac = load("router", "wifi_devices")["device_list"][0]["mac_address"]
     entry = make_entry(tracked=[mac])

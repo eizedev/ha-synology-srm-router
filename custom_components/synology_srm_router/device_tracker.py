@@ -25,7 +25,13 @@ from .const import (
     DOMAIN,
     LOCATION_GRACE,
 )
-from .coordinator import SIGNAL_LOCATIONS, LocationHub, SrmConfigEntry, get_hub
+from .coordinator import (
+    SIGNAL_LOCATIONS,
+    LocationHub,
+    SrmConfigEntry,
+    device_identifier,
+    get_hub,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -78,6 +84,25 @@ def changed_by_user(hass: HomeAssistant, item: er.RegistryEntry) -> bool:
     return device is not None and bool(device.name_by_user or device.area_id or device.labels)
 
 
+@callback
+def remove_empty_devices(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
+    """Remove this entry's client devices that have no entity left.
+
+    Deleting a tracker in the entity list leaves its device. A device belongs to one config entry,
+    so the devices of this entry are its own; a device of another integration with the same MAC
+    address is a device of its own and stays.
+    """
+    devices = dr.async_get(hass)
+    entities = er.async_get(hass)
+    for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
+        if (
+            any(kind == dr.CONNECTION_NETWORK_MAC for kind, _ in device.connections)
+            and device_identifier(entry) not in device.identifiers
+            and not er.async_entries_for_device(entities, device.id, include_disabled_entities=True)
+        ):
+            devices.async_remove_device(device.id)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: SrmConfigEntry,
@@ -119,6 +144,7 @@ async def async_setup_entry(
     if restored:
         added.update(restored)
         async_add_entities(SrmTracker(hub, entry, mac, name) for mac, name in restored.items())
+    remove_empty_devices(hass, entry)
     _add_new()
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_LOCATIONS, _add_new))
 
