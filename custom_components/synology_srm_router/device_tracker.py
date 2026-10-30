@@ -7,6 +7,7 @@ from typing import Any
 
 from aiosynologysrm import helpers
 from homeassistant.components.device_tracker import ScannerEntity
+from homeassistant.components.person import persons_with_entity
 from homeassistant.const import STATE_HOME, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
@@ -24,7 +25,13 @@ from .const import (
     DOMAIN,
     LOCATION_GRACE,
 )
-from .coordinator import SIGNAL_LOCATIONS, LocationHub, SrmConfigEntry, get_hub
+from .coordinator import (
+    SIGNAL_LOCATIONS,
+    LocationHub,
+    SrmConfigEntry,
+    device_identifier,
+    get_hub,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -40,7 +47,8 @@ def remove_unwanted(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
     """Delete this entry's trackers for clients that are no longer picked.
 
     With "all", nothing is deleted: whether a client is covered depends on data that may not be
-    there yet, and a deleted entity loses its name, area and history.
+    there yet, and a deleted entity loses its name, area and history. Trackers "all" no longer
+    covers are not provided at setup instead, so the user can delete them (see changed_by_user).
     """
     if entry.options.get(CONF_TRACK_ALL, False) and get_hub(hass).keeps_trackers(entry):
         return
@@ -50,6 +58,49 @@ def remove_unwanted(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
             chosen(entry, item.unique_id) and get_hub(hass).keeps_trackers(entry)
         ):
             registry.async_remove(item.entity_id)
+
+
+@callback
+def changed_by_user(hass: HomeAssistant, item: er.RegistryEntry) -> bool:
+    """Whether the user changed a tracker or its device, so it stays provided.
+
+    In doubt this says yes: a tracker kept by mistake only stays as it is. A changed entity ID
+    alone does not count; there is no reliable way to tell it from a generated one. The device's
+    name does not count either, since this integration writes it from SRM.
+    """
+    if (
+        item.name
+        or item.icon
+        or item.area_id
+        or item.labels
+        or item.categories
+        # [] or [COMPUTED_NAME], depending on when the entity was created, mean unchanged
+        or any(isinstance(alias, str) for alias in item.aliases)
+        or item.hidden_by is er.RegistryEntryHider.USER
+        or persons_with_entity(hass, item.entity_id)
+    ):
+        return True
+    device = dr.async_get(hass).async_get(item.device_id) if item.device_id else None
+    return device is not None and bool(device.name_by_user or device.area_id or device.labels)
+
+
+@callback
+def remove_empty_devices(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
+    """Remove this entry's client devices that have no entity left.
+
+    Deleting a tracker in the entity list leaves its device. A device belongs to one config entry,
+    so the devices of this entry are its own; a device of another integration with the same MAC
+    address is a device of its own and stays.
+    """
+    devices = dr.async_get(hass)
+    entities = er.async_get(hass)
+    for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
+        if (
+            any(kind == dr.CONNECTION_NETWORK_MAC for kind, _ in device.connections)
+            and device_identifier(entry) not in device.identifiers
+            and not er.async_entries_for_device(entities, device.id, include_disabled_entities=True)
+        ):
+            devices.async_remove_device(device.id)
 
 
 async def async_setup_entry(
@@ -78,17 +129,22 @@ async def async_setup_entry(
             added.update(new)
             async_add_entities(SrmTracker(hub, entry, mac) for mac in new)
 
-    # Trackers this entry created before come back even while their client is unknown (SRM
-    # forgot it, or "track all" no longer covers it): away rather than unavailable.
+    # Trackers this entry created before come back even while their client is unknown, if they
+    # are still wanted (chosen, or covered by "all") or the user changed them: away rather than
+    # unavailable. The others are left in the registry: Home Assistant shows them unavailable and
+    # lets the user delete them. They return through _add_new when their client is in a device
+    # list again, otherwise at the next setup.
     devices = dr.async_get(hass)
     restored = {
         item.unique_id: _known_name(devices, item)
         for item in er.async_entries_for_config_entry(registry, entry.entry_id)
         if item.domain == Platform.DEVICE_TRACKER
+        and (hub.wants(entry, item.unique_id) or changed_by_user(hass, item))
     }
     if restored:
         added.update(restored)
         async_add_entities(SrmTracker(hub, entry, mac, name) for mac, name in restored.items())
+    remove_empty_devices(hass, entry)
     _add_new()
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_LOCATIONS, _add_new))
 

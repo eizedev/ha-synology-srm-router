@@ -127,10 +127,36 @@ host name or address (a PlayStation, a printer, ...) offer themselves under *Dis
 | Slow polling interval | 300 s | System information (firmware, last boot) and USB storage; on routers also DHCP and the firewall. |
 
 Each update reads several values from the device; SRM devices answer slowly (about half a second
-per call on an RT2600ac), so intervals much below the defaults mostly add load. Trackers of
-clients you no longer choose are removed. With *Track all clients* none are removed: a client
-SRM no longer lists keeps its tracker, which says away. Devices with private (rotating) MAC
-addresses therefore collect trackers over time; delete those by hand.
+per call on an RT2600ac), so intervals much below the defaults mostly add load.
+
+### Old trackers
+
+Trackers of clients you no longer choose are removed. With *Track all clients*, none are removed,
+and a client that no longer matters keeps its tracker. Devices with private (rotating) MAC
+addresses collect such trackers over time, since each new address is a new client.
+
+From the next restart or reload, a tracker of a client that no longer matters is still kept, but
+not provided by the integration if you did not change it. Home Assistant then shows it as
+unavailable instead of away, and offers to delete it, also several at once from the entity list.
+Deleting the tracker's device deletes the tracker with it. If you delete only the tracker, the
+integration removes its empty device at the next restart or reload. If the client comes back, it
+gets its tracker back with the same entity ID.
+
+A tracker stays provided, and says away, when any of these holds:
+
+- you chose its client under *Clients to track*;
+- you gave the tracker or its device a name, an area or a label, or the tracker an icon, a
+  category or an alias, or hid it;
+- a person uses it.
+
+Known limits:
+
+- A tracker that you only gave a new entity ID, for an automation, does not count as changed.
+  Once its client no longer matters, it shows unavailable until the client is back.
+- A client with a name or a DHCP reservation in SRM still matters, so its tracker stays. To let it
+  go, remove the name or the reservation in SRM.
+- If a client mattered only through the router's DHCP list and that list could not be read when
+  Home Assistant started, its tracker shows unavailable until the next restart or reload.
 
 ## Coming from the built-in Synology SRM integration
 

@@ -268,6 +268,11 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
             delete_blocked_issue(self.hass, self.config_entry)
 
 
+def device_identifier(entry: ConfigEntry) -> tuple[str, str]:
+    """Return the identifier of the router's or access point's own device."""
+    return (DOMAIN, entry.unique_id or entry.entry_id)
+
+
 def _blocked_issue_id(entry: ConfigEntry) -> str:
     return f"blocked_{entry.entry_id}"
 
@@ -368,8 +373,7 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         """Keep the device registry's firmware version current after an update."""
         registry = dr.async_get(self.hass)
         device = registry.async_get_device_by_identifier(
-            (DOMAIN, self.config_entry.unique_id or self.config_entry.entry_id),
-            self.config_entry.entry_id,
+            device_identifier(self.config_entry), self.config_entry.entry_id
         )
         if device is not None and device.sw_version != system.firmware_ver:
             registry.async_update_device(device.id, sw_version=system.firmware_ver)

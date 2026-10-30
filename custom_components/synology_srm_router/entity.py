@@ -10,8 +10,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
-from .const import CONF_USE_HTTPS, DOMAIN
-from .coordinator import SrmConfigEntry
+from .const import CONF_USE_HTTPS
+from .coordinator import SrmConfigEntry, device_identifier
 
 
 def url_host(host: str) -> str:
@@ -27,7 +27,7 @@ def device_info(entry: SrmConfigEntry) -> DeviceInfo:
     system = entry.runtime_data.slow.data.system
     scheme = "https" if entry.data[CONF_USE_HTTPS] else "http"
     return DeviceInfo(
-        identifiers={(DOMAIN, entry.unique_id or entry.entry_id)},
+        identifiers={device_identifier(entry)},
         manufacturer="Synology",
         model=system.model,
         name=entry.title,

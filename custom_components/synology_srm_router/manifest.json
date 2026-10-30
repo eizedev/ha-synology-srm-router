@@ -1,6 +1,7 @@
 {
   "domain": "synology_srm_router",
   "name": "Synology SRM Router",
+  "after_dependencies": ["person"],
   "codeowners": ["@eizedev"],
   "config_flow": true,
   "documentation": "https://ha-synology-srm-router.eize.dev/",
