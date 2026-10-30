@@ -1,4 +1,4 @@
-"""Sensors: load, traffic, clients, WAN, DHCP, firewall hits and USB storage of an SRM device."""
+"""Sensors: load, traffic, clients, WAN, IPv6 prefix, DHCP, firewall hits and USB storage."""
 
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .changes import used_prefixes
 from .const import CONF_FIREWALL_HITS, RECENTLY_SEEN
 from .coordinator import (
     SIGNAL_LOCATIONS,
@@ -273,6 +274,19 @@ def _reservation_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, An
     return {"reservations": rows}
 
 
+def _lan_prefix(data: SlowData) -> str | None:
+    """Return the prefix of the main network, else of the first network that has one."""
+    prefixes = used_prefixes(data)
+    if not prefixes:
+        return None
+    return prefixes.get("lan", next(iter(prefixes.values())))
+
+
+def _prefix_attributes(hass: HomeAssistant, data: SlowData) -> dict[str, Any]:
+    prefixes = used_prefixes(data)
+    return {} if prefixes is None else {"networks": prefixes}
+
+
 SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
     SrmSlowSensorDescription(
         key="last_boot",
@@ -280,6 +294,14 @@ SLOW_SENSORS: tuple[SrmSlowSensorDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.boot_time,
+    ),
+    SrmSlowSensorDescription(
+        key="ipv6_prefix",
+        translation_key="ipv6_prefix",
+        requires="get_ipv6_prefixes",
+        router_only=True,
+        value_fn=_lan_prefix,
+        attributes_fn=_prefix_attributes,
     ),
     SrmSlowSensorDescription(
         key="dhcp_leases",

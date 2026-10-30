@@ -386,6 +386,7 @@ async def test_card_templates_render_with_real_attributes(hass: HomeAssistant) -
         "firewall-list.jinja": " hits",
         "where.jinja": "](/history?entity_id=device_tracker.",
         "radio.jinja": "**2.4G** (",
+        "router-changes.jinja": " · no change seen yet<br>",
     }
     assert {f.name for f in cards.glob("*.jinja")} == set(expected)
     for name, text in expected.items():

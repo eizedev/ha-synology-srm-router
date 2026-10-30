@@ -19,6 +19,7 @@ from aiosynologysrm import (
     ExternalIp,
     FirewallHitCount,
     FirewallRules,
+    Ipv6Prefixes,
     NetworkDevices,
     SrmCertificateError,
     StorageVolumes,
@@ -133,6 +134,10 @@ class FakeClient:
     async def get_firewall_hit_counts(self) -> tuple[FirewallHitCount, ...]:
         self._raise("get_firewall_hit_counts")
         return FirewallHitCount.list_from_api(load(self.folder, "firewall_hit_counts"))
+
+    async def get_ipv6_prefixes(self) -> Ipv6Prefixes:
+        self._raise("get_ipv6_prefixes")
+        return Ipv6Prefixes.from_api(load(self.folder, "ipv6_prefixes"))
 
     async def get_usb_volumes(self) -> StorageVolumes:
         self._raise("get_usb_volumes")

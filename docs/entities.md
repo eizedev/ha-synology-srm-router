@@ -38,6 +38,8 @@ library keeps only the fields it knows, so the passwords never reach Home Assist
 | WAN connection | connectivity |
 | Public IPv4 address | the address the internet sees, as SRM last recorded it (can be out of date) |
 | IPv6 address | the WAN interface's address, read live |
+| IPv6 prefix | the prefix the provider delegated to the LAN (else to the first network that has one), read with the slow update; attribute `networks`: the prefix per local network (`lan`, `guest`, or the interface's name). Prefixes of the delegated range that no network uses are left out |
+| Router events | fires when an IPv6 prefix or the firewall changes; see [Events](events.md#router-events), with a blueprint |
 | WAN IPv4 address | the WAN interface's own address; diagnostic, disabled by default |
 | WAN address type | public, private (another router in front) or carrier-grade NAT; diagnostic |
 | Behind NAT | on when nothing on the internet can reach the router over IPv4 directly (port forwards will not work over IPv4); diagnostic |

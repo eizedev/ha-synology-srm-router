@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- An *IPv6 prefix* sensor on routers: the prefix the provider delegated to the LAN, with the prefix
+  of every local network as an attribute.
+- A *Router events* entity on routers: it fires when the IPv6 prefix of a local network changes and
+  when the firewall changes (rules added, removed, switched, moved, or a default policy changed),
+  once per read with everything that changed. The last state is stored, so a change made while
+  Home Assistant was off fires after its start. A blueprint sends notifications.
+  [#34](https://github.com/eizedev/ha-synology-srm-router/issues/34)
+
 ## [0.3.0] - 2026-10-30
 
 ### Added

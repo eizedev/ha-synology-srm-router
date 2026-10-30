@@ -281,6 +281,14 @@
       "ipv6_address": {
         "name": "IPv6 address"
       },
+      "ipv6_prefix": {
+        "name": "IPv6 prefix",
+        "state_attributes": {
+          "networks": {
+            "name": "Networks"
+          }
+        }
+      },
       "wan_ipv4": {
         "name": "WAN IPv4 address"
       },
@@ -441,6 +449,38 @@
           },
           "private_mac": {
             "name": "Private MAC address"
+          }
+        }
+      },
+      "router_events": {
+        "name": "Router events",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "prefix_changed": "IPv6 prefix changed",
+              "firewall_changed": "Firewall changed"
+            }
+          },
+          "changes": {
+            "name": "Changes"
+          },
+          "added": {
+            "name": "Rules added"
+          },
+          "removed": {
+            "name": "Rules removed"
+          },
+          "enabled": {
+            "name": "Rules switched on"
+          },
+          "disabled": {
+            "name": "Rules switched off"
+          },
+          "reordered": {
+            "name": "Order changed"
+          },
+          "policy": {
+            "name": "Default policy changed"
           }
         }
       }

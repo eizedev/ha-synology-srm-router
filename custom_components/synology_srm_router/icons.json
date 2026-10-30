@@ -28,6 +28,9 @@
       "ipv6_address": {
         "default": "mdi:ip-network-outline"
       },
+      "ipv6_prefix": {
+        "default": "mdi:ip-network-outline"
+      },
       "wan_ipv4": {
         "default": "mdi:wan"
       },
@@ -118,6 +121,9 @@
       },
       "client_events": {
         "default": "mdi:account-network"
+      },
+      "router_events": {
+        "default": "mdi:wall-fire"
       }
     }
   }

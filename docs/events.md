@@ -1,11 +1,12 @@
 # Events
 
-Each router and access point has two event entities: **Wi-Fi events** and **New clients**.
+Each router and access point has two event entities: **Wi-Fi events** and **New clients**. Routers
+also have **Router events**.
 
 ## Wi-Fi events
 
-The **Wi-Fi events** entity It fires when something about its
-Wi-Fi changes that is worth knowing, and stays quiet otherwise:
+The **Wi-Fi events** entity fires when something about its Wi-Fi changes that is worth knowing,
+and stays quiet otherwise:
 
 | Event | When | Attributes |
 | --- | --- | --- |
@@ -49,3 +50,27 @@ its lists are incomplete then.
 [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_new_clients.yaml)
 
 Create one automation per router or access point, and pick its *New clients* entity.
+
+## Router events
+
+The **Router events** entity of a router fires when something changes that other devices or your
+security depend on:
+
+| Event | When | Attributes |
+| --- | --- | --- |
+| `prefix_changed` | the IPv6 prefix of a local network changed, appeared or is gone: addresses, DNS records and firewall rules elsewhere that use the old prefix stop working | `changes`: one row per network with `network` (`lan`, `guest`, or the interface's name), `prefix` and `previous` (empty when there was none) |
+| `firewall_changed` | firewall rules were added, removed, switched on or off, or moved, or a default policy changed | `added`, `removed`, `enabled`, `disabled`: rule names; `reordered`: whether the order changed; `policy`: one row per changed default policy with `traffic` (for example `ipv6_wan_to_lan`), `policy` and `previous` |
+
+Everything that changed between two reads fires as one event, so five edited rules make one
+notification. SRM gives a rule no fixed number, so an edited rule (also a renamed one) shows as
+removed and added. The lifetimes of a prefix change with every read and are no change.
+
+The router's last state is stored (`.storage/synology_srm_router.router_events.<entry>`), so a
+change made while Home Assistant was off fires once it has started. The very first start only
+takes in the current state, and a read that fails keeps the last one, so neither looks like a
+change. Both are read with the slow update (every 5 minutes by default), so an event can come up
+to that late. Removing the router's entry deletes the stored state.
+
+[![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_router_events.yaml)
+
+Create one automation per router, and pick its *Router events* entity.
