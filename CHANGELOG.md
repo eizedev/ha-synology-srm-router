@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- No more warning from Home Assistant about `DeviceEntry.config_entries` when a tracker names its
+  device; that access stops working in Home Assistant 2027.10.
+
+### Changed
+
+- When a single read fails while the others work (the values it feeds show as unknown), the log
+  says so once at info level, naming the read and the device, and again when it works. Before, only
+  the debug log showed it.
+
 ## [0.1.2] - 2026-10-26
 
 ### Fixed

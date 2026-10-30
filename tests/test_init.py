@@ -45,7 +45,7 @@ from custom_components.synology_srm_router.const import (
     DOMAIN,
     RECENTLY_SEEN,
 )
-from custom_components.synology_srm_router.coordinator import FastData, get_hub
+from custom_components.synology_srm_router.coordinator import SLOW_READS, FastData, get_hub
 from custom_components.synology_srm_router.device_tracker import SrmTracker
 from custom_components.synology_srm_router.diagnostics import async_get_config_entry_diagnostics
 from custom_components.synology_srm_router.entity import url_host
@@ -150,6 +150,23 @@ async def test_one_failing_read_does_not_fail_the_update(
     assert entry.runtime_data.fast.last_update_success
     assert _state(hass, "sensor.router_192_0_2_1_cpu_load") == "unknown"
     assert _state(hass, "binary_sensor.router_192_0_2_1_wan_connection") == "on"
+
+
+async def test_a_failing_read_is_logged_once_and_when_it_works_again(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    entry = make_entry()
+    await _setup(hass, entry)
+    client = FakeClient.instances[-1]
+    client.errors["get_utilization"] = SrmConnectionError("x")
+    await _refresh(hass)
+    await _refresh(hass)
+    failed = f"Reading utilization from {entry.title} failed: SrmConnectionError"
+    assert caplog.text.count(failed) == 1
+    del client.errors["get_utilization"]
+    await _refresh(hass)
+    await _refresh(hass)
+    assert caplog.text.count(f"Reading utilization from {entry.title} works again") == 1
 
 
 async def test_all_reads_failing_makes_entities_unavailable(
@@ -494,6 +511,25 @@ async def test_dhcp_read_failures_keep_what_is_known(hass: HomeAssistant) -> Non
     await slow.async_refresh()
     assert slow.last_update_success
     assert slow.data.dhcp == known
+
+
+async def test_optional_reads_failing_together_are_logged_once(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    entry = make_entry()
+    await _setup(hass, entry)
+    slow = entry.runtime_data.slow
+    client = FakeClient.instances[-1]
+    for _, getter, _ in SLOW_READS:
+        client.errors[getter] = SrmConnectionError("x")
+    await slow.async_refresh()
+    await slow.async_refresh()
+    assert slow.last_update_success
+    failed = f"Reading leases from {entry.title} failed: SrmConnectionError"
+    assert caplog.text.count(failed) == 1
+    client.errors.clear()
+    await slow.async_refresh()
+    assert caplog.text.count(f"Reading leases from {entry.title} works again") == 1
 
 
 async def test_last_seen_survives_a_restart(

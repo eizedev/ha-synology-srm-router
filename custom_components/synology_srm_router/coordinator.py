@@ -158,10 +158,14 @@ _NEEDS_USER = (SrmAuthenticationError, SrmCertificateError, SrmPermissionError, 
 
 async def gather_partial(
     calls: dict[str, Callable[[], Awaitable[Any]]],
+    failing: set[str],
+    device: str,
 ) -> dict[str, Any]:
     """Run reads concurrently; a read that fails is left out, unless every read failed.
 
     Errors that need the user (credentials, certificate, permission, auto block) always win.
+    `failing` holds the reads that failed last time, so a partial result logs once when a read
+    fails and once when it works again; a failed update is logged by the coordinator.
     """
     names = list(calls)
     results = await asyncio.gather(*(calls[n]() for n in names), return_exceptions=True)
@@ -177,6 +181,13 @@ async def gather_partial(
             raise map_error(error) from error
     if errors and len(errors) == len(results):
         raise map_error(errors[0]) from errors[0]
+    for name, result in zip(names, results, strict=True):
+        if isinstance(result, SrmError) and name not in failing:
+            failing.add(name)
+            LOGGER.info("Reading %s from %s failed: %s", name, device, type(result).__name__)
+        elif not isinstance(result, SrmError) and name in failing:
+            failing.discard(name)
+            LOGGER.info("Reading %s from %s works again", name, device)
     return {n: r for n, r in zip(names, results, strict=True) if not isinstance(r, BaseException)}
 
 
@@ -209,6 +220,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
         self.supported = supported
         self.is_router = is_router
         self.blocked_since: datetime | None = None
+        self.failing: set[str] = set()
 
     async def _async_update_data(self) -> FastData:
         await self._retry_after_block()
@@ -227,7 +239,7 @@ class SrmFastCoordinator(DataUpdateCoordinator[FastData]):
                 calls["external_ip"] = self.client.get_external_ip
         try:
             async with asyncio.timeout(UPDATE_TIMEOUT):
-                results = await gather_partial(calls)
+                results = await gather_partial(calls, self.failing, self.config_entry.title)
         except UpdateFailed as err:
             if isinstance(err.__cause__, SrmBlockedError):
                 self._blocked()
@@ -305,6 +317,7 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
         self.client = client
         self.supported = supported
         self.is_router = is_router
+        self.failing: set[str] = set()
 
     async def _async_update_data(self) -> SlowData:
         try:
@@ -333,9 +346,14 @@ class SrmSlowCoordinator(DataUpdateCoordinator[SlowData]):
             for field, getter, router_only in SLOW_READS
             if getter in self.supported and (self.is_router or not router_only)
         }
+        title = self.config_entry.title
         try:
-            results = await gather_partial(calls) if calls else {}
-        except UpdateFailed:
+            results = await gather_partial(calls, self.failing, title) if calls else {}
+        except UpdateFailed as err:
+            cause = type(err.__cause__).__name__
+            for name in calls.keys() - self.failing:
+                LOGGER.info("Reading %s from %s failed: %s", name, title, cause)
+            self.failing.update(calls)
             results = {}
         if "hits" in results:
             results["hits"] = helpers.hits_by_rule(results["hits"])

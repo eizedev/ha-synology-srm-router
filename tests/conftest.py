@@ -149,6 +149,18 @@ def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
 
 
 @pytest.fixture(autouse=True)
+def no_deprecated_usage(caplog: pytest.LogCaptureFixture) -> Generator[None]:
+    """Fail on Home Assistant's report of deprecated usage; it only logs it for us."""
+    yield
+    reports = [
+        r.getMessage()
+        for r in caplog.get_records("call")
+        if r.name == "homeassistant.helpers.frame" and DOMAIN in r.getMessage()
+    ]
+    assert not reports
+
+
+@pytest.fixture(autouse=True)
 def fake_client() -> Generator[type[FakeClient]]:
     """Replace the library client and the fingerprint lookup."""
     FakeClient.instances = []
