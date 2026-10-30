@@ -1,4 +1,4 @@
-"""Binary sensors: WAN connection, whether the router sits behind NAT, Wi-Fi networks on or off."""
+"""Binary sensors: WAN connection, behind NAT, Wi-Fi networks on or off, Ethernet port links."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import FastData, SrmConfigEntry, SrmFastCoordinator, SrmSlowCoordinator
 from .entity import SrmEntity
+from .ports import own_ports, port_label
 from .wifi import band_label, networks
 
 PARALLEL_UPDATES = 0
@@ -70,6 +71,24 @@ async def async_setup_entry(
     if runtime.is_router and "get_connection_status" in runtime.supported:
         async_add_entities(SrmBinarySensor(entry, runtime.fast, d) for d in BINARY_SENSORS)
     _add_networks(entry, async_add_entities)
+    _add_ports(entry, async_add_entities)
+
+
+@callback
+def _add_ports(entry: SrmConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback) -> None:
+    """Add a link sensor for every Ethernet port of the device, as they appear."""
+    fast = entry.runtime_data.fast
+    added: set[str] = set()
+
+    @callback
+    def _update() -> None:
+        new = [SrmPortLinkSensor(entry, port) for port in own_ports(fast.data) if port not in added]
+        if new:
+            added.update(sensor.port for sensor in new)
+            async_add_entities(new)
+
+    _update()
+    entry.async_on_unload(fast.async_add_listener(_update))
 
 
 @callback
@@ -164,3 +183,30 @@ class SrmWifiNetworkSensor(SrmEntity[SrmSlowCoordinator], BinarySensorEntity):
             "smart_connect": profile.enable_smart_connect,
             "hidden": radio.hide_ssid if radio else None,
         }
+
+
+class SrmPortLinkSensor(SrmEntity[SrmFastCoordinator], BinarySensorEntity):
+    """Whether an Ethernet port of the device has a link."""
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+
+    def __init__(self, entry: SrmConfigEntry, port: str) -> None:
+        """Bind the sensor to one port, by SRM's name (``wp1``, ``lp1``)."""
+        super().__init__(
+            entry,
+            entry.runtime_data.fast,
+            BinarySensorEntityDescription(key=f"port_{port}_link", translation_key="port_link"),
+        )
+        self.port = port
+        self._attr_translation_placeholders = {"port": port_label(port)}
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the device does not list the port."""
+        return super().available and self.port in own_ports(self.coordinator.data)
+
+    @property
+    def is_on(self) -> bool | None:
+        """Whether the port has a link."""
+        port = own_ports(self.coordinator.data).get(self.port)
+        return port.has_link if port else None

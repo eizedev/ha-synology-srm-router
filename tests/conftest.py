@@ -15,6 +15,7 @@ from aiosynologysrm import (
     DhcpClients,
     DhcpReservations,
     DhcpServers,
+    EthPortInfo,
     ExternalIp,
     FirewallHitCount,
     FirewallRules,
@@ -144,6 +145,10 @@ class FakeClient:
     async def get_wifi_radio_status(self) -> WifiRadioStatus:
         self._raise("get_wifi_radio_status")
         return WifiRadioStatus.from_api(load(self.folder, "wifi_radio_status"))
+
+    async def get_eth_port_info(self) -> EthPortInfo:
+        self._raise("get_eth_port_info")
+        return EthPortInfo.from_api(load(self.folder, "eth_port_info"))
 
     async def get_wifi_networks(self) -> WifiNetworks:
         self._raise("get_wifi_networks")

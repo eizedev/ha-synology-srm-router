@@ -26,7 +26,7 @@ hassfest and the HACS check run in CI only.
 - **One config entry per SRM device.** Client locations are combined across all entries in
   `coordinator.LocationHub` with `aiosynologysrm.helpers.locate_clients()`. Do not query other
   entries' devices from an entry.
-- **Coordinators poll, entities never do.** Fast coordinator: load, clients, Wi-Fi clients, WAN.
+- **Coordinators poll, entities never do.** Fast coordinator: load, clients, Wi-Fi clients, Ethernet ports, WAN.
   Slow coordinator: system information, plus the optional reads in `SLOW_READS` (DHCP leases,
   reservations and servers, firewall rules and hits on routers; USB volumes). One failing fast
   read leaves its part empty, and only when every read fails does the update fail; a failing

@@ -87,6 +87,9 @@
       },
       "radio_wireless_mode": {
         "default": "mdi:wifi-cog"
+      },
+      "port_speed": {
+        "default": "mdi:speedometer"
       }
     },
     "binary_sensor": {
@@ -100,6 +103,12 @@
         "default": "mdi:wifi-off",
         "state": {
           "on": "mdi:wifi"
+        }
+      },
+      "port_link": {
+        "default": "mdi:ethernet-off",
+        "state": {
+          "on": "mdi:ethernet"
         }
       }
     },

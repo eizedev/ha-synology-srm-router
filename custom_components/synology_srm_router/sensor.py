@@ -42,6 +42,7 @@ from .coordinator import (
 )
 from .entity import SrmEntity
 from .firewall import address_key, rule_label, rule_rows
+from .ports import own_ports, port_label
 from .wifi import band_label, radios, width_label
 
 # Coordinators poll; entities never call the router themselves.
@@ -338,6 +339,26 @@ async def async_setup_entry(
     entities += [SrmClientsSensor(entry, key, match) for key, match in CLIENT_COUNTS.items()]
     async_add_entities(entities)
     _add_dynamic(hass, entry, async_add_entities)
+    _add_ports(entry, async_add_entities)
+
+
+@callback
+def _add_ports(entry: SrmConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback) -> None:
+    """Add a speed sensor for every Ethernet port of the device, as they appear."""
+    fast = entry.runtime_data.fast
+    added: set[str] = set()
+
+    @callback
+    def _update() -> None:
+        new = [
+            SrmPortSpeedSensor(entry, port) for port in own_ports(fast.data) if port not in added
+        ]
+        if new:
+            added.update(sensor.port for sensor in new)
+            async_add_entities(new)
+
+    _update()
+    entry.async_on_unload(fast.async_add_listener(_update))
 
 
 class SrmFastSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
@@ -794,3 +815,32 @@ class SrmRadioSensor(SrmEntity[SrmSlowCoordinator], SensorEntity):
         if self.entity_description.translation_key != "radio_channel" or radio is None:
             return {}
         return {"configured_channel": radio[0].channel}
+
+
+class SrmPortSpeedSensor(SrmEntity[SrmFastCoordinator], SensorEntity):
+    """The link speed of an Ethernet port of the device; 0 without a link."""
+
+    _attr_device_class = SensorDeviceClass.DATA_RATE
+    _attr_native_unit_of_measurement = UnitOfDataRate.MEGABITS_PER_SECOND
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, entry: SrmConfigEntry, port: str) -> None:
+        """Bind the sensor to one port, by SRM's name (``wp1``, ``lp1``)."""
+        super().__init__(
+            entry,
+            entry.runtime_data.fast,
+            SensorEntityDescription(key=f"port_{port}_speed", translation_key="port_speed"),
+        )
+        self.port = port
+        self._attr_translation_placeholders = {"port": port_label(port)}
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the device does not list the port."""
+        return super().available and self.port in own_ports(self.coordinator.data)
+
+    @property
+    def native_value(self) -> int | None:
+        """The link speed in Mbit/s."""
+        port = own_ports(self.coordinator.data).get(self.port)
+        return port.link_speed if port else None
