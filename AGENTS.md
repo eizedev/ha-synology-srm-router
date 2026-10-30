@@ -38,7 +38,10 @@ hassfest and the HACS check run in CI only.
   load order does not matter. A tracker holds its location for `LOCATION_GRACE` while the device
   it was on is missing. Each tracker provides `device_info` (MAC, name from SRM) and is its
   device's main entity (`has_entity_name`, no name); `device_info` is `@final` in Home Assistant
-  2026.10 for type checkers only, hence the `type: ignore`.
+  2026.10 for type checkers only, hence the `type: ignore`. At setup, a registered tracker is
+  provided again only if `hub.wants()` holds or the user changed it (`changed_by_user`); the rest
+  stay in the registry, unavailable and deletable. Client devices of the entry with no entity left
+  are removed (`async_remove_device`, never the router's or access point's own device).
 - **Errors**: authentication, two-factor, missing admin rights and certificate errors raise
   `ConfigEntryAuthFailed` (reauth shows what was trusted before and confirms the new
   certificate: by a name the user enters when a public authority vouches for it, never a name

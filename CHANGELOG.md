@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Old trackers can be deleted in Home Assistant. With *Track all clients*, a tracker of a client
+  that no longer matters is no longer provided at setup, unless you chose its client or changed the
+  tracker or its device (name, area, label, icon, category, alias, hidden, used by a person). Home
+  Assistant then shows it as unavailable and offers *Delete*; until now it said away and could not
+  be deleted. It comes back with the same entity ID when its client does.
+  [#14](https://github.com/eizedev/ha-synology-srm-router/issues/14),
+  [#45](https://github.com/eizedev/ha-synology-srm-router/issues/45)
+- A client device left without its tracker is removed at the next setup. Devices of other
+  integrations for the same client stay.
+
+### Changed
+
+- Automations, templates and dashboards that read such an old tracker see `unavailable` instead of
+  `not_home`.
+
 ## [0.1.3] - 2026-10-30
 
 ### Fixed
