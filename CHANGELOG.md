@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-30
+
 ### Added
 
 - A *Wi-Fi events* entity per device: it fires when a radio set to a fixed channel runs on
@@ -135,7 +137,8 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.1...v0.1.2
