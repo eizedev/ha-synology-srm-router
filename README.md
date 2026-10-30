@@ -16,7 +16,6 @@ changes a setting.
 
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=eizedev&repository=ha-synology-srm-router&category=integration)
 [![Open your Home Assistant instance and start setting up the integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=synology_srm_router)
-[![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_wifi_events.yaml)
 
 > **Unofficial.** Not affiliated with, endorsed by or supported by Synology Inc.
 
@@ -61,6 +60,16 @@ Without HACS: download `synology_srm_router.zip` from the
 [latest release](https://github.com/eizedev/ha-synology-srm-router/releases/latest) and unpack it
 into `custom_components/synology_srm_router/` in your Home Assistant configuration
 ([details](https://ha-synology-srm-router.eize.dev/installation/#without-hacs)).
+
+## Blueprints
+
+Ready automations for notifications; import one, then create an automation per router or access
+point. Details: [Events](https://ha-synology-srm-router.eize.dev/events/).
+
+| Blueprint | Notifies when | Import |
+| --- | --- | --- |
+| New clients | a client joins the network for the first time (private MAC addresses only if you include them) | [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_new_clients.yaml) |
+| Wi-Fi events | a radio set to a fixed channel runs on another one, or a Wi-Fi network is switched off or on | [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_wifi_events.yaml) |
 
 ## Documentation
 
