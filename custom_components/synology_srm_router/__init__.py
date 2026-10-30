@@ -23,6 +23,7 @@ from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
 from homeassistant.util.ssl import get_default_context
 
+from .changes import store as router_events_store
 from .const import (
     BLOCKED_RETRY,
     CONF_CERTIFICATE_NAME,
@@ -60,6 +61,7 @@ GETTERS = (
     "get_dhcp_servers",
     "get_firewall_rules",
     "get_firewall_hit_counts",
+    "get_ipv6_prefixes",
     "get_usb_volumes",
     "get_wifi_radio_settings",
     "get_wifi_radio_status",
@@ -181,7 +183,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
-    """Forget the clients' "last seen" times once no router or access point is left."""
+    """Forget the entry's last seen prefixes and firewall; the clients once no entry is left."""
+    await router_events_store(hass, entry.entry_id).async_remove()
     if not any(e.entry_id != entry.entry_id for e in hass.config_entries.async_entries(DOMAIN)):
         await get_hub(hass).async_forget()
 

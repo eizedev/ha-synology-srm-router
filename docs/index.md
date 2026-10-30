@@ -22,7 +22,7 @@ hide:
 - [**Installation**](installation.md)<br>HACS, the first device, the account to use.
 - [**Configuration**](configuration.md)<br>Certificate, device trackers, options.
 - [**Entities**](entities.md)<br>Sensors of routers and access points.
-- [**Events**](events.md)<br>New clients, Wi-Fi channel and network changes, with blueprints for notifications.
+- [**Events**](events.md)<br>New clients, Wi-Fi channel and network changes, IPv6 prefix and firewall changes, with blueprints for notifications.
 - [**Dashboards**](dashboards.md)<br>Who is where, by radio, DHCP leases and unknown devices, firewall rules.
 - [**Ideas and automations**](ideas.md)<br>Presence, internet down, offline devices, data per day.
 - [**Troubleshooting**](troubleshooting.md)<br>Messages, repairs, diagnostics, removal.
@@ -35,9 +35,11 @@ hide:
   number of clients on it (all, per Wi-Fi band and wired), the last boot, used and free space
   per USB volume, the channel of each Wi-Fi radio, and whether each Wi-Fi network (primary,
   guest) is on, per band, and link and speed of every Ethernet port.
-- On routers: WAN connection, public IPv4 and IPv6 address, and whether the router sits behind
-  another router or the provider's carrier-grade NAT; DHCP leases, reservations and how full
-  each network's pool is; the firewall's rules with their hits. The lists behind these counts
+- On routers: WAN connection, public IPv4 and IPv6 address, the delegated IPv6 prefix, and whether
+  the router sits behind another router or the provider's carrier-grade NAT; DHCP leases,
+  reservations and how full each network's pool is; the firewall's rules with their hits. Events
+  tell when the IPv6 prefix or the firewall changes, also when that happened while Home Assistant
+  was off. The lists behind these counts
   show who holds an address, which devices are unknown, and what each rule is about, named after
   your devices, on sensors you switch on; a sensor per rule that counts its hits is an option.
 - Device trackers for the clients you choose (or all that matter). Each says whether the client is

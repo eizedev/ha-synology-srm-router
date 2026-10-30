@@ -97,11 +97,22 @@ chart_type: line
 hour stand side by side and spread over the time axis, which reads like hits at other times.
 Statistics start with the first full hour after a sensor was added.
 
+## Last router change
+
+The last time the IPv6 prefix or the firewall changed, and what changed, from the router's
+*Router events* entity (see [Events](events.md#router-events)):
+
+```jinja
+--8<-- "docs/assets/cards/router-changes.jinja"
+```
+
+The card shows only the latest change; to hear about each one, use the router events blueprint.
+
 ## A complete dashboard
 
 ![The example dashboard's first view: router, access point, by radio, who is where](assets/screenshots/dashboard.png)
 
-Router and access point with gauges, tiles and a traffic graph, the client lists above, and views for DHCP and the firewall.
+Router and access point with gauges, tiles and a traffic graph, the client lists above, and views for DHCP and the firewall (with the last router change).
 [Download it](assets/example-dashboard.yaml) or copy it from here; the comment at the top says
 where to paste it and which entity IDs to adjust.
 
@@ -117,6 +128,8 @@ example uses the English IDs. In German, these differ (the device prefix stays t
 | `sensor.<device>_memory_usage` | `sensor.<device>_speicherauslastung` |
 | `binary_sensor.<device>_wan_connection` | `binary_sensor.<device>_wan_verbindung` |
 | `sensor.<device>_public_ipv4_address` | `sensor.<device>_offentliche_ipv4_adresse` |
+| `sensor.<device>_ipv6_prefix` | `sensor.<device>_ipv6_prafix` |
+| `event.<device>_router_events` | `event.<device>_router_ereignisse` |
 | `sensor.<device>_dhcp_pool_usage_lan` | `sensor.<device>_dhcp_pool_belegt_lan` |
 | `sensor.<device>_dhcp_reservations` | `sensor.<device>_dhcp_reservierungen` |
 | `sensor.<device>_firewall_rules` | `sensor.<device>_firewall_regeln` |

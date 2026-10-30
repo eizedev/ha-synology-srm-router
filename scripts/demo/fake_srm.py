@@ -42,6 +42,7 @@ APIS: dict[tuple[str, str], tuple[str, int, int]] = {
     ("SYNO.Core.Security.Firewall.Rules", "get"): ("firewall_rules", 1, 2),
     ("SYNO.Core.Security.Firewall.Rules.HitCount", "get"): ("firewall_hit_counts", 1, 1),
     ("SYNO.Core.Storage.Volume", "list"): ("usb_volumes", 1, 1),
+    ("SYNO.Core.Network.IPv6.Router.Prefix", "list"): ("ipv6_prefixes", 1, 1),
 }
 
 # Readable firewall rule names, in the order of the router's recorded rules.

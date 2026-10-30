@@ -26,6 +26,7 @@ APIS = (
     "SYNO.Core.Network.DHCPServer.Reservation",
     "SYNO.Core.Security.Firewall.Rules",
     "SYNO.Core.Security.Firewall.Rules.HitCount",
+    "SYNO.Core.Network.IPv6.Router.Prefix",
     "SYNO.Core.Storage.Volume",
     "SYNO.Wifi.Device",
     "SYNO.Wifi.Radio.Setting",

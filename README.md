@@ -34,8 +34,10 @@ changes a setting.
   notifications) when a fixed channel changes or a network is switched off or on.
 - An event when a client joins the network for the first time, with a blueprint for notifications.
 - Link and speed of every Ethernet port of routers and access points.
-- On routers: WAN connection, public IPv4 and IPv6 address, whether the router is behind NAT, DHCP
-  leases, reservations and pool usage, and the firewall rules with their hits. Lists behind the
+- On routers: WAN connection, public IPv4 and IPv6 address and the delegated IPv6 prefix, whether
+  the router is behind NAT, DHCP leases, reservations and pool usage, and the firewall rules with
+  their hits; events (and a blueprint) when the IPv6 prefix or the firewall changes, also while
+  Home Assistant was off. Lists behind the
   counts show who holds an address, which devices are unknown, and what each firewall rule is
   about, named after your devices (sensors you switch on); a hits sensor per rule on request.
 - Device trackers that know which router or access point, connection and radio each client
@@ -64,19 +66,20 @@ into `custom_components/synology_srm_router/` in your Home Assistant configurati
 ## Blueprints
 
 Ready automations for notifications; import one, then create an automation per router or access
-point. Details: [Events](https://ha-synology-srm-router.eize.dev/events/).
+point (router events: per router). Details: [Events](https://ha-synology-srm-router.eize.dev/events/).
 
 | Blueprint | Notifies when | Import |
 | --- | --- | --- |
 | New clients | a client joins the network for the first time (private MAC addresses only if you include them) | [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_new_clients.yaml) |
+| Router events | the IPv6 prefix of a local network changes, or the firewall does (rules added, removed, switched, moved, default policy), also while Home Assistant was off | [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_router_events.yaml) |
 | Wi-Fi events | a radio set to a fixed channel runs on another one, or a Wi-Fi network is switched off or on | [![Open your Home Assistant instance and show the blueprint import dialog.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feizedev%2Fha-synology-srm-router%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fsynology_srm_router%2Fnotify_wifi_events.yaml) |
 
 ## Documentation
 
 - [Configuration](https://ha-synology-srm-router.eize.dev/configuration/): certificate, account, device trackers, options
 - [Entities](https://ha-synology-srm-router.eize.dev/entities/)
-- [Events](https://ha-synology-srm-router.eize.dev/events/): new clients, Wi-Fi channel and network changes, blueprints for notifications
-- [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by radio, DHCP leases and unknown devices, firewall rules
+- [Events](https://ha-synology-srm-router.eize.dev/events/): new clients, Wi-Fi channel and network changes, IPv6 prefix and firewall changes, blueprints for notifications
+- [Dashboards](https://ha-synology-srm-router.eize.dev/dashboards/): who is where, by radio, DHCP leases and unknown devices, firewall rules, the last router change
 - [Ideas and automations](https://ha-synology-srm-router.eize.dev/ideas/): presence, internet down, offline devices, data per day
 - [Troubleshooting](https://ha-synology-srm-router.eize.dev/troubleshooting/): messages, repairs, diagnostics, removal
 

@@ -1,0 +1,73 @@
+blueprint:
+  name: Synology SRM router events
+  description: >-
+    Send a notification when a delegated IPv6 prefix changes, or when the firewall changes:
+    rules added, removed, switched on or off, moved, or a default policy changed.
+    Uses the "Router events" entity of the Synology SRM Router integration.
+  domain: automation
+  source_url: https://github.com/eizedev/ha-synology-srm-router/blob/main/blueprints/automation/synology_srm_router/notify_router_events.yaml
+  input:
+    events_entity:
+      name: Router events
+      description: The "Router events" entity of a router.
+      selector:
+        entity:
+          filter:
+            - integration: synology_srm_router
+              domain: event
+    event_types:
+      name: Events
+      default: [prefix_changed, firewall_changed]
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: IPv6 prefix changed
+              value: prefix_changed
+            - label: Firewall changed
+              value: firewall_changed
+    notify_action:
+      name: Notification
+      description: What to do, for example a notification to your phone.
+      default:
+        - action: persistent_notification.create
+          data:
+            title: "{{ title }}"
+            message: "{{ message }}"
+      selector:
+        action: {}
+
+mode: queued
+
+triggers:
+  - trigger: state
+    entity_id: !input events_entity
+    not_from: unavailable
+    not_to: unavailable
+
+variables:
+  event_types: !input event_types
+  event_type: "{{ trigger.to_state.attributes.event_type }}"
+  device: >-
+    {% set device = device_id(trigger.entity_id) %}
+    {{ device_attr(device, 'name_by_user') or device_attr(device, 'name') or trigger.entity_id }}
+  title: "{{ device }}"
+  message: >-
+    {% set a = trigger.to_state.attributes %}
+    {% if event_type == 'prefix_changed' %}
+    {%- for c in a.changes %}IPv6 prefix of {{ c.network }}: {{ c.prefix or 'none' }} (was {{ c.previous or 'none' }}).
+    {% endfor %}
+    {%- elif event_type == 'firewall_changed' %}Firewall changed.
+    {%- if a.added %} Added: {{ a.added | join(', ') }}.{% endif %}
+    {%- if a.removed %} Removed: {{ a.removed | join(', ') }}.{% endif %}
+    {%- if a.enabled %} Switched on: {{ a.enabled | join(', ') }}.{% endif %}
+    {%- if a.disabled %} Switched off: {{ a.disabled | join(', ') }}.{% endif %}
+    {%- if a.reordered %} Order of the rules changed.{% endif %}
+    {%- for p in a.policy %} Default policy {{ p.traffic }}: {{ p.policy }} (was {{ p.previous }}).{% endfor %}
+    {%- endif %}
+
+conditions:
+  - condition: template
+    value_template: "{{ event_type in event_types }}"
+
+actions: !input notify_action

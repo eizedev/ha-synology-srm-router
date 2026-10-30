@@ -28,12 +28,17 @@ hassfest and the HACS check run in CI only.
   entries' devices from an entry.
 - **Coordinators poll, entities never do.** Fast coordinator: load, clients, Wi-Fi clients, Ethernet ports, WAN.
   Slow coordinator: system information, plus the optional reads in `SLOW_READS` (DHCP leases,
-  reservations and servers, firewall rules and hits on routers; USB volumes). One failing fast
+  reservations and servers, firewall rules and hits, IPv6 prefixes on routers; USB volumes,
+  Wi-Fi settings, status and networks). One failing fast
   read leaves its part empty, and only when every read fails does the update fail; a failing
   optional slow read keeps its last value. A failing read is logged at info once, and once
   when it works again (`gather_partial`). Reads the device does not offer are skipped, with
   their entities. Both coordinators share one client, so a remembered login error (auto block,
   credentials) stops both without another login.
+- **Events** compare each read with the last one and never fire for the state at startup or after
+  a failed read. Router events (`changes.py`) store what they last saw in `.storage`, so a change
+  made while Home Assistant was off fires, but only once it has started (`async_at_started`),
+  when automations listen.
 - **Trackers**: routers own them (access points only without a router), in a fixed order, so the
   load order does not matter. A tracker holds its location for `LOCATION_GRACE` while the device
   it was on is missing. Each tracker provides `device_info` (MAC, name from SRM) and is its

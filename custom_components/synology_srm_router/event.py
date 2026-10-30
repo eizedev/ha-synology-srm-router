@@ -1,4 +1,4 @@
-"""Events of one device: Wi-Fi (fixed channel changed, network switched) and new clients."""
+"""Events of one device: Wi-Fi, new clients, and on routers IPv6 prefix and firewall changes."""
 
 from __future__ import annotations
 
@@ -6,7 +6,16 @@ from homeassistant.components.event import EventEntity, EventEntityDescription
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.start import async_at_started
 
+from .changes import (
+    EVENT_FIREWALL_CHANGED,
+    EVENT_PREFIX_CHANGED,
+    Snapshot,
+    changes,
+    snapshot,
+    store,
+)
 from .coordinator import (
     SIGNAL_NEW_CLIENT,
     SlowData,
@@ -33,6 +42,12 @@ EVENT_NEW_CLIENT = "new_client"
 CLIENT_DESCRIPTION = EventEntityDescription(
     key="client_events", translation_key="client_events", event_types=[EVENT_NEW_CLIENT]
 )
+ROUTER_DESCRIPTION = EventEntityDescription(
+    key="router_events",
+    translation_key="router_events",
+    event_types=[EVENT_PREFIX_CHANGED, EVENT_FIREWALL_CHANGED],
+)
+ROUTER_READS = ("get_ipv6_prefixes", "get_firewall_rules")
 
 
 async def async_setup_entry(
@@ -40,11 +55,13 @@ async def async_setup_entry(
     entry: SrmConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the new-clients entity, and Wi-Fi events where the device offers its Wi-Fi settings."""
+    """Add the event entities the device offers: new clients, Wi-Fi, and router changes."""
     runtime = entry.runtime_data
     entities: list[EventEntity] = [SrmClientEvents(entry, runtime.fast)]
     if any(read in runtime.supported for read in WIFI_READS):
         entities.append(SrmWifiEvents(entry, runtime.slow))
+    if runtime.is_router and any(read in runtime.supported for read in ROUTER_READS):
+        entities.append(SrmRouterEvents(entry, runtime.slow))
     async_add_entities(entities)
 
 
@@ -161,3 +178,50 @@ class SrmClientEvents(SrmEntity[SrmFastCoordinator], EventEntity):
             },
         )
         self.async_write_ha_state()
+
+
+class SrmRouterEvents(SrmEntity[SrmSlowCoordinator], EventEntity):
+    """Fires when a delegated IPv6 prefix or the firewall changes, at most once per kind and read.
+
+    What was last seen is stored, so a change made while Home Assistant was not running fires
+    once it has started (when automations listen). The very first start only takes in the
+    current state, and a read that fails keeps the last values, so neither looks like a change.
+    """
+
+    _attr_should_poll = False
+
+    def __init__(self, entry: SrmConfigEntry, coordinator: SrmSlowCoordinator) -> None:
+        """Bind the entity to its router."""
+        super().__init__(entry, coordinator, ROUTER_DESCRIPTION)
+        self._store = store(coordinator.hass, entry.entry_id)
+        self._seen: Snapshot | None = None
+        self._started = False
+
+    async def async_added_to_hass(self) -> None:
+        """Read what was last seen, and compare once Home Assistant has started."""
+        await super().async_added_to_hass()
+        self._seen = await self._store.async_load()
+        self.async_on_remove(async_at_started(self.hass, self._at_started))
+
+    @callback
+    def _at_started(self, _: HomeAssistant) -> None:
+        self._started = True
+        self._compare()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Compare with what was last seen."""
+        if self._started:
+            self._compare()
+        super()._handle_coordinator_update()
+
+    @callback
+    def _compare(self) -> None:
+        current = snapshot(self.coordinator.data, self._seen)
+        if self._seen is not None:
+            for event_type, attributes in changes(self._seen, current):
+                self._trigger_event(event_type, attributes)
+                self.async_write_ha_state()
+        if current != self._seen:
+            self._seen = current
+            self._store.async_delay_save(lambda: current, 1)

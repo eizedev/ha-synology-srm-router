@@ -17,6 +17,7 @@ from aiosynologysrm import (
     ExternalIp,
     FirewallRule,
     FirewallRules,
+    Ipv6Prefixes,
     NetworkDevices,
     SrmAuthenticationError,
     SrmBlockedError,
@@ -90,7 +91,7 @@ class FastData:
 
 @dataclass(kw_only=True)
 class SlowData:
-    """What changes rarely: system information, USB storage and Wi-Fi; DHCP and firewall on routers.
+    """What changes rarely: system information, USB storage, Wi-Fi; DHCP, firewall, IPv6 on routers.
 
     Everything but the system information is optional: a read that fails keeps what is known.
     """
@@ -108,6 +109,7 @@ class SlowData:
 
     Not kept when its read fails: a counter must not be matched against a newer rule list.
     """
+    prefixes: Ipv6Prefixes | None = None
     usb: StorageVolumes | None = None
     radio_settings: WifiRadioSettings | None = None
     radio_status: WifiRadioStatus | None = None
@@ -124,6 +126,7 @@ SLOW_READS: tuple[tuple[str, str, bool], ...] = (
     ("dhcp_servers", "get_dhcp_servers", True),
     ("firewall", "get_firewall_rules", True),
     ("hits", "get_firewall_hit_counts", True),
+    ("prefixes", "get_ipv6_prefixes", True),
     ("usb", "get_usb_volumes", False),
     ("radio_settings", "get_wifi_radio_settings", False),
     ("radio_status", "get_wifi_radio_status", False),

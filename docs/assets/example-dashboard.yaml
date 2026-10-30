@@ -35,6 +35,9 @@ views:
           - type: tile
             entity: sensor.rt2600ac_public_ipv4_address
             grid_options: {columns: 6}
+          - type: tile
+            entity: sensor.rt2600ac_ipv6_prefix
+            grid_options: {columns: 6}
           - type: statistics-graph
             title: Traffic
             entities:
@@ -180,6 +183,23 @@ views:
     cards:
       - type: vertical-stack
         cards:
+          - type: markdown
+            title: Last router change
+            content: |
+              {#- Names come from the devices themselves: escape what Markdown would read as a table, link or image. -#}
+              {%- macro md(v) -%}{{ (v ~ '') | replace('\r', ' ') | replace('\n', ' ') | replace('\\', '\\\\') | replace('|', '\\|') | replace('[', '\\[') | replace(']', '\\]') | replace('!', '\\!') | replace('<', '&lt;') | replace('>', '&gt;') | replace('`', '\\`') | replace('*', '\\*') | replace('_', '\\_') }}{%- endmacro -%}
+              {% set ns = namespace(found=false) %}
+              {% for id in integration_entities('synology_srm_router') if id.startswith('event.') and 'firewall_changed' in (state_attr(id, 'event_types') or []) -%}
+              {% set ns.found = true %}{% set a = states[id].attributes %}{% set device = device_id(id) %}
+              **{{ md(device_attr(device, 'name_by_user') or device_attr(device, 'name')) }}** · {{ 'no change seen yet' if states(id) in ['unknown', 'unavailable'] else (states(id) | as_datetime | as_local).strftime('%Y-%m-%d %H:%M') }}<br>
+              {% if a.event_type == 'prefix_changed' -%}
+              {% for c in a.changes %}IPv6 prefix {{ md(c.network) }}: {{ c.prefix or 'none' }} (was {{ c.previous or 'none' }})<br>{% endfor %}
+              {%- elif a.event_type == 'firewall_changed' -%}
+              {{ ('added: ' ~ md(a.added | join(', ')) ~ '<br>') if a.added }}{{ ('removed: ' ~ md(a.removed | join(', ')) ~ '<br>') if a.removed }}{{ ('switched on: ' ~ md(a.enabled | join(', ')) ~ '<br>') if a.enabled }}{{ ('switched off: ' ~ md(a.disabled | join(', ')) ~ '<br>') if a.disabled }}{{ 'order changed<br>' if a.reordered }}{% for p in a.policy %}default policy {{ p.traffic }}: {{ p.policy }} (was {{ p.previous }})<br>{% endfor %}
+              {%- endif %}
+
+              {% endfor %}
+              {{ 'No router with router events.' if not ns.found }}
           - type: conditional
             conditions:
               - condition: screen
