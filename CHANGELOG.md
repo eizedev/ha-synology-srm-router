@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-30
+
 ### Fixed
 
 - No more warning from Home Assistant about `DeviceEntry.config_entries` when a tracker names its
@@ -97,7 +99,8 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/eizedev/ha-synology-srm-router/releases/tag/v0.1.0
