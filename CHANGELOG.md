@@ -6,12 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-31
+
 ### Added
 
 - Repairs for router settings that weaken a router, each with a page in the docs that says what to
-  change in SRM: SRM's web interface reachable from the internet, the auto block switched off, a
-  firewall default policy that allows traffic from the internet. Checked with the slow update;
-  a repair goes once the setting is safe. Read only, as everything else.
+  change in SRM: access to SRM allowed from the internet, the auto block switched off, a firewall
+  default policy that allows traffic from the internet. Checked with the slow update; a repair
+  goes once the setting is safe. Read only, as everything else.
   [#35](https://github.com/eizedev/ha-synology-srm-router/issues/35)
 - Discovery: routers and access points that announce themselves on the network (mDNS) are offered
   in Home Assistant with host and HTTPS port filled in; a Synology NAS announcing itself the same
@@ -176,7 +178,8 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.0...v0.2.1
