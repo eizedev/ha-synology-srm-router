@@ -19,7 +19,9 @@ uv run ruff check . && uv run ruff format --check .
 uv run mypy                   # strict
 ```
 
-hassfest and the HACS check run in CI only.
+hassfest, the HACS check and the tests on the oldest supported Home Assistant (`hacs.json`,
+harness found by `scripts/oldest_ha.py`) run in CI only. README and `docs/installation.md` name
+that minimum too; a test keeps them equal.
 
 ## Rules that matter here
 

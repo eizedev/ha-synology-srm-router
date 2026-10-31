@@ -32,6 +32,8 @@ show_missing = true
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+# CI runs these with the runner's Python, not the project's.
+per-file-target-version = { "scripts/*.py" = "py312" }
 
 [tool.ruff.lint]
 # The same rule set as aiosynologysrm.
