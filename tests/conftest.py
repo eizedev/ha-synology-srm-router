@@ -10,6 +10,8 @@ from typing import Any, ClassVar
 from unittest.mock import PropertyMock, patch
 
 from aiosynologysrm import (
+    AllowSrmFromWan,
+    AutoBlock,
     CertificateNames,
     ConnectionStatus,
     DhcpClients,
@@ -138,6 +140,14 @@ class FakeClient:
     async def get_ipv6_prefixes(self) -> Ipv6Prefixes:
         self._raise("get_ipv6_prefixes")
         return Ipv6Prefixes.from_api(load(self.folder, "ipv6_prefixes"))
+
+    async def get_allow_srm_from_wan(self) -> AllowSrmFromWan:
+        self._raise("get_allow_srm_from_wan")
+        return AllowSrmFromWan.from_api(load(self.folder, "allow_srm_from_wan"))
+
+    async def get_auto_block(self) -> AutoBlock:
+        self._raise("get_auto_block")
+        return AutoBlock.from_api(load(self.folder, "auto_block"))
 
     async def get_usb_volumes(self) -> StorageVolumes:
         self._raise("get_usb_volumes")

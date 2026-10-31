@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name} ({host})",
     "step": {
       "user": {
         "title": "Synology-Router oder Access Point",
@@ -186,7 +187,8 @@
       "reauth_successful": "Erneut angemeldet.",
       "reconfigure_successful": "Verbindung geändert.",
       "wrong_device": "Das ist ein anderes Gerät als das eingerichtete.",
-      "unknown": "Unerwarteter Fehler, siehe Log."
+      "unknown": "Unerwarteter Fehler, siehe Log.",
+      "not_srm_device": "Im Netz gefunden, aber kein Synology-Router oder Access Point."
     }
   },
   "options": {
@@ -510,6 +512,18 @@
     "blocked": {
       "title": "{name} sperrt Home Assistant",
       "description": "Die automatische Sperre von SRM weist Anmeldungen von Home Assistant nach Fehlversuchen ab, deshalb wird {name} nicht gelesen. Home Assistant versucht alle 15 Minuten, sich erneut anzumelden; jeder Versuch zählt für die Sperre mit. Gib die Adresse von Home Assistant in den Einstellungen der automatischen Sperre von SRM frei oder warte, bis die Sperre abläuft. Diese Meldung verschwindet nach der nächsten erfolgreichen Abfrage."
+    },
+    "srm_from_internet": {
+      "title": "{name} erlaubt den Zugriff auf SRM aus dem Internet",
+      "description": "SRM auf {name} ist so eingestellt, dass die Weboberfläche aus dem Internet erreichbar sein darf. Wo dein Anschluss das durchlässt, kann jeder, der sie findet, Anmeldungen versuchen, und eine Lücke in SRM stünde dem ganzen Internet offen. Wenn du sie unterwegs nicht brauchst, schalte in SRM die Einstellung aus, die den Zugriff auf SRM aus dem Internet erlaubt, und nutze stattdessen ein VPN. Diese Meldung verschwindet, sobald die Einstellung aus ist."
+    },
+    "auto_block_off": {
+      "title": "Automatische Sperre auf {name} ist aus",
+      "description": "Die automatische Sperre von SRM ist auf {name} ausgeschaltet, also hindert nichts jemanden daran, ein Passwort nach dem anderen zu probieren. Schalte die automatische Sperre in SRM ein. Diese Meldung verschwindet, sobald sie an ist."
+    },
+    "firewall_open": {
+      "title": "Die Firewall von {name} lässt das Internet herein",
+      "description": "Eine Standardrichtlinie der Firewall auf {name} erlaubt Verkehr aus dem Internet, auf den keine Regel passt, zum Router oder in dein Netz. Setze die Standardrichtlinien für Verkehr aus dem Internet in den Firewall-Einstellungen von SRM auf Ablehnen und erlaube nur, was du brauchst, mit Regeln. Diese Meldung verschwindet, sobald keine davon mehr erlaubt."
     }
   }
 }

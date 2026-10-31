@@ -54,7 +54,9 @@ that minimum too; a test keeps them equal.
   certificate: by a name the user enters when a public authority vouches for it, never a name
   taken from the certificate; else by its fingerprint); SRM's auto block raises a repair
   and is retried every `BLOCKED_RETRY`; everything else is `UpdateFailed` or
-  `ConfigEntryNotReady`. A failed setup always logs out. Messages come from `strings.json` (`exceptions`).
+  `ConfigEntryNotReady`. A failed setup always logs out. Risky router settings
+  (`repairs.py`) raise warning repairs; one stays while its setting is unknown and goes only once
+  the setting is safe or the entry is removed, so an ignored repair stays ignored. Messages come from `strings.json` (`exceptions`).
 - **Texts**: every user-facing text is in `strings.json` and in both `translations/en.json` and
   `translations/de.json`. Do not name SRM menu paths you have not checked on a device.
 - **Schemas use `probatio`** (Home Assistant 2026.10), not voluptuous.

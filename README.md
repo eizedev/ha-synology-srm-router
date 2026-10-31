@@ -40,6 +40,8 @@ changes a setting.
   Home Assistant was off. Lists behind the
   counts show who holds an address, which devices are unknown, and what each firewall rule is
   about, named after your devices (sensors you switch on); a hits sensor per rule on request.
+- Repairs when a router is set up in a way that weakens it: SRM reachable from the internet, the
+  auto block off, or a firewall that lets traffic from the internet in by default.
 - Device trackers that know which router or access point, connection and radio each client
   uses, named as in SRM.
 - Checked certificates (by name for public certificate authorities such as Let's Encrypt, so
@@ -55,7 +57,8 @@ above), install **Synology SRM Router** and restart Home Assistant:
 https://github.com/eizedev/ha-synology-srm-router
 ```
 
-Then add the integration once per router and per access point, router first. Requires Home
+Then add the integration once per router and per access point, router first; Home Assistant
+also finds them on the network and offers them. Requires Home
 Assistant 2026.10.3 or newer. Details: [Installation](https://ha-synology-srm-router.eize.dev/installation/).
 
 Without HACS: download `synology_srm_router.zip` from the

@@ -14,6 +14,13 @@ point is shown there.
 | Use HTTPS | Recommended: the password travels encrypted. |
 | Check the certificate | Checks the device's certificate: by the name you give when a public certificate authority vouches for it, else by its fingerprint after you confirmed it (see below). Turn off only if you accept that anyone in your network could read the password. |
 
+Routers and access points in your network announce themselves (mDNS), so Home Assistant offers
+them under *Discovered* with model, address and HTTPS port filled in; a device already set up is
+not offered again, and keeps the host you gave it. Anyone in your network could announce a device,
+so set up only addresses you know as your router or access point. Home Assistant's built-in *Synology DSM* integration
+reacts to the same announcement and offers them too; that one is for Synology NAS, ignore it for
+your routers.
+
 Each device is recognised by its serial number. Whether it runs as router or as access point is
 read at every start, so switching the operation mode in SRM needs no reconfiguration.
 

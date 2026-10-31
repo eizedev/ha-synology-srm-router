@@ -14,6 +14,13 @@ The messages as Home Assistant shows them in English; the German texts say the s
 | The device could not be reached. | Check host and port, and that HTTPS matches SRM's settings. |
 | The device reports no serial number, so it cannot be set up. | The device cannot be told apart from others and is not set up. Please report it with the model and firmware. |
 
+**Repairs about router settings** point out settings that weaken a router; each has a page with
+what to change in SRM: [managed from the internet](repairs/srm-from-internet.md),
+[auto block is off](repairs/auto-block-off.md),
+[firewall lets the internet in](repairs/firewall-open.md). They are checked with the slow update
+(every 5 minutes by default) and disappear once the setting is safe. A setting you keep on purpose:
+ignore its repair.
+
 **Diagnostics** (*Settings, Devices & services, Synology SRM Router, the three dots, Download
 diagnostics*) contain the device model, firmware, which values could be read and their types, but
 no addresses, names, passwords or the certificate fingerprint. Attach them to a bug report.

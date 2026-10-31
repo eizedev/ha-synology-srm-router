@@ -42,6 +42,9 @@ hide:
   was off. The lists behind these counts
   show who holds an address, which devices are unknown, and what each rule is about, named after
   your devices, on sensors you switch on; a sensor per rule that counts its hits is an option.
+- Repairs when a router is set up in a way that weakens it: SRM's web interface reachable from the
+  internet, the auto block switched off, or a firewall default policy that lets the internet in.
+  Each explains what to change in SRM; the integration changes nothing itself.
 - Device trackers for the clients you choose (or all that matter). Each says whether the client is
   home and which device, connection and radio it uses. Clients on a standalone access point are
   found there, even though the router itself reports them as wired; names are the ones given in

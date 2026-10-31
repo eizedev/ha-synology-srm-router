@@ -46,6 +46,7 @@ from .coordinator import (
     get_hub,
     map_error,
 )
+from .repairs import delete_risk_issues, update_risk_issues
 
 BLOCKED_AT: HassKey[dict[str, datetime]] = HassKey(f"{DOMAIN}_blocked_at")
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER, Platform.EVENT, Platform.SENSOR]
@@ -62,6 +63,8 @@ GETTERS = (
     "get_firewall_rules",
     "get_firewall_hit_counts",
     "get_ipv6_prefixes",
+    "get_allow_srm_from_wan",
+    "get_auto_block",
     "get_usb_volumes",
     "get_wifi_radio_settings",
     "get_wifi_radio_status",
@@ -165,6 +168,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool:
         )
     blocked.pop(entry.entry_id, None)
     delete_blocked_issue(hass, entry)
+
+    def _check_risks() -> None:
+        update_risk_issues(hass, entry, slow.data, is_router=is_router, supported=supported)
+
+    _check_risks()
+    entry.async_on_unload(slow.async_add_listener(_check_risks))
     hub = get_hub(hass)
     await hub.async_load()
     hub.async_add(entry)
@@ -185,6 +194,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> bool
 async def async_remove_entry(hass: HomeAssistant, entry: SrmConfigEntry) -> None:
     """Forget the entry's last seen prefixes and firewall; the clients once no entry is left."""
     await router_events_store(hass, entry.entry_id).async_remove()
+    delete_risk_issues(hass, entry)
     if not any(e.entry_id != entry.entry_id for e in hass.config_entries.async_entries(DOMAIN)):
         await get_hub(hass).async_forget()
 

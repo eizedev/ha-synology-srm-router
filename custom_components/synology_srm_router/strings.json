@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name} ({host})",
     "step": {
       "user": {
         "title": "Synology router or access point",
@@ -186,7 +187,8 @@
       "reauth_successful": "Signed in again.",
       "reconfigure_successful": "Connection changed.",
       "wrong_device": "This is a different device than the one set up.",
-      "unknown": "Unexpected error, see the log."
+      "unknown": "Unexpected error, see the log.",
+      "not_srm_device": "Found on the network, but not a Synology router or access point."
     }
   },
   "options": {
@@ -510,6 +512,18 @@
     "blocked": {
       "title": "{name} blocks Home Assistant",
       "description": "SRM's auto block refuses logins from Home Assistant after failed attempts, so {name} is not read. Home Assistant tries to log in again every 15 minutes; each attempt counts towards the block. Unblock Home Assistant's address in SRM's auto block settings, or wait until the block expires. This message disappears after the next successful update."
+    },
+    "srm_from_internet": {
+      "title": "{name} allows access to SRM from the internet",
+      "description": "SRM on {name} is set to allow access to its web interface from the internet. Wherever your connection lets it through, anyone who finds it can try to sign in, and a flaw in SRM would be open to the whole internet. Unless you need it while away, switch off the setting in SRM that allows access to SRM from the internet, and use a VPN instead. This message disappears once the setting is off."
+    },
+    "auto_block_off": {
+      "title": "Auto block is off on {name}",
+      "description": "SRM's auto block is switched off on {name}, so nothing stops anyone from trying one password after another. Switch the auto block on in SRM. This message disappears once it is on."
+    },
+    "firewall_open": {
+      "title": "The firewall of {name} lets the internet in",
+      "description": "A default policy of the firewall on {name} allows traffic from the internet that no rule matches, to the router or to your network. Set the default policies for traffic from the internet to deny in SRM's firewall settings, and allow only what you need with rules. This message disappears once none of them allows."
     }
   }
 }

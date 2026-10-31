@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from aiosynologysrm import (
+    AllowSrmFromWan,
+    AutoBlock,
     ConnectionStatus,
     DhcpClients,
     DhcpReservations,
@@ -110,6 +112,9 @@ class SlowData:
     Not kept when its read fails: a counter must not be matched against a newer rule list.
     """
     prefixes: Ipv6Prefixes | None = None
+    allow_wan: AllowSrmFromWan | None = None
+    """Whether SRM's web interface is reachable from the internet."""
+    auto_block: AutoBlock | None = None
     usb: StorageVolumes | None = None
     radio_settings: WifiRadioSettings | None = None
     radio_status: WifiRadioStatus | None = None
@@ -127,6 +132,8 @@ SLOW_READS: tuple[tuple[str, str, bool], ...] = (
     ("firewall", "get_firewall_rules", True),
     ("hits", "get_firewall_hit_counts", True),
     ("prefixes", "get_ipv6_prefixes", True),
+    ("allow_wan", "get_allow_srm_from_wan", True),
+    ("auto_block", "get_auto_block", True),
     ("usb", "get_usb_volumes", False),
     ("radio_settings", "get_wifi_radio_settings", False),
     ("radio_status", "get_wifi_radio_status", False),
