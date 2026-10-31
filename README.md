@@ -89,9 +89,9 @@ point (router events: per router). Details: [Events](https://ha-synology-srm-rou
 ## Roadmap
 
 Planned work is grouped in [milestones](https://github.com/eizedev/ha-synology-srm-router/milestones):
-[0.5.0](https://github.com/eizedev/ha-synology-srm-router/milestone/6) brings repairs for risky
-router settings, discovery and the listing in HACS and Home Assistant's Marketplace. Ideas and reports
-are welcome in the [issues](https://github.com/eizedev/ha-synology-srm-router/issues).
+[0.6.0](https://github.com/eizedev/ha-synology-srm-router/milestone/7) brings the listing in HACS
+and Home Assistant's Marketplace. Ideas and reports are welcome in the
+[issues](https://github.com/eizedev/ha-synology-srm-router/issues).
 
 ## Credits
 
