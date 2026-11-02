@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-02
+
+### Changed
+
+- The integration is in the HACS default list: the README and the installation page say to search
+  for it in HACS instead of adding a custom repository.
+  [#38](https://github.com/eizedev/ha-synology-srm-router/issues/38)
+
 ## [0.5.0] - 2026-10-31
 
 ### Added
@@ -178,7 +186,8 @@ All notable changes to this project are documented here. The format follows
 - Each Home Assistant installation logs in under its own session name, so its sessions can be told
   apart in SRM.
 
-[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/eizedev/ha-synology-srm-router/compare/v0.2.1...v0.3.0
