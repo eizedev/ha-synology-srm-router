@@ -5,15 +5,10 @@ it, see [Without HACS](#without-hacs).
 
 ## In HACS
 
+In HACS, search for **Synology SRM Router**, install it, then restart Home Assistant. The button
+opens it in HACS directly:
+
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=eizedev&repository=ha-synology-srm-router&category=integration)
-
-Or in HACS: the three dots, *Custom repositories*, add this URL with the type *Integration*:
-
-```text
-https://github.com/eizedev/ha-synology-srm-router
-```
-
-Install **Synology SRM Router**, then restart Home Assistant.
 
 ## Without HACS
 

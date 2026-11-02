@@ -2,7 +2,7 @@
 
 | HACS | Release | CI | License |
 | ---- | ------- | -- | ------- |
-| [![HACS custom](https://img.shields.io/badge/HACS-custom-41BDF5?cacheSeconds=3600)](https://hacs.xyz/docs/faq/custom_repositories/) | [![Release](https://img.shields.io/github/v/release/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/releases) | [![CI](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml/badge.svg)](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml) | [![License](https://img.shields.io/github/license/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/blob/main/LICENSE) |
+| [![HACS default](https://img.shields.io/badge/HACS-default-41BDF5?cacheSeconds=3600)](https://hacs.xyz/) | [![Release](https://img.shields.io/github/v/release/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/releases) | [![CI](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml/badge.svg)](https://github.com/eizedev/ha-synology-srm-router/actions/workflows/ci.yml) | [![License](https://img.shields.io/github/license/eizedev/ha-synology-srm-router?cacheSeconds=3600)](https://github.com/eizedev/ha-synology-srm-router/blob/main/LICENSE) |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eizedev/ha-synology-srm-router/main/assets/header-dark.svg">
@@ -50,12 +50,8 @@ changes a setting.
 
 ## Install
 
-In HACS, add this repository as a custom repository of the type *Integration* (or use the button
-above), install **Synology SRM Router** and restart Home Assistant:
-
-```text
-https://github.com/eizedev/ha-synology-srm-router
-```
+In HACS, search for **Synology SRM Router** (or use the button above), install it and restart
+Home Assistant.
 
 Then add the integration once per router and per access point, router first; Home Assistant
 also finds them on the network and offers them. Requires Home
@@ -89,8 +85,8 @@ point (router events: per router). Details: [Events](https://ha-synology-srm-rou
 ## Roadmap
 
 Planned work is grouped in [milestones](https://github.com/eizedev/ha-synology-srm-router/milestones):
-[0.6.0](https://github.com/eizedev/ha-synology-srm-router/milestone/7) brings the listing in HACS
-and Home Assistant's Marketplace. Ideas and reports are welcome in the
+[0.6.0](https://github.com/eizedev/ha-synology-srm-router/milestone/7) checks installing through
+Home Assistant's Marketplace. Ideas and reports are welcome in the
 [issues](https://github.com/eizedev/ha-synology-srm-router/issues).
 
 ## Credits
