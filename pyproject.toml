@@ -7,7 +7,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-    "pytest-homeassistant-custom-component==0.13.374",
+    "pytest-homeassistant-custom-component==0.13.375",
     "aiosynologysrm==0.10.0",
     "mypy>=1.15",
     "ruff>=0.11",
